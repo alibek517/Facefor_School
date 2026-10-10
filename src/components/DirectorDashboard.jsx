@@ -440,7 +440,6 @@ export const DirectorDashboard = () => {
     bridgeUrl, 
     recentFaceScans, 
     faceDevice, 
-    syncAllToSupabase, 
     isLocalConnected, 
     isSchoolLocalOnline, 
     cameraLatestFrames, 
@@ -462,7 +461,6 @@ export const DirectorDashboard = () => {
   const [playbackCamIp, setPlaybackCamIp] = useState(null);
   const [livePlaying, setLivePlaying] = useState(true);
   const [activeModalCam, setActiveModalCam] = useState(null);
-  const [syncingCloud, setSyncingCloud] = useState(false);
 
   const handleMoveCamera = (cameraId, direction) => {
     const list = [...(cameras || [])];
@@ -614,20 +612,10 @@ export const DirectorDashboard = () => {
 
   const gradesList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
-  const handleCloudSync = async () => {
-    if (!syncAllToSupabase) return;
-    setSyncingCloud(true);
-    try {
-      await syncAllToSupabase();
-    } finally {
-      setSyncingCloud(false);
-    }
-  };
-
   return (
     <div className="w-full space-y-3">
       
-      {/* Sarlavha, Supabase sinxronizatsiyasi va Chop etish */}
+      {/* Sarlavha, Avto-sinxronizatsiya va Chop etish */}
       <div className="bg-white dark:bg-slate-900 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 transition-colors">
         <div>
           <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -642,16 +630,11 @@ export const DirectorDashboard = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Supabase Bulutiga Saqlash / Sinxronlash tugmasi */}
-          <button
-            onClick={handleCloudSync}
-            disabled={syncingCloud}
-            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all shadow-xs"
-            title="Barcha o'quvchi va maktab ma'lumotlarini Supabase bulut bazasiga saqlash"
-          >
-            <Cloud className={`w-3.5 h-3.5 ${syncingCloud ? 'animate-bounce' : ''}`} />
-            <span>{syncingCloud ? 'Yuklanmoqda...' : 'Supabase Bulutiga Saqlash'}</span>
-          </button>
+          {/* Avtomatik bulutga saqlash holati */}
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-400 text-xs font-medium" title="Barcha o'zgarishlar va davomat avtomatik Supabase bulut bazasida saqlanadi">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Bulutda avto-saqlanmoqda</span>
+          </div>
 
           <button
             onClick={() => window.print()}
