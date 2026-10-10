@@ -215,6 +215,8 @@ export const SchoolProvider = ({ children }) => {
   const [localBridgeInfo, setLocalBridgeInfo] = useState(null);
   const supabaseChannelRef = useRef(null);
   const lastSavedFramesTime = useRef(0);
+  const localFailuresCount = useRef(0);
+  const manualRetryLocal = useRef(false);
   const [globalStreamUrl, setGlobalStreamUrl] = useState(() => {
     try {
       return localStorage.getItem('school_global_stream_url') || '';
@@ -815,24 +817,34 @@ export const SchoolProvider = ({ children }) => {
 
     const pollDevice = async () => {
       let localReachable = false;
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1200);
-        const res = await fetch(`${BRIDGE_API}/api/device/status`, { signal: controller.signal }).catch(() => null);
-        clearTimeout(timeoutId);
-        if (res && res.ok) {
-          const json = await res.json().catch(() => null);
-          if (json) {
-            if (json.data) setFaceDevice(json.data);
-            if (json.cameras) setCameras(json.cameras);
-            if (json.globalStreamUrl) updateGlobalStreamUrl(json.globalStreamUrl);
-            localReachable = true;
-            setIsLocalConnected(true);
-            setIsSchoolLocalOnline(true);
-            setNetworkMode('local');
+      const shouldProbeLocal = localFailuresCount.current === 0 || manualRetryLocal.current || (localFailuresCount.current % 24 === 0);
+      manualRetryLocal.current = false;
+
+      if (shouldProbeLocal) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 1000);
+          const res = await fetch(`${BRIDGE_API}/api/device/status`, { signal: controller.signal }).catch(() => null);
+          clearTimeout(timeoutId);
+          if (res && res.ok) {
+            const json = await res.json().catch(() => null);
+            if (json) {
+              if (json.data) setFaceDevice(json.data);
+              if (json.cameras) setCameras(json.cameras);
+              if (json.globalStreamUrl) updateGlobalStreamUrl(json.globalStreamUrl);
+              localReachable = true;
+              localFailuresCount.current = 0;
+              setIsLocalConnected(true);
+              setIsSchoolLocalOnline(true);
+              setNetworkMode('local');
+            }
           }
+        } catch (err) {}
+
+        if (!localReachable) {
+          localFailuresCount.current += 1;
         }
-      } catch (err) {}
+      }
 
       if (localReachable) {
         connectSSE();
@@ -955,6 +967,8 @@ export const SchoolProvider = ({ children }) => {
   }, [isLocalConnected]);
 
   const refreshLocalStatus = async () => {
+    manualRetryLocal.current = true;
+    localFailuresCount.current = 0;
     try {
       const status = await getLocalStatusFromSupabase();
       if (status && status.online) {
