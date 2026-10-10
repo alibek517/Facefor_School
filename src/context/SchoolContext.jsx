@@ -209,8 +209,8 @@ export const SchoolProvider = ({ children }) => {
     window.location.hostname.startsWith('192.168.') || 
     window.location.hostname.startsWith('10.')
   );
-  const [networkMode, setNetworkMode] = useState(isLocalHostEnv ? 'local' : 'detecting');
-  const [isLocalConnected, setIsLocalConnected] = useState(isLocalHostEnv);
+  const [networkMode, setNetworkMode] = useState(isLocalHostEnv ? 'detecting' : 'global');
+  const [isLocalConnected, setIsLocalConnected] = useState(false);
   const [isSchoolLocalOnline, setIsSchoolLocalOnline] = useState(true);
   const [localBridgeInfo, setLocalBridgeInfo] = useState(null);
   const supabaseChannelRef = useRef(null);
@@ -624,10 +624,11 @@ export const SchoolProvider = ({ children }) => {
         }
 
         // B. Mahalliy ko'prik serveridan ham tekshirish (agar Supabase bo'sh bo'lsa)
-        const res = await fetch(`${BRIDGE_API}/api/school/data`).catch(() => null);
-        if (res && res.ok) {
-          const json = await res.json();
-          if (json.data) {
+        if (!cloudData || !cloudData.students || cloudData.students.length === 0) {
+          const res = await fetch(`${BRIDGE_API}/api/school/data`).catch(() => null);
+          if (res && res.ok) {
+            const json = await res.json();
+            if (json.data) {
             if (!cloudData?.students && json.data.students && json.data.students.length > 0) {
               setStudents(json.data.students);
               saveModuleToSupabase('students', json.data.students);
@@ -651,6 +652,7 @@ export const SchoolProvider = ({ children }) => {
             if (!cloudData?.attendanceList && json.data.attendanceList) {
               setAttendanceList(json.data.attendanceList);
               saveModuleToSupabase('attendanceList', json.data.attendanceList);
+            }
             }
           }
         }
@@ -754,88 +756,9 @@ export const SchoolProvider = ({ children }) => {
     }
 
     // 3. Kameralar holati va lokal/global tarmoqni tekshirib borish
-    const pollDevice = async () => {
-      let localReachable = false;
+    const connectSSE = () => {
+      if (es || typeof window === 'undefined' || !window.EventSource) return;
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1800);
-        const res = await fetch(`${BRIDGE_API}/api/device/status`, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data) setFaceDevice(json.data);
-          if (json.cameras) setCameras(json.cameras);
-          if (json.globalStreamUrl) updateGlobalStreamUrl(json.globalStreamUrl);
-          localReachable = true;
-          setIsLocalConnected(true);
-          setIsSchoolLocalOnline(true);
-          setNetworkMode('local');
-        }
-      } catch (err) {}
-
-      if (localReachable) {
-        // Ushbu qurilma lokalga ulangan - u Global va Localni bir-biriga bog'lovchi faol ko'prikdir
-        const hbInfo = {
-          bridgedBy: currentUser?.fullName || currentUser?.name || 'Lokal Maktab Profili',
-          role: currentUser?.role || 'monitor',
-          totalCameras: 6,
-          camerasOnline: 6
-        };
-        sendLocalHeartbeatToSupabase(hbInfo).catch(() => {});
-        if (supabaseChannelRef.current) {
-          try {
-            supabaseChannelRef.current.send({
-              type: 'broadcast',
-              event: 'local_heartbeat',
-              payload: { online: true, timestamp: Date.now(), ...hbInfo }
-            });
-          } catch (e) {}
-        }
-
-        try {
-          const evRes = await fetch(`${BRIDGE_API}/api/device/events`);
-          if (evRes.ok) {
-            const evJson = await evRes.json();
-            if (evJson.data) setRecentFaceScans(evJson.data);
-          }
-        } catch (e) {}
-      } else {
-        // Lokal server bilan to'g'ridan-to'g'ri aloqa yo'q (tashqi internet rejimida)
-        setIsLocalConnected(false);
-        setNetworkMode('global');
-
-        // Supabase dan "local_status" heartbeat ni tekshiramiz
-        try {
-          const localStatus = await getLocalStatusFromSupabase();
-          if (localStatus && localStatus.online) {
-            const isFresh = (Date.now() - (localStatus.timestamp || 0)) < 45000;
-            setIsSchoolLocalOnline(isFresh);
-            if (isFresh) setLocalBridgeInfo(localStatus);
-          } else {
-            setIsSchoolLocalOnline(false);
-          }
-        } catch (e) {
-          setIsSchoolLocalOnline(false);
-        }
-
-        // Supabase dan oxirgi kamera kadrlarini yangilab turish (Global rejim uchun)
-        try {
-          const cloudFrames = await getLatestCameraFramesFromSupabase();
-          if (cloudFrames && typeof cloudFrames === 'object') {
-            setCameraLatestFrames(prev => ({ ...prev, ...cloudFrames }));
-          }
-        } catch (e) {}
-      }
-
-      setIsInitialized(true);
-    };
-
-    pollDevice();
-    const interval = setInterval(pollDevice, 2000);
-
-    // 4. SSE orqali real-vaqtda jonli push
-    try {
-      if (typeof window !== 'undefined' && window.EventSource) {
         es = new EventSource(`${BRIDGE_API}/api/device/stream`);
         es.addEventListener('scan', (e) => {
           try {
@@ -881,12 +804,107 @@ export const SchoolProvider = ({ children }) => {
             if (Array.isArray(updatedCameras)) setCameras(updatedCameras);
           } catch (err) {}
         });
+        es.onerror = () => {
+          if (es) {
+            try { es.close(); } catch (err) {}
+            es = null;
+          }
+        };
+      } catch (err) {}
+    };
+
+    const pollDevice = async () => {
+      let localReachable = false;
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1200);
+        const res = await fetch(`${BRIDGE_API}/api/device/status`, { signal: controller.signal }).catch(() => null);
+        clearTimeout(timeoutId);
+        if (res && res.ok) {
+          const json = await res.json().catch(() => null);
+          if (json) {
+            if (json.data) setFaceDevice(json.data);
+            if (json.cameras) setCameras(json.cameras);
+            if (json.globalStreamUrl) updateGlobalStreamUrl(json.globalStreamUrl);
+            localReachable = true;
+            setIsLocalConnected(true);
+            setIsSchoolLocalOnline(true);
+            setNetworkMode('local');
+          }
+        }
+      } catch (err) {}
+
+      if (localReachable) {
+        connectSSE();
+        // Ushbu qurilma lokalga ulangan - u Global va Localni bir-biriga bog'lovchi faol ko'prikdir
+        const hbInfo = {
+          bridgedBy: currentUser?.fullName || currentUser?.name || 'Lokal Maktab Profili',
+          role: currentUser?.role || 'monitor',
+          totalCameras: 6,
+          camerasOnline: 6
+        };
+        sendLocalHeartbeatToSupabase(hbInfo).catch(() => {});
+        if (supabaseChannelRef.current) {
+          try {
+            supabaseChannelRef.current.send({
+              type: 'broadcast',
+              event: 'local_heartbeat',
+              payload: { online: true, timestamp: Date.now(), ...hbInfo }
+            });
+          } catch (e) {}
+        }
+
+        try {
+          const evRes = await fetch(`${BRIDGE_API}/api/device/events`).catch(() => null);
+          if (evRes && evRes.ok) {
+            const evJson = await evRes.json().catch(() => null);
+            if (evJson && evJson.data) setRecentFaceScans(evJson.data);
+          }
+        } catch (e) {}
+      } else {
+        // Lokal server bilan to'g'ridan-to'g'ri aloqa yo'q (tashqi internet rejimida)
+        if (es) {
+          try { es.close(); } catch (err) {}
+          es = null;
+        }
+        setIsLocalConnected(false);
+        setNetworkMode('global');
+
+        // Supabase dan "local_status" heartbeat ni tekshiramiz
+        try {
+          const localStatus = await getLocalStatusFromSupabase();
+          if (localStatus && localStatus.online) {
+            const isFresh = (Date.now() - (localStatus.timestamp || 0)) < 45000;
+            setIsSchoolLocalOnline(isFresh);
+            if (isFresh) setLocalBridgeInfo(localStatus);
+          } else {
+            setIsSchoolLocalOnline(false);
+          }
+        } catch (e) {
+          setIsSchoolLocalOnline(false);
+        }
+
+        // Supabase dan oxirgi kamera kadrlarini yangilab turish (Global rejim uchun)
+        try {
+          const cloudFrames = await getLatestCameraFramesFromSupabase();
+          if (cloudFrames && typeof cloudFrames === 'object') {
+            setCameraLatestFrames(prev => ({ ...prev, ...cloudFrames }));
+          }
+        } catch (e) {}
       }
-    } catch (err) {}
+
+      setIsInitialized(true);
+    };
+
+    pollDevice();
+    const interval = setInterval(pollDevice, 2500);
 
     return () => {
       clearInterval(interval);
-      if (es) es.close();
+      if (es) {
+        try { es.close(); } catch (err) {}
+        es = null;
+      }
       if (supabaseChannel) supabase.removeChannel(supabaseChannel);
     };
   }, []);

@@ -74,12 +74,12 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
 
   // Haqiqiy jonli ulanish bormi?
   const hasLiveTunnel = Boolean(globalStreamUrl && globalStreamUrl.startsWith('https://'));
-  const isCloudRelayLive = Boolean(!isLocalConnected && !isLocalHost && (isSchoolLocalOnline || cameraLatestFrames?.[cam.ip]));
-  const canLiveStream = Boolean(isLocalConnected || isLocalHost || hasLiveTunnel || isCloudRelayLive);
-  const liveBaseUrl = (isLocalConnected || isLocalHost)
+  const isCloudRelayLive = Boolean(!isLocalConnected && (isSchoolLocalOnline || cameraLatestFrames?.[cam.ip]));
+  const canLiveStream = Boolean(isLocalConnected || hasLiveTunnel || isCloudRelayLive);
+  const liveBaseUrl = isLocalConnected
     ? (bridgeUrl && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
     : (hasLiveTunnel ? globalStreamUrl : null);
-  const effectiveBaseUrl = passedEffectiveBaseUrl || bridgeUrl || liveBaseUrl || '';
+  const effectiveBaseUrl = passedEffectiveBaseUrl || (isLocalConnected ? bridgeUrl : '') || liveBaseUrl || '';
 
   const [frameSrc, setFrameSrc] = useState(cloudFrame);
   const [isLiveActive, setIsLiveActive] = useState(false);
@@ -1029,7 +1029,7 @@ export const DirectorDashboard = () => {
             <div className="relative aspect-video bg-black flex items-center justify-center">
               {(() => {
                 const modalCloudFrame = cameraLatestFrames?.[activeModalCam.ip] || `/photos/camera_${activeModalCam.ip}.jpg`;
-                const modalLiveUrl = (isLocalConnected || isLocalHost)
+                const modalLiveUrl = isLocalConnected
                   ? `${bridgeUrl || 'http://localhost:5001'}/api/camera/stream/${activeModalCam.ip}`
                   : (globalStreamUrl && globalStreamUrl.startsWith('https://') ? `${globalStreamUrl}/api/camera/stream/${activeModalCam.ip}` : null);
                 const isModalLive = Boolean(modalLiveUrl || (isSchoolLocalOnline && cameraLatestFrames?.[activeModalCam.ip]));
