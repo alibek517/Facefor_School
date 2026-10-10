@@ -214,6 +214,7 @@ export const SchoolProvider = ({ children }) => {
   const [isSchoolLocalOnline, setIsSchoolLocalOnline] = useState(true);
   const [localBridgeInfo, setLocalBridgeInfo] = useState(null);
   const supabaseChannelRef = useRef(null);
+  const isChannelSubscribedRef = useRef(false);
   const lastSavedFramesTime = useRef(0);
   const localFailuresCount = useRef(0);
   const manualRetryLocal = useRef(false);
@@ -837,10 +838,14 @@ export const SchoolProvider = ({ children }) => {
         })
         .subscribe((status, err) => {
           if (status === 'SUBSCRIBED') {
+            isChannelSubscribedRef.current = true;
             console.log('[SUPABASE REALTIME] Jonli kanal ulandi.');
-          } else if (status === 'CHANNEL_ERROR') {
-            // Internet yoki DNS uzilishida jim ogohlantirish (tizim lokal rejimda ishlayveradi)
-            console.warn('[SUPABASE REALTIME] Tarmoq kutilyapti, qayta ulanish davom etmoqda...');
+          } else {
+            isChannelSubscribedRef.current = false;
+            if (status === 'CHANNEL_ERROR') {
+              // Internet yoki DNS uzilishida jim ogohlantirish (tizim lokal rejimda ishlayveradi)
+              console.warn('[SUPABASE REALTIME] Tarmoq kutilyapti, qayta ulanish davom etmoqda...');
+            }
           }
         });
     } catch (e) {
@@ -863,13 +868,13 @@ export const SchoolProvider = ({ children }) => {
             const data = JSON.parse(e.data);
             if (data.device) setFaceDevice(data.device);
             if (data.cameras) setCameras(data.cameras);
-            if (data.globalStreamUrl) updateGlobalStreamUrl(data.globalStreamUrl);
+            if (data.globalStreamUrl && !isLocalHostEnv) updateGlobalStreamUrl(data.globalStreamUrl);
           } catch (e) {}
         });
         es.addEventListener('global_stream_url', (e) => {
           try {
             const data = typeof e.data === 'string' && e.data.startsWith('{') ? JSON.parse(e.data) : { url: e.data };
-            if (data.url) updateGlobalStreamUrl(data.url);
+            if (data.url && !isLocalHostEnv) updateGlobalStreamUrl(data.url);
           } catch (e) {}
         });
         es.addEventListener('school_data_sync', (e) => {
@@ -946,7 +951,7 @@ export const SchoolProvider = ({ children }) => {
           camerasOnline: 6
         };
         sendLocalHeartbeatToSupabase(hbInfo).catch(() => {});
-        if (supabaseChannelRef.current) {
+        if (supabaseChannelRef.current && isChannelSubscribedRef.current) {
           try {
             supabaseChannelRef.current.send({
               type: 'broadcast',
@@ -1027,7 +1032,7 @@ export const SchoolProvider = ({ children }) => {
             if (frameEntries.length > 0) {
               setCameraLatestFrames(prev => ({ ...prev, ...json.frames }));
 
-              if (supabaseChannelRef.current) {
+              if (supabaseChannelRef.current && isChannelSubscribedRef.current) {
                 for (const [ip, frame] of frameEntries) {
                   try {
                     supabaseChannelRef.current.send({

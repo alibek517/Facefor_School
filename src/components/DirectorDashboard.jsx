@@ -81,14 +81,14 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
 
   // Haqiqiy jonli ulanish bormi?
   const hasLiveTunnel = Boolean(globalStreamUrl && (globalStreamUrl.startsWith('https://') || globalStreamUrl.startsWith('http://')));
-  const isCloudRelayLive = Boolean(!isLocalConnected && (isSchoolLocalOnline || (rawCloudFrame && isValidFrameSrc(rawCloudFrame))));
-  const canLiveStream = Boolean(isLocalConnected || hasLiveTunnel || isCloudRelayLive);
-  const liveBaseUrl = isLocalConnected
+  const isCloudRelayLive = Boolean(!isLocalConnected && !isLocalHost && (isSchoolLocalOnline || (rawCloudFrame && isValidFrameSrc(rawCloudFrame))));
+  const canLiveStream = Boolean(isLocalConnected || isLocalHost || hasLiveTunnel || isCloudRelayLive);
+  const liveBaseUrl = (isLocalConnected || isLocalHost)
     ? (bridgeUrl && bridgeUrl.startsWith('http') && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
     : (hasLiveTunnel ? globalStreamUrl : null);
-  const effectiveBaseUrl = (passedEffectiveBaseUrl && passedEffectiveBaseUrl.startsWith('http'))
+  const effectiveBaseUrl = (passedEffectiveBaseUrl && passedEffectiveBaseUrl.startsWith('http') && (!isLocalHost || !passedEffectiveBaseUrl.includes('trycloudflare.com')))
     ? passedEffectiveBaseUrl
-    : ((isLocalConnected && bridgeUrl && bridgeUrl.startsWith('http')) ? bridgeUrl : '') || (liveBaseUrl && liveBaseUrl.startsWith('http') ? liveBaseUrl : '');
+    : ((isLocalConnected || isLocalHost) ? 'http://localhost:5001' : (liveBaseUrl && liveBaseUrl.startsWith('http') ? liveBaseUrl : ''));
 
   const [frameSrc, setFrameSrc] = useState(cloudFrame);
   const [isLiveActive, setIsLiveActive] = useState(false);
