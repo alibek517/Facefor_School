@@ -358,9 +358,9 @@ export const CameraPlaybackView = ({
                   alt={activeCam.name}
                   className="w-full h-full object-contain"
                   onError={(e) => {
-                    // Agar arxiv kadr topilmasa zaxira jonli kadr
+                    // Agar arxiv kadr topilmasa zaxira statik kadr
                     e.target.onerror = null;
-                    e.target.src = `${effectiveBaseUrl}/api/camera/snapshot/${selectedCameraIp}`;
+                    e.target.src = `/photos/camera_${selectedCameraIp}.jpg`;
                   }}
                 />
 
@@ -410,7 +410,7 @@ export const CameraPlaybackView = ({
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = `${effectiveBaseUrl}/api/camera/snapshot/${c.ip}`;
+                        e.target.src = `/photos/camera_${c.ip}.jpg`;
                       }}
                     />
                     <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-bold text-white">

@@ -58,6 +58,16 @@ const formatScanTime = (scan) => {
   return '--:--:--';
 };
 
+// Ishlamay qolgan (o'chgan) tunnellar keshi - brauzerda takroriy xatolar va so'rovlarni oldini olish uchun
+const deadTunnelsSet = new Set();
+const isDeadTunnel = (url) => {
+  if (!url || typeof url !== 'string') return true;
+  for (const dead of deadTunnelsSet) {
+    if (url.includes(dead)) return true;
+  }
+  return false;
+};
+
 // Alohida, har bir kamerani silliq va navbat bilan (staggered) yangilovchi komponent
 const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, updateCameraType, recentFaceScans, index, onMoveLeft, onMoveRight, effectiveBaseUrl: passedEffectiveBaseUrl }) => {
   const isEntry = cam.type === 'in';
@@ -80,13 +90,13 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
   const cloudFrame = isValidFrameSrc(rawCloudFrame) ? rawCloudFrame : `/photos/camera_${cam.ip}.jpg`;
 
   // Haqiqiy jonli ulanish bormi?
-  const hasLiveTunnel = Boolean(globalStreamUrl && (globalStreamUrl.startsWith('https://') || globalStreamUrl.startsWith('http://')));
+  const hasLiveTunnel = Boolean(globalStreamUrl && (globalStreamUrl.startsWith('https://') || globalStreamUrl.startsWith('http://')) && !isDeadTunnel(globalStreamUrl));
   const isCloudRelayLive = Boolean(!isLocalConnected && !isLocalHost && (isSchoolLocalOnline || (rawCloudFrame && isValidFrameSrc(rawCloudFrame))));
   const canLiveStream = Boolean(isLocalConnected || isLocalHost || hasLiveTunnel || isCloudRelayLive);
   const liveBaseUrl = (isLocalConnected || isLocalHost)
     ? (bridgeUrl && bridgeUrl.startsWith('http') && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
     : (hasLiveTunnel ? globalStreamUrl : null);
-  const effectiveBaseUrl = (passedEffectiveBaseUrl && passedEffectiveBaseUrl.startsWith('http') && (!isLocalHost || !passedEffectiveBaseUrl.includes('trycloudflare.com')))
+  const effectiveBaseUrl = (passedEffectiveBaseUrl && passedEffectiveBaseUrl.startsWith('http') && (!isLocalHost || !passedEffectiveBaseUrl.includes('trycloudflare.com')) && !isDeadTunnel(passedEffectiveBaseUrl))
     ? passedEffectiveBaseUrl
     : ((isLocalConnected || isLocalHost) ? 'http://localhost:5001' : (liveBaseUrl && liveBaseUrl.startsWith('http') ? liveBaseUrl : ''));
 
@@ -111,12 +121,12 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
       return;
     }
 
-    if (liveBaseUrl) {
+    if (liveBaseUrl && !isDeadTunnel(liveBaseUrl)) {
       let isMounted = true;
       let timer = null;
 
       const loadNext = () => {
-        if (!isMounted || !liveBaseUrl || !liveBaseUrl.startsWith('http')) return;
+        if (!isMounted || !liveBaseUrl || !liveBaseUrl.startsWith('http') || isDeadTunnel(liveBaseUrl)) return;
         const cleanBase = liveBaseUrl.replace(/\/+$/, '');
         const nextUrl = `${cleanBase}/api/camera/snapshot/${cam.ip}?t=${Date.now()}`;
         const img = new Image();
@@ -135,9 +145,19 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
           img.onerror = null;
           if (!isMounted) return;
           failCountRef.current += 1;
+
+          // Agar tashqi tunnel (trycloudflare.com) xatolik bersa, uni o'chgan deb belgilaymiz
+          if (liveBaseUrl.includes('trycloudflare.com')) {
+            try {
+              const u = new URL(liveBaseUrl);
+              deadTunnelsSet.add(u.hostname);
+            } catch (e) {
+              deadTunnelsSet.add(liveBaseUrl);
+            }
+          }
           
-          // Jonli kadr uzilsa yoki tunnel (masalan Cloudflare tunnel) o'chgan bo'lsa,
-          // zudlik bilan Supabase bulut kadriga qaytamiz
+          // Jonli kadr uzilsa yoki tunnel o'chgan bo'lsa,
+          // zudlik bilan Supabase bulut kadriga qaytamiz va so'rovni to'xtatamiz
           if (cloudFrame) {
             setFrameSrc(cloudFrame);
             if (isCloudRelayLive) {
@@ -149,9 +169,11 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
             setIsLiveActive(false);
           }
 
-          // Agar tashqi tunnel ishlamasa (ERR_NAME_NOT_RESOLVED), brauzer konsolini to'ldirmaymiz
-          // 2 marta xatodan so'ng 90 soniyaga kechiktiramiz
-          const retryDelay = failCountRef.current >= 2 ? 90000 : 4000;
+          // Agar tunnel o'chgan bo'lsa qayta so'rov yubormaymiz, aks holda lokal qayta urinish
+          if (isDeadTunnel(liveBaseUrl)) {
+            return;
+          }
+          const retryDelay = failCountRef.current >= 2 ? 60000 : 5000;
           timer = setTimeout(loadNext, retryDelay);
         };
         img.src = nextUrl;
@@ -454,7 +476,7 @@ export const DirectorDashboard = () => {
   );
   const effectiveBaseUrl = (isLocalConnected || isLocalHost)
     ? (bridgeUrl && bridgeUrl.startsWith('http') && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
-    : (globalStreamUrl && globalStreamUrl.startsWith('http') ? globalStreamUrl : (bridgeUrl && bridgeUrl.startsWith('http') ? bridgeUrl : 'http://localhost:5001'));
+    : (globalStreamUrl && globalStreamUrl.startsWith('http') && !isDeadTunnel(globalStreamUrl) ? globalStreamUrl : (bridgeUrl && bridgeUrl.startsWith('http') && !isDeadTunnel(bridgeUrl) ? bridgeUrl : 'http://localhost:5001'));
   const [selectedClass, setSelectedClass] = useState('all');
   const [cameraFilter, setCameraFilter] = useState('all'); // 'all', 'in', 'out'
   const [cameraMode, setCameraMode] = useState('live'); // 'live' yoki 'playback'
@@ -1070,7 +1092,7 @@ export const DirectorDashboard = () => {
                 const modalCloudFrame = (rawModalFrame && isValidSrc(rawModalFrame)) ? rawModalFrame : `/photos/camera_${activeModalCam.ip}.jpg`;
                 const cleanStreamBase = isLocalConnected
                   ? (bridgeUrl && bridgeUrl.startsWith('http') ? bridgeUrl : 'http://localhost:5001')
-                  : (globalStreamUrl && (globalStreamUrl.startsWith('https://') || globalStreamUrl.startsWith('http://')) ? globalStreamUrl : null);
+                  : (globalStreamUrl && (globalStreamUrl.startsWith('https://') || globalStreamUrl.startsWith('http://')) && !isDeadTunnel(globalStreamUrl) ? globalStreamUrl : null);
                 const modalLiveUrl = cleanStreamBase ? `${cleanStreamBase.replace(/\/+$/, '')}/api/camera/stream/${activeModalCam.ip}` : null;
                 const isModalLive = Boolean(modalLiveUrl || (isSchoolLocalOnline && rawModalFrame && isValidSrc(rawModalFrame)));
 
