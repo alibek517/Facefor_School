@@ -38,7 +38,9 @@ export const Navbar = () => {
     isLocalConnected,
     isSchoolLocalOnline,
     localBridgeInfo,
-    networkMode
+    networkMode,
+    navigateTo,
+    currentPath
   } = useSchool();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -80,7 +82,11 @@ export const Navbar = () => {
         <div className="flex items-center justify-between h-14 gap-2">
           
           {/* Logo */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div 
+            onClick={() => navigateTo('/director')}
+            className="flex items-center gap-2 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+            title="Bosh sahifa (Direktor)"
+          >
             <div className="w-8 h-8 rounded-lg bg-blue-700 flex items-center justify-center text-white shadow-sm">
               <Building className="w-4 h-4" />
             </div>
@@ -91,12 +97,12 @@ export const Navbar = () => {
             </div>
           </div>
 
-          {/* Headerdagi tez o'tish (Foydalanuvchi so'ragan tez almashtirish) */}
+          {/* Headerdagi tez o'tish (Path bilan o'zgaruvchi navigatsiya) */}
           <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 gap-1">
             <button
-              onClick={() => quickSwitchRole('director')}
+              onClick={() => navigateTo('/director')}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                currentUser?.role === 'director'
+                (currentUser?.role === 'director' || currentPath === '/director' || currentPath === '/students' || currentPath === '/teachers')
                   ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-400 shadow-sm'
                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
@@ -106,9 +112,9 @@ export const Navbar = () => {
             </button>
 
             <button
-              onClick={() => quickSwitchRole('inspector')}
+              onClick={() => navigateTo('/duty')}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                currentUser?.role === 'inspector'
+                (currentUser?.role === 'inspector' || currentPath === '/duty')
                   ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-400 shadow-sm'
                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
@@ -118,9 +124,9 @@ export const Navbar = () => {
             </button>
 
             <button
-              onClick={() => quickSwitchRole('class_teacher')}
+              onClick={() => navigateTo('/class-teacher')}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                currentUser?.role === 'class_teacher'
+                (currentUser?.role === 'class_teacher' || currentPath === '/class-teacher')
                   ? 'bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-400 shadow-sm'
                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
@@ -130,9 +136,9 @@ export const Navbar = () => {
             </button>
 
             <button
-              onClick={() => quickSwitchRole('subject_teacher')}
+              onClick={() => navigateTo('/subject-teacher')}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                currentUser?.role === 'subject_teacher'
+                (currentUser?.role === 'subject_teacher' || currentPath === '/subject-teacher')
                   ? 'bg-white dark:bg-slate-700 text-amber-700 dark:text-amber-400 shadow-sm'
                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
@@ -142,9 +148,9 @@ export const Navbar = () => {
             </button>
 
             <button
-              onClick={() => quickSwitchRole('monitor')}
+              onClick={() => navigateTo('/monitor')}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                currentUser?.role === 'monitor'
+                (currentUser?.role === 'monitor' || currentPath === '/monitor')
                   ? 'bg-white dark:bg-slate-700 text-purple-700 dark:text-purple-400 shadow-sm'
                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
@@ -354,41 +360,41 @@ export const Navbar = () => {
         {/* Mobil uchun tezkor rolni tanlash (Kichik ekranlarda) */}
         <div className="flex md:hidden overflow-x-auto py-1.5 gap-1 no-scrollbar border-t border-slate-100 dark:border-slate-800">
           <button
-            onClick={() => quickSwitchRole('director')}
+            onClick={() => navigateTo('/director')}
             className={`px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-colors ${
-              currentUser?.role === 'director' ? 'bg-blue-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+              (currentUser?.role === 'director' || currentPath === '/director' || currentPath === '/students' || currentPath === '/teachers') ? 'bg-blue-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
             }`}
           >
             Direktor
           </button>
           <button
-            onClick={() => quickSwitchRole('inspector')}
+            onClick={() => navigateTo('/duty')}
             className={`px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-colors ${
-              currentUser?.role === 'inspector' ? 'bg-emerald-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+              (currentUser?.role === 'inspector' || currentPath === '/duty') ? 'bg-emerald-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
             }`}
           >
             Navbatchi
           </button>
           <button
-            onClick={() => quickSwitchRole('class_teacher')}
+            onClick={() => navigateTo('/class-teacher')}
             className={`px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-colors ${
-              currentUser?.role === 'class_teacher' ? 'bg-indigo-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+              (currentUser?.role === 'class_teacher' || currentPath === '/class-teacher') ? 'bg-indigo-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
             }`}
           >
             Sinf Rahbari
           </button>
           <button
-            onClick={() => quickSwitchRole('subject_teacher')}
+            onClick={() => navigateTo('/subject-teacher')}
             className={`px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-colors ${
-              currentUser?.role === 'subject_teacher' ? 'bg-amber-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+              (currentUser?.role === 'subject_teacher' || currentPath === '/subject-teacher') ? 'bg-amber-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
             }`}
           >
             Fan O'qituvchisi
           </button>
           <button
-            onClick={() => quickSwitchRole('monitor')}
+            onClick={() => navigateTo('/monitor')}
             className={`px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-colors ${
-              currentUser?.role === 'monitor' ? 'bg-purple-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+              (currentUser?.role === 'monitor' || currentPath === '/monitor') ? 'bg-purple-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
             }`}
           >
             Monitor (Foye)

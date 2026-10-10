@@ -236,6 +236,63 @@ export const SchoolProvider = ({ children }) => {
     saveModuleToSupabase('global_stream_url', clean).catch(() => {});
   };
 
+  // URL Routing tizimi: path va mos rol/tab tahlili
+  const parsePath = (rawPath) => {
+    let p = (rawPath || '/director').toLowerCase().trim();
+    if (!p.startsWith('/')) p = '/' + p;
+    if (p.length > 1 && p.endsWith('/')) p = p.slice(0, -1);
+
+    if (p === '/students' || p === '/directory' || p === '/oquvchilar') {
+      return { path: '/students', role: 'director', tab: 'directory' };
+    }
+    if (p === '/teachers' || p === '/settings' || p === '/oqituvchilar' || p === '/darslar') {
+      return { path: '/teachers', role: 'director', tab: 'settings' };
+    }
+    if (p === '/duty' || p === '/inspector' || p === '/navbatchi') {
+      return { path: '/duty', role: 'inspector', tab: 'main' };
+    }
+    if (p === '/class-teacher' || p === '/teacher' || p === '/sinfraxbari') {
+      return { path: '/class-teacher', role: 'class_teacher', tab: 'main' };
+    }
+    if (p === '/subject-teacher' || p === '/journal' || p === '/fanoqituvchisi') {
+      return { path: '/subject-teacher', role: 'subject_teacher', tab: 'main' };
+    }
+    if (p === '/monitor' || p === '/foye' || p === '/tablo') {
+      return { path: '/monitor', role: 'monitor', tab: 'main' };
+    }
+    return { path: '/director', role: 'director', tab: 'main' };
+  };
+
+  const [currentPath, setCurrentPath] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const init = parsePath(window.location.pathname);
+      return init.path;
+    }
+    return '/director';
+  });
+
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const init = parsePath(window.location.pathname);
+      return init.tab;
+    }
+    return 'main';
+  });
+
+  const navigateTo = (targetPath) => {
+    const route = parsePath(targetPath);
+    setActiveTab(route.tab);
+    setCurrentPath(route.path);
+
+    if (typeof window !== 'undefined' && window.location.pathname !== route.path) {
+      window.history.pushState({ path: route.path }, '', route.path);
+    }
+
+    if (currentUser?.role !== route.role) {
+      quickSwitchRole(route.role, false, true);
+    }
+  };
+
   const [isInitialized, setIsInitialized] = useState(false);
   const [localWarningSnoozedUntil, setLocalWarningSnoozedUntil] = useState(() => {
     try {
@@ -255,6 +312,35 @@ export const SchoolProvider = ({ children }) => {
       localStorage.setItem('school_local_warning_snooze', snoozeTime.toString());
     } catch (e) {}
   };
+
+  // Brauzer tarixi (Back / Forward) va boshlang'ich URL ni kuzatish
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handlePopState = () => {
+      const route = parsePath(window.location.pathname);
+      setCurrentPath(route.path);
+      setActiveTab(route.tab);
+      quickSwitchRole(route.role, false, true);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    // Dastlabki yuklanganda mavjud URL ga moslash
+    const initialRoute = parsePath(window.location.pathname);
+    if (window.location.pathname !== initialRoute.path) {
+      window.history.replaceState({ path: initialRoute.path }, '', initialRoute.path);
+    }
+    setCurrentPath(initialRoute.path);
+    setActiveTab(initialRoute.tab);
+    if (initialRoute.role !== 'director') {
+      quickSwitchRole(initialRoute.role, false, true);
+    }
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   // LocalStorage saqlash
   useEffect(() => {
@@ -1096,6 +1182,14 @@ export const SchoolProvider = ({ children }) => {
         setSelectedTeacherId(found.teacherId);
       }
       showToast('Xush kelibsiz', `${found.name} sifatida kirdingiz.`, 'success');
+
+      let p = '/director';
+      if (found.role === 'inspector') p = '/duty';
+      else if (found.role === 'class_teacher') p = '/class-teacher';
+      else if (found.role === 'subject_teacher') p = '/subject-teacher';
+      else if (found.role === 'monitor') p = '/monitor';
+      navigateTo(p);
+
       return { success: true };
     } else {
       return { success: false, error: 'Login yoki parol xato!' };
@@ -1105,11 +1199,12 @@ export const SchoolProvider = ({ children }) => {
   // Chiqish
   const logout = () => {
     setCurrentUser(null);
+    navigateTo('/director');
     showToast('Chiqildi', 'Tizimdan chiqildi.', 'info');
   };
 
   // Tezkor almashtirish
-  const quickSwitchRole = (role) => {
+  const quickSwitchRole = (role, updateUrl = true, silent = false) => {
     let match = USERS_AUTH.find(u => u.role === role);
     if (!match && role === 'class_teacher') {
       const classTeacher = teachers.find(t => t.classId) || teachers[0];
@@ -1146,7 +1241,24 @@ export const SchoolProvider = ({ children }) => {
       if (match.teacherId) {
         setSelectedTeacherId(match.teacherId);
       }
-      showToast('Rol almashtirildi', `${match.name} (${match.detail || match.role}) rejimiga o'tildi.`, 'info');
+      if (!silent) {
+        showToast('Rol almashtirildi', `${match.name} (${match.detail || match.role}) rejimiga o'tildi.`, 'info');
+      }
+
+      if (updateUrl) {
+        let p = '/director';
+        if (role === 'inspector') p = '/duty';
+        else if (role === 'class_teacher') p = '/class-teacher';
+        else if (role === 'subject_teacher') p = '/subject-teacher';
+        else if (role === 'monitor') p = '/monitor';
+        else if (role === 'director') {
+          p = activeTab === 'directory' ? '/students' : (activeTab === 'settings' ? '/teachers' : '/director');
+        }
+        if (typeof window !== 'undefined' && window.location.pathname !== p) {
+          window.history.pushState({ path: p }, '', p);
+        }
+        setCurrentPath(p);
+      }
     }
   };
 
@@ -1164,6 +1276,7 @@ export const SchoolProvider = ({ children }) => {
         permissions: Array.isArray(member.permissions) ? member.permissions : ['dashboard']
       };
       setCurrentUser(staffUser);
+      navigateTo('/director');
       showToast('Xodim tanlandi', `${member.name} profiliga o'tildi.`, 'info');
     }
   };
@@ -1819,7 +1932,12 @@ export const SchoolProvider = ({ children }) => {
     cameraLatestFrames,
     isInitialized,
     localWarningSnoozedUntil,
-    dismissLocalWarning
+    dismissLocalWarning,
+    // URL Routing boshqaruvi
+    currentPath,
+    navigateTo,
+    activeTab,
+    setActiveTab
   };
 
   return (
@@ -1846,6 +1964,10 @@ export const useSchool = () => {
       logout: () => {},
       quickSwitchRole: () => {},
       showToast: () => {},
+      currentPath: '/director',
+      navigateTo: () => {},
+      activeTab: 'main',
+      setActiveTab: () => {},
     };
   }
   return context;

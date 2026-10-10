@@ -14,8 +14,7 @@ import { LocalNetworkModal } from './components/LocalNetworkModal';
 import { Users, Home, Settings, Tv } from 'lucide-react';
 
 const MainLayout = () => {
-  const { currentUser, hasPermission } = useSchool();
-  const [activeTab, setActiveTab] = useState('main'); // 'main' | 'directory' | 'settings'
+  const { currentUser, hasPermission, activeTab, navigateTo, currentPath } = useSchool();
 
   if (!currentUser) {
     return <LoginModal />;
@@ -34,7 +33,7 @@ const MainLayout = () => {
   // Direktor bo'lmagan foydalanuvchilar (masalan, sinf rahbari) uchun faqat o'z kabinetini ochish
   React.useEffect(() => {
     if (!isDirectorUser && activeTab !== 'main') {
-      setActiveTab('main');
+      navigateTo(currentPath || '/director');
     }
   }, [currentUser?.id, currentUser?.role, isDirectorUser]);
 
@@ -50,7 +49,13 @@ const MainLayout = () => {
             
             {/* 1. Asosiy rol ekrani */}
             <button
-              onClick={() => setActiveTab('main')}
+              onClick={() => {
+                if (currentUser?.role === 'inspector') navigateTo('/duty');
+                else if (currentUser?.role === 'class_teacher') navigateTo('/class-teacher');
+                else if (currentUser?.role === 'subject_teacher') navigateTo('/subject-teacher');
+                else if (currentUser?.role === 'monitor') navigateTo('/monitor');
+                else navigateTo('/director');
+              }}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1 ${
                 activeTab === 'main'
                   ? 'bg-blue-700 text-white shadow-sm'
@@ -72,7 +77,7 @@ const MainLayout = () => {
             {/* 2. O'quvchilar CRUD */}
             {canSeeStudents && (
               <button
-                onClick={() => setActiveTab('directory')}
+                onClick={() => navigateTo('/students')}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1 ${
                   activeTab === 'directory'
                     ? 'bg-blue-700 text-white shadow-sm'
@@ -87,7 +92,7 @@ const MainLayout = () => {
             {/* 3. O'qituvchilar va Fanlar CRUD */}
             {canSeeSettings && (
               <button
-                onClick={() => setActiveTab('settings')}
+                onClick={() => navigateTo('/teachers')}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1 ${
                   activeTab === 'settings'
                     ? 'bg-blue-700 text-white shadow-sm'
