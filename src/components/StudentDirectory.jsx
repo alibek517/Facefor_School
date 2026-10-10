@@ -35,8 +35,6 @@ export const StudentDirectory = () => {
     addStudent, 
     updateStudent, 
     deleteStudent, 
-    convertStudentToTeacher,
-    batchConvertStudentsToTeachers,
     resetToAllFaceStudents, 
     bridgeUrl, 
     changeStudentClass,
@@ -65,13 +63,6 @@ export const StudentDirectory = () => {
   const [parentPhone, setParentPhone] = useState('');
   const [phone, setPhone] = useState('');
 
-  // O'qituvchilar bo'limiga o'tkazish modali
-  const [moveToTeacherModal, setMoveToTeacherModal] = useState(false);
-  const [targetStudentForTeacher, setTargetStudentForTeacher] = useState(null);
-  const [teacherRoleInput, setTeacherRoleInput] = useState('O\'qituvchi');
-  const [teacherSubjectInput, setTeacherSubjectInput] = useState('Boshlang\'ich ta\'lim');
-  const [teacherClassIdInput, setTeacherClassIdInput] = useState('');
-
   // Excel Import Modali
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState(null);
@@ -82,45 +73,6 @@ export const StudentDirectory = () => {
   // Sinf Ko'tarish Modali
   const [promoteModalOpen, setPromoteModalOpen] = useState(false);
   const [promoting, setPromoting] = useState(false);
-
-  // O'quvchilar ro'yxatida adashib qolgan o'qituvchilarni avtomatik aniqlash
-  const detectedTeachers = useMemo(() => {
-    return students.filter(s => {
-      const n = (s.fullName || s.name || '').toLowerCase();
-      return (
-        /(ovna|evna|ovich|evich)/i.test(n) &&
-        !/(qizi|o'g'li|og'li|o‘g‘li)/i.test(n)
-      ) || (s.fullName || s.name || '').includes('Saidova Dilfuza');
-    });
-  }, [students]);
-
-  const handleOpenMoveToTeacher = (st) => {
-    setTargetStudentForTeacher(st);
-    setTeacherRoleInput(st.classId ? 'Sinf rahbari' : 'O\'qituvchi');
-    setTeacherSubjectInput("Boshlang'ich ta'lim");
-    setTeacherClassIdInput(st.classId || '');
-    setMoveToTeacherModal(true);
-  };
-
-  const handleConfirmMoveToTeacher = (e) => {
-    e.preventDefault();
-    if (!targetStudentForTeacher) return;
-    convertStudentToTeacher(targetStudentForTeacher.id, {
-      role: teacherRoleInput,
-      subject: teacherSubjectInput,
-      classId: teacherClassIdInput || null
-    });
-    setMoveToTeacherModal(false);
-    setTargetStudentForTeacher(null);
-    if (modalOpen) setModalOpen(false);
-  };
-
-  const handleBatchMoveDetected = () => {
-    if (detectedTeachers.length === 0) return;
-    if (window.confirm(`Aniqlangan ${detectedTeachers.length} nafar o'qituvchini o'quvchilar bazasidan chiqarib, O'qituvchilar bo'limiga ko'chirishni tasdiqlaysizmi?`)) {
-      batchConvertStudentsToTeachers(detectedTeachers.map(t => t.id));
-    }
-  };
 
   // Filtrlangan o'quvchilar
   const filtered = students.filter(st => {
@@ -368,32 +320,6 @@ export const StudentDirectory = () => {
         })}
       </div>
 
-      {/* O'quvchilar orasida aniqlangan o'qituvchilar ogohlantirish paneli */}
-      {detectedTeachers.length > 0 && (
-        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-xs">
-          <div className="flex items-start sm:items-center gap-2.5">
-            <div className="p-2 bg-amber-100 dark:bg-amber-900/60 rounded-lg text-amber-700 dark:text-amber-300 shrink-0">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
-                <span>O'quvchilar orasida {detectedTeachers.length} nafar o'qituvchi aniqlandi</span>
-              </div>
-              <div className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">
-                Turniketdan kelgan {detectedTeachers.slice(0, 2).map(t => t.name).join(', ')}{detectedTeachers.length > 2 ? ' va boshqalar' : ''} o'quvchilar ro'yxatida turibdi. Ularni O'qituvchilar bo'limiga ko'chirish tavsiya etiladi.
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={handleBatchMoveDetected}
-            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg shrink-0 flex items-center justify-center gap-1.5 shadow-xs transition-colors self-end sm:self-center"
-          >
-            <GraduationCap className="w-3.5 h-3.5" />
-            <span>O'qituvchilarga o'tkazish</span>
-          </button>
-        </div>
-      )}
-
       {/* O'quvchilar Ro'yxati */}
       <div className="space-y-1.5">
         {filtered.length === 0 ? (
@@ -465,14 +391,6 @@ export const StudentDirectory = () => {
                     )}
 
                     <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleOpenMoveToTeacher(st)}
-                        className="px-2 py-1 text-[11px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-1 transition-colors"
-                        title="Ushbu shaxsni o'qituvchi deb belgilash va o'qituvchilar bazasiga ko'chirish"
-                      >
-                        <GraduationCap className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                        <span className="hidden sm:inline">O'qituvchi deb belgilash</span>
-                      </button>
                       <button
                         onClick={() => openEditModal(st)}
                         className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -805,101 +723,6 @@ export const StudentDirectory = () => {
                     Saqlash
                   </button>
                 </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* O'qituvchilar safiga ko'chirish modali */}
-      {moveToTeacherModal && targetStudentForTeacher && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-xl max-w-sm w-full p-4 border border-slate-200 dark:border-slate-800 shadow-xl space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <GraduationCap className="w-4 h-4 text-amber-600" />
-                O'qituvchilar safiga ko'chirish
-              </h3>
-              <button
-                onClick={() => setMoveToTeacherModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1 text-xs">
-              <div className="font-bold text-slate-900 dark:text-white">{targetStudentForTeacher.fullName || targetStudentForTeacher.name}</div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                <span>Hozirgi sinfi: <b>{targetStudentForTeacher.className || '1-A'}</b></span>
-                {targetStudentForTeacher.studentId && <span>• ID: #{targetStudentForTeacher.studentId}</span>}
-              </div>
-            </div>
-
-            <form onSubmit={handleConfirmMoveToTeacher} className="space-y-2.5">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-0.5">Lavozimi / Roli:</label>
-                <select
-                  value={teacherRoleInput}
-                  onChange={(e) => setTeacherRoleInput(e.target.value)}
-                  className="w-full text-xs p-1.5 border border-slate-300 dark:border-slate-700 rounded outline-none focus:ring-1 focus:ring-amber-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-                >
-                  <option value="Sinf rahbari">Sinf rahbari</option>
-                  <option value="O'qituvchi">Fan o'qituvchisi</option>
-                  <option value="Direktor o'rinbosari">Direktor o'rinbosari</option>
-                  <option value="Kutubxonachi">Kutubxonachi</option>
-                  <option value="Psixolog">Maktab psixologi</option>
-                  <option value="Tarbiyachi">Tarbiyachi</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-0.5">Dars beradigan fani:</label>
-                <input
-                  type="text"
-                  required
-                  value={teacherSubjectInput}
-                  onChange={(e) => setTeacherSubjectInput(e.target.value)}
-                  placeholder="Masalan: Boshlang'ich ta'lim, Matematika..."
-                  className="w-full text-xs p-1.5 border border-slate-300 dark:border-slate-700 rounded outline-none focus:ring-1 focus:ring-amber-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-                />
-              </div>
-
-              {teacherRoleInput === 'Sinf rahbari' && (
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-0.5">Rahbarlik qiladigan sinfi:</label>
-                  <select
-                    value={teacherClassIdInput}
-                    onChange={(e) => setTeacherClassIdInput(e.target.value)}
-                    className="w-full text-xs p-1.5 border border-slate-300 dark:border-slate-700 rounded outline-none focus:ring-1 focus:ring-amber-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-                  >
-                    <option value="">Biriktirilmagan</option>
-                    {classes.map(c => (
-                      <option key={c.id} value={c.id}>{c.name} sinfi</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                * Ushbu shaxs o'quvchilar ro'yxatidan chiqariladi va uning fotosurati hamda Face-ID ma'lumotlari bilan birga O'qituvchilar bo'limiga o'tkaziladi.
-              </p>
-
-              <div className="pt-2 flex items-center justify-end gap-1.5 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setMoveToTeacherModal(false)}
-                  className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-                >
-                  Bekor qilish
-                </button>
-                <button
-                  type="submit"
-                  className="px-3 py-1.5 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded flex items-center gap-1 shadow-sm transition-colors"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  O'qituvchiga o'tkazish
-                </button>
               </div>
             </form>
           </div>
