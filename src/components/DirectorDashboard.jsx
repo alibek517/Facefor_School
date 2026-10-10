@@ -59,7 +59,7 @@ const formatScanTime = (scan) => {
 };
 
 // Alohida, har bir kamerani silliq va navbat bilan (staggered) yangilovchi komponent
-const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, updateCameraType, recentFaceScans, index, onMoveLeft, onMoveRight }) => {
+const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, updateCameraType, recentFaceScans, index, onMoveLeft, onMoveRight, effectiveBaseUrl: passedEffectiveBaseUrl }) => {
   const isEntry = cam.type === 'in';
   const { isLocalConnected, isSchoolLocalOnline, globalStreamUrl, cameraLatestFrames } = useSchool();
   const isLocalHost = typeof window !== 'undefined' && (
@@ -79,6 +79,7 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
   const liveBaseUrl = (isLocalConnected || isLocalHost)
     ? (bridgeUrl && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
     : (hasLiveTunnel ? globalStreamUrl : null);
+  const effectiveBaseUrl = passedEffectiveBaseUrl || bridgeUrl || liveBaseUrl || '';
 
   const [frameSrc, setFrameSrc] = useState(cloudFrame);
   const [isLiveActive, setIsLiveActive] = useState(false);
@@ -949,6 +950,7 @@ export const DirectorDashboard = () => {
                   cam={cam}
                   index={idx}
                   bridgeUrl={effectiveBaseUrl}
+                  effectiveBaseUrl={effectiveBaseUrl}
                   livePlaying={livePlaying}
                   onEnlarge={(c) => setActiveModalCam(c)}
                   onPlayback={(c) => {
