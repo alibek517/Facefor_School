@@ -1049,10 +1049,20 @@ export const SchoolSettings = () => {
                     <span className="text-xs font-bold text-slate-900 dark:text-white">{c.name} sinfi</span>
                     <span className="text-[10px] text-slate-400 dark:text-slate-500">({c.room})</span>
                   </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Rahbar: <span className={teacher ? "font-semibold text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"}>
-                      {teacher ? teacher.name : 'Biriktirilmagan'}
-                    </span>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium shrink-0">Sinf rahbari:</span>
+                    <select
+                      value={c.teacherId || teacher?.id || ''}
+                      onChange={(e) => updateClass(c.id, { teacherId: e.target.value || null })}
+                      className="text-xs py-0.5 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium outline-none focus:ring-1 focus:ring-blue-500 max-w-[220px] truncate"
+                    >
+                      <option value="">— Biriktirilmagan —</option>
+                      {teachers.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.name} {t.subject ? `(${t.subject})` : ''}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
