@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   USERS_AUTH,
   SCHOOL_LEADERSHIP,
@@ -23,7 +23,9 @@ import {
   insertFaceScanToSupabase,
   loadTodayFaceScansFromSupabase,
   getLocalStatusFromSupabase,
-  getLatestCameraFramesFromSupabase
+  getLatestCameraFramesFromSupabase,
+  sendLocalHeartbeatToSupabase,
+  saveLatestCameraFramesToSupabase
 } from '../supabase';
 import { promoteAllClasses } from '../utils/excelAndPromotion';
 import { formatPhoneNumber } from '../utils/phoneFormatter';
@@ -210,6 +212,9 @@ export const SchoolProvider = ({ children }) => {
   const [networkMode, setNetworkMode] = useState(isLocalHostEnv ? 'local' : 'detecting');
   const [isLocalConnected, setIsLocalConnected] = useState(isLocalHostEnv);
   const [isSchoolLocalOnline, setIsSchoolLocalOnline] = useState(true);
+  const [localBridgeInfo, setLocalBridgeInfo] = useState(null);
+  const supabaseChannelRef = useRef(null);
+  const lastSavedFramesTime = useRef(0);
   const [globalStreamUrl, setGlobalStreamUrl] = useState(() => {
     try {
       return localStorage.getItem('school_global_stream_url') || '';
@@ -659,7 +664,10 @@ export const SchoolProvider = ({ children }) => {
     // 2. Supabase Realtime: Barcha kompyuterlar va qurilmalar uchun jonli sinxronizatsiya
     try {
       supabaseChannel = supabase
-        .channel('school_global_realtime')
+        .channel('school_global_realtime');
+      supabaseChannelRef.current = supabaseChannel;
+
+      supabaseChannel
         .on('postgres_changes', { event: '*', schema: 'public', table: 'school_data' }, (payload) => {
           if (payload.new && payload.new.key) {
             const { key, data } = payload.new;
@@ -713,6 +721,26 @@ export const SchoolProvider = ({ children }) => {
             handleIncomingFaceScan(scan);
           }
         })
+        .on('broadcast', { event: 'camera_frame' }, ({ payload }) => {
+          if (payload && payload.ip && payload.frame) {
+            setCameraLatestFrames(prev => ({
+              ...prev,
+              [payload.ip]: payload.frame
+            }));
+            setIsSchoolLocalOnline(true);
+          }
+        })
+        .on('broadcast', { event: 'local_heartbeat' }, ({ payload }) => {
+          if (payload) {
+            setIsSchoolLocalOnline(true);
+            setLocalBridgeInfo(payload);
+          }
+        })
+        .on('broadcast', { event: 'live_face_scan' }, ({ payload }) => {
+          if (payload) {
+            handleIncomingFaceScan(payload);
+          }
+        })
         .subscribe((status, err) => {
           if (status === 'SUBSCRIBED') {
             console.log('[SUPABASE REALTIME] Jonli kanal ulandi.');
@@ -746,6 +774,24 @@ export const SchoolProvider = ({ children }) => {
       } catch (err) {}
 
       if (localReachable) {
+        // Ushbu qurilma lokalga ulangan - u Global va Localni bir-biriga bog'lovchi faol ko'prikdir
+        const hbInfo = {
+          bridgedBy: currentUser?.fullName || currentUser?.name || 'Lokal Maktab Profili',
+          role: currentUser?.role || 'monitor',
+          totalCameras: 6,
+          camerasOnline: 6
+        };
+        sendLocalHeartbeatToSupabase(hbInfo).catch(() => {});
+        if (supabaseChannelRef.current) {
+          try {
+            supabaseChannelRef.current.send({
+              type: 'broadcast',
+              event: 'local_heartbeat',
+              payload: { online: true, timestamp: Date.now(), ...hbInfo }
+            });
+          } catch (e) {}
+        }
+
         try {
           const evRes = await fetch(`${BRIDGE_API}/api/device/events`);
           if (evRes.ok) {
@@ -764,6 +810,7 @@ export const SchoolProvider = ({ children }) => {
           if (localStatus && localStatus.online) {
             const isFresh = (Date.now() - (localStatus.timestamp || 0)) < 45000;
             setIsSchoolLocalOnline(isFresh);
+            if (isFresh) setLocalBridgeInfo(localStatus);
           } else {
             setIsSchoolLocalOnline(false);
           }
@@ -775,7 +822,7 @@ export const SchoolProvider = ({ children }) => {
         try {
           const cloudFrames = await getLatestCameraFramesFromSupabase();
           if (cloudFrames && typeof cloudFrames === 'object') {
-            setCameraLatestFrames(cloudFrames);
+            setCameraLatestFrames(prev => ({ ...prev, ...cloudFrames }));
           }
         } catch (e) {}
       }
@@ -784,7 +831,7 @@ export const SchoolProvider = ({ children }) => {
     };
 
     pollDevice();
-    const interval = setInterval(pollDevice, 3000);
+    const interval = setInterval(pollDevice, 2000);
 
     // 4. SSE orqali real-vaqtda jonli push
     try {
@@ -843,6 +890,66 @@ export const SchoolProvider = ({ children }) => {
       if (supabaseChannel) supabase.removeChannel(supabaseChannel);
     };
   }, []);
+
+  // Lokal profil uchun kamera kadrlarini uzluksiz tezkor relay qilish (har 1.2 soniyada)
+  useEffect(() => {
+    if (!isLocalConnected) return;
+
+    let isMounted = true;
+    const relayInterval = setInterval(async () => {
+      if (!isMounted) return;
+      try {
+        const res = await fetch(`${BRIDGE_API}/api/camera/latest_frames`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.frames && typeof json.frames === 'object') {
+            const frameEntries = Object.entries(json.frames);
+            if (frameEntries.length > 0) {
+              setCameraLatestFrames(prev => ({ ...prev, ...json.frames }));
+
+              if (supabaseChannelRef.current) {
+                for (const [ip, frame] of frameEntries) {
+                  try {
+                    supabaseChannelRef.current.send({
+                      type: 'broadcast',
+                      event: 'camera_frame',
+                      payload: { ip, frame, timestamp: Date.now() }
+                    });
+                  } catch (e) {}
+                }
+              }
+
+              const now = Date.now();
+              if (now - lastSavedFramesTime.current > 3500) {
+                lastSavedFramesTime.current = now;
+                saveLatestCameraFramesToSupabase(json.frames).catch(() => {});
+              }
+            }
+          }
+        }
+      } catch (err) {}
+    }, 1200);
+
+    return () => {
+      isMounted = false;
+      clearInterval(relayInterval);
+    };
+  }, [isLocalConnected]);
+
+  const refreshLocalStatus = async () => {
+    try {
+      const status = await getLocalStatusFromSupabase();
+      if (status && status.online) {
+        const isFresh = (Date.now() - (status.timestamp || 0)) < 45000;
+        setIsSchoolLocalOnline(isFresh);
+        if (isFresh) setLocalBridgeInfo(status);
+      }
+      const cloudFrames = await getLatestCameraFramesFromSupabase();
+      if (cloudFrames && typeof cloudFrames === 'object') {
+        setCameraLatestFrames(prev => ({ ...prev, ...cloudFrames }));
+      }
+    } catch (e) {}
+  };
 
   // Turniket yo'nalishini almashtirish (Kirish <-> Chiqish)
   const updateCameraType = async (cameraId, newType) => {
@@ -1669,6 +1776,8 @@ export const SchoolProvider = ({ children }) => {
     networkMode,
     isLocalConnected,
     isSchoolLocalOnline,
+    localBridgeInfo,
+    refreshLocalStatus,
     globalStreamUrl,
     setGlobalStreamUrl: updateGlobalStreamUrl,
     cameraLatestFrames,

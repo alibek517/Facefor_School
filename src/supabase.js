@@ -238,3 +238,36 @@ export async function getLatestCameraFramesFromSupabase() {
   }
 }
 
+/**
+ * Lokal profil faolligini (Heartbeat) Supabase ga saqlash
+ */
+export async function sendLocalHeartbeatToSupabase(info = {}) {
+  try {
+    const payload = {
+      online: true,
+      timestamp: Date.now(),
+      last_heartbeat: new Date().toISOString(),
+      bridged_by: info.bridgedBy || 'Lokal Maktab Profili',
+      role: info.role || 'device',
+      total_cameras: info.totalCameras || 6,
+      cameras_online: info.camerasOnline || 6,
+      message: "Maktab lokal tarmog'i va profili orqali jonli bog'langan"
+    };
+    return await saveModuleToSupabase('local_status', payload);
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * 6 ta kamera kadrlarini Supabase ga saqlash
+ */
+export async function saveLatestCameraFramesToSupabase(frames) {
+  try {
+    if (!frames || typeof frames !== 'object' || Object.keys(frames).length === 0) return false;
+    return await saveModuleToSupabase('camera_latest_frames', frames);
+  } catch (e) {
+    return false;
+  }
+}
+

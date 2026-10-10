@@ -37,6 +37,7 @@ export const Navbar = () => {
     toggleTheme,
     isLocalConnected,
     isSchoolLocalOnline,
+    localBridgeInfo,
     networkMode
   } = useSchool();
 
@@ -188,10 +189,10 @@ export const Navbar = () => {
               }`}
               title={
                 isLocalConnected 
-                  ? "Maktab lokal serveriga to'g'ridan-to'g'ri ulangan (Bridge faol)" 
+                  ? "Maktab lokal serveriga to'g'ridan-to'g'ri ulangan (Ko'prik profili faol)" 
                   : isSchoolLocalOnline 
-                    ? "Global Bulut rejimida (Maktab monitori lokalga ulangan)" 
-                    : "Global Bulut rejimida (Maktab lokal tarmog'i o'chiq)"
+                    ? `Global Bulut rejimida (Maktabdagi ${localBridgeInfo?.bridged_by || 'profil'} orqali jonli bog'langan)` 
+                    : "Global Bulut rejimida (Maktab lokal tarmog'iga ulanish kutilmoqda)"
               }
             >
               {isLocalConnected ? (
@@ -200,15 +201,19 @@ export const Navbar = () => {
                   <Wifi className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>Wi-Fi Lokal</span>
                 </>
+              ) : isSchoolLocalOnline ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <Cloud className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>Global Live</span>
+                </>
               ) : (
                 <>
-                  <Cloud className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <Cloud className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                   <span>Global Bulut</span>
-                  {!isSchoolLocalOnline && (
-                    <span className="text-[10px] bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 px-1 rounded font-semibold ml-0.5">
-                      Lokal oflayn
-                    </span>
-                  )}
+                  <span className="text-[10px] bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 px-1 rounded font-semibold ml-0.5">
+                    Lokal kutilmoqda
+                  </span>
                 </>
               )}
             </div>

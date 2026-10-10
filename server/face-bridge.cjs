@@ -335,10 +335,13 @@ loadSchoolDataFromSupabase();
 setTimeout(sendHeartbeatToSupabase, 1500);
 
 setInterval(() => {
+  sendHeartbeatToSupabase();
+}, 5000);
+
+setInterval(() => {
   loadCamerasFromSupabase();
   loadSchoolDataFromSupabase();
-  sendHeartbeatToSupabase();
-}, 10000);
+}, 15000);
 
 function md5(str) {
   return crypto.createHash('md5').update(str).digest('hex');
@@ -767,7 +770,7 @@ async function updateCameraFrame(cam) {
 let lastFramesSyncTime = 0;
 async function syncLatestFramesToSupabase() {
   const now = Date.now();
-  if (now - lastFramesSyncTime < 4000) return;
+  if (now - lastFramesSyncTime < 2000) return;
   lastFramesSyncTime = now;
 
   try {
@@ -1129,6 +1132,20 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: e.message }));
       }
     });
+    return;
+  }
+
+  // 3.5. Barcha 6 ta kameraning RAM keshdagi eng so'nggi kadrlarini JSON ko'rinishida olish (Ko'prik profili uchun)
+  if (pathname === '/api/camera/latest_frames') {
+    const frames = {};
+    for (const cam of CAMERAS) {
+      const cached = cameraFrames.get(cam.ip);
+      if (cached && isValidJpeg(cached.buffer)) {
+        frames[cam.ip] = `data:image/jpeg;base64,${cached.buffer.toString('base64')}`;
+      }
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, timestamp: Date.now(), frames }));
     return;
   }
 

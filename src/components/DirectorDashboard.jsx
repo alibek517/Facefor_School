@@ -74,7 +74,8 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
 
   // Haqiqiy jonli ulanish bormi?
   const hasLiveTunnel = Boolean(globalStreamUrl && globalStreamUrl.startsWith('https://'));
-  const canLiveStream = Boolean(isLocalConnected || isLocalHost || hasLiveTunnel);
+  const isCloudRelayLive = Boolean(!isLocalConnected && !isLocalHost && (isSchoolLocalOnline || cameraLatestFrames?.[cam.ip]));
+  const canLiveStream = Boolean(isLocalConnected || isLocalHost || hasLiveTunnel || isCloudRelayLive);
   const liveBaseUrl = (isLocalConnected || isLocalHost)
     ? (bridgeUrl && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
     : (hasLiveTunnel ? globalStreamUrl : null);
@@ -94,49 +95,58 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
 
   useEffect(() => {
     // Agar jonli efir mavjud bo'lmasa yoki pauza qilingan bo'lsa
-    if (!livePlaying || !canLiveStream || !liveBaseUrl) {
+    if (!livePlaying || !canLiveStream) {
       setIsLiveActive(false);
       return;
     }
 
-    let isMounted = true;
-    let timer = null;
+    if (liveBaseUrl) {
+      let isMounted = true;
+      let timer = null;
 
-    const loadNext = () => {
-      if (!isMounted || !liveBaseUrl) return;
-      const nextUrl = `${liveBaseUrl}/api/camera/snapshot/${cam.ip}?t=${Date.now()}`;
-      const img = new Image();
-      img.onload = () => {
-        img.onload = null;
-        img.onerror = null;
-        if (!isMounted) return;
-        setFrameSrc(nextUrl);
-        setIsLiveActive(true);
-        setHasError(false);
-        timer = setTimeout(loadNext, 750);
+      const loadNext = () => {
+        if (!isMounted || !liveBaseUrl) return;
+        const nextUrl = `${liveBaseUrl}/api/camera/snapshot/${cam.ip}?t=${Date.now()}`;
+        const img = new Image();
+        img.onload = () => {
+          img.onload = null;
+          img.onerror = null;
+          if (!isMounted) return;
+          setFrameSrc(nextUrl);
+          setIsLiveActive(true);
+          setHasError(false);
+          timer = setTimeout(loadNext, 750);
+        };
+        img.onerror = () => {
+          img.onload = null;
+          img.onerror = null;
+          if (!isMounted) return;
+          setIsLiveActive(false);
+          // Jonli kadr uzilsa, oxirgi bulut kadriga qaytamiz
+          if (cloudFrame) {
+            setFrameSrc(cloudFrame);
+          }
+          timer = setTimeout(loadNext, 4000);
+        };
+        img.src = nextUrl;
       };
-      img.onerror = () => {
-        img.onload = null;
-        img.onerror = null;
-        if (!isMounted) return;
-        setIsLiveActive(false);
-        // Jonli kadr uzilsa, oxirgi bulut kadriga qaytamiz
-        if (cloudFrame) {
-          setFrameSrc(cloudFrame);
-        }
-        timer = setTimeout(loadNext, 4000);
+
+      const initTimer = setTimeout(loadNext, (index % 6) * 125);
+
+      return () => {
+        isMounted = false;
+        clearTimeout(initTimer);
+        if (timer) clearTimeout(timer);
       };
-      img.src = nextUrl;
-    };
+    }
 
-    const initTimer = setTimeout(loadNext, (index % 6) * 125);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(initTimer);
-      if (timer) clearTimeout(timer);
-    };
-  }, [cam.ip, livePlaying, index, liveBaseUrl, canLiveStream, cloudFrame]);
+    // Global rejimda (lokal profil orqali jonli bulut efiri)
+    if (isCloudRelayLive && cloudFrame) {
+      setFrameSrc(cloudFrame);
+      setIsLiveActive(true);
+      setHasError(false);
+    }
+  }, [cam.ip, livePlaying, index, liveBaseUrl, canLiveStream, cloudFrame, isCloudRelayLive]);
 
   return (
     <div className="bg-slate-50 dark:bg-slate-800/70 rounded-xl border border-slate-200 dark:border-slate-700/80 overflow-hidden flex flex-col transition-all hover:border-blue-400 hover:shadow-md">
@@ -242,7 +252,11 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
         {/* Jonli Efir Belgisi (Live Badge) */}
         <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-xs text-[10px] font-bold text-white border border-white/10">
           <span className={`w-1.5 h-1.5 rounded-full ${isLiveActive ? 'bg-emerald-500 animate-pulse' : 'bg-blue-400'}`}></span>
-          <span>{isLiveActive ? (isLocalConnected ? 'LIVE' : 'GLOBAL LIVE') : 'OXIRGI KADR (BULUT)'}</span>
+          <span>
+            {isLiveActive 
+              ? (isLocalConnected ? 'LIVE' : (hasLiveTunnel ? 'GLOBAL LIVE' : 'JONLI KO\'PRIK')) 
+              : 'OXIRGI KADR (BULUT)'}
+          </span>
         </div>
 
         {/* Yo'nalish overlay */}
@@ -1016,6 +1030,7 @@ export const DirectorDashboard = () => {
                 const modalLiveUrl = (isLocalConnected || isLocalHost)
                   ? `${bridgeUrl || 'http://localhost:5001'}/api/camera/stream/${activeModalCam.ip}`
                   : (globalStreamUrl && globalStreamUrl.startsWith('https://') ? `${globalStreamUrl}/api/camera/stream/${activeModalCam.ip}` : null);
+                const isModalLive = Boolean(modalLiveUrl || (isSchoolLocalOnline && cameraLatestFrames?.[activeModalCam.ip]));
 
                 return (
                   <>
@@ -1030,10 +1045,10 @@ export const DirectorDashboard = () => {
                       }}
                     />
                     <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded bg-black/70 text-xs font-bold text-white border border-white/20">
-                      <span className={`w-2 h-2 rounded-full ${modalLiveUrl ? 'bg-emerald-500 animate-pulse' : 'bg-blue-400'}`}></span>
+                      <span className={`w-2 h-2 rounded-full ${isModalLive ? 'bg-emerald-500 animate-pulse' : 'bg-blue-400'}`}></span>
                       {modalLiveUrl 
                         ? (isLocalConnected ? 'LIVE VIDEO OQIMI' : 'GLOBAL LIVE VIDEO OQIMI')
-                        : 'OXIRGI KADR (BULUT)'}
+                        : (isModalLive ? 'JONLI BULUT KO\'PRIGI (LIVE)' : 'OXIRGI KADR (BULUT)')}
                     </div>
                   </>
                 );
