@@ -69,17 +69,26 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
     window.location.hostname.startsWith('10.')
   );
 
+  // Kadr formati tekshiruvi (xom IP yoki noto'g'ri string brauzerda ERR_NAME_NOT_RESOLVED chaqirmasligi uchun)
+  const isValidFrameSrc = (src) => {
+    if (!src || typeof src !== 'string') return false;
+    return src.startsWith('data:image/') || src.startsWith('http://') || src.startsWith('https://') || src.startsWith('/');
+  };
+
   // Bulutdagi oxirgi kadr (Supabase yoki statik baseline)
-  const cloudFrame = cameraLatestFrames?.[cam.ip] || `/photos/camera_${cam.ip}.jpg`;
+  const rawCloudFrame = cameraLatestFrames?.[cam.ip];
+  const cloudFrame = isValidFrameSrc(rawCloudFrame) ? rawCloudFrame : `/photos/camera_${cam.ip}.jpg`;
 
   // Haqiqiy jonli ulanish bormi?
-  const hasLiveTunnel = Boolean(globalStreamUrl && globalStreamUrl.startsWith('https://'));
-  const isCloudRelayLive = Boolean(!isLocalConnected && (isSchoolLocalOnline || cameraLatestFrames?.[cam.ip]));
+  const hasLiveTunnel = Boolean(globalStreamUrl && (globalStreamUrl.startsWith('https://') || globalStreamUrl.startsWith('http://')));
+  const isCloudRelayLive = Boolean(!isLocalConnected && (isSchoolLocalOnline || (rawCloudFrame && isValidFrameSrc(rawCloudFrame))));
   const canLiveStream = Boolean(isLocalConnected || hasLiveTunnel || isCloudRelayLive);
   const liveBaseUrl = isLocalConnected
-    ? (bridgeUrl && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
+    ? (bridgeUrl && bridgeUrl.startsWith('http') && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
     : (hasLiveTunnel ? globalStreamUrl : null);
-  const effectiveBaseUrl = passedEffectiveBaseUrl || (isLocalConnected ? bridgeUrl : '') || liveBaseUrl || '';
+  const effectiveBaseUrl = (passedEffectiveBaseUrl && passedEffectiveBaseUrl.startsWith('http'))
+    ? passedEffectiveBaseUrl
+    : ((isLocalConnected && bridgeUrl && bridgeUrl.startsWith('http')) ? bridgeUrl : '') || (liveBaseUrl && liveBaseUrl.startsWith('http') ? liveBaseUrl : '');
 
   const [frameSrc, setFrameSrc] = useState(cloudFrame);
   const [isLiveActive, setIsLiveActive] = useState(false);
@@ -106,8 +115,9 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
       let timer = null;
 
       const loadNext = () => {
-        if (!isMounted || !liveBaseUrl) return;
-        const nextUrl = `${liveBaseUrl}/api/camera/snapshot/${cam.ip}?t=${Date.now()}`;
+        if (!isMounted || !liveBaseUrl || !liveBaseUrl.startsWith('http')) return;
+        const cleanBase = liveBaseUrl.replace(/\/+$/, '');
+        const nextUrl = `${cleanBase}/api/camera/snapshot/${cam.ip}?t=${Date.now()}`;
         const img = new Image();
         img.onload = () => {
           img.onload = null;
@@ -405,7 +415,23 @@ const ArchiveCard = ({ scan, effectiveBaseUrl }) => {
 };
 
 export const DirectorDashboard = () => {
-  const { classes, students, attendanceList, cameras, updateCameraType, reorderCameras, bridgeUrl, recentFaceScans, faceDevice, syncAllToSupabase, isLocalConnected, globalStreamUrl, setGlobalStreamUrl } = useSchool();
+  const { 
+    classes, 
+    students, 
+    attendanceList, 
+    cameras, 
+    updateCameraType, 
+    reorderCameras, 
+    bridgeUrl, 
+    recentFaceScans, 
+    faceDevice, 
+    syncAllToSupabase, 
+    isLocalConnected, 
+    isSchoolLocalOnline, 
+    cameraLatestFrames, 
+    globalStreamUrl, 
+    setGlobalStreamUrl 
+  } = useSchool();
   const isLocalHost = typeof window !== 'undefined' && (
     window.location.hostname === 'localhost' || 
     window.location.hostname === '127.0.0.1' || 
@@ -413,8 +439,8 @@ export const DirectorDashboard = () => {
     window.location.hostname.startsWith('10.')
   );
   const effectiveBaseUrl = (isLocalConnected || isLocalHost)
-    ? (bridgeUrl && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
-    : (globalStreamUrl || bridgeUrl || 'http://localhost:5001');
+    ? (bridgeUrl && bridgeUrl.startsWith('http') && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
+    : (globalStreamUrl && globalStreamUrl.startsWith('http') ? globalStreamUrl : (bridgeUrl && bridgeUrl.startsWith('http') ? bridgeUrl : 'http://localhost:5001'));
   const [selectedClass, setSelectedClass] = useState('all');
   const [cameraFilter, setCameraFilter] = useState('all'); // 'all', 'in', 'out'
   const [cameraMode, setCameraMode] = useState('live'); // 'live' yoki 'playback'
@@ -1028,11 +1054,14 @@ export const DirectorDashboard = () => {
             
             <div className="relative aspect-video bg-black flex items-center justify-center">
               {(() => {
-                const modalCloudFrame = cameraLatestFrames?.[activeModalCam.ip] || `/photos/camera_${activeModalCam.ip}.jpg`;
-                const modalLiveUrl = isLocalConnected
-                  ? `${bridgeUrl || 'http://localhost:5001'}/api/camera/stream/${activeModalCam.ip}`
-                  : (globalStreamUrl && globalStreamUrl.startsWith('https://') ? `${globalStreamUrl}/api/camera/stream/${activeModalCam.ip}` : null);
-                const isModalLive = Boolean(modalLiveUrl || (isSchoolLocalOnline && cameraLatestFrames?.[activeModalCam.ip]));
+                const rawModalFrame = cameraLatestFrames?.[activeModalCam.ip];
+                const isValidSrc = (s) => typeof s === 'string' && (s.startsWith('data:image/') || s.startsWith('http://') || s.startsWith('https://') || s.startsWith('/'));
+                const modalCloudFrame = (rawModalFrame && isValidSrc(rawModalFrame)) ? rawModalFrame : `/photos/camera_${activeModalCam.ip}.jpg`;
+                const cleanStreamBase = isLocalConnected
+                  ? (bridgeUrl && bridgeUrl.startsWith('http') ? bridgeUrl : 'http://localhost:5001')
+                  : (globalStreamUrl && (globalStreamUrl.startsWith('https://') || globalStreamUrl.startsWith('http://')) ? globalStreamUrl : null);
+                const modalLiveUrl = cleanStreamBase ? `${cleanStreamBase.replace(/\/+$/, '')}/api/camera/stream/${activeModalCam.ip}` : null;
+                const isModalLive = Boolean(modalLiveUrl || (isSchoolLocalOnline && rawModalFrame && isValidSrc(rawModalFrame)));
 
                 return (
                   <>
