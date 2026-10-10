@@ -755,11 +755,33 @@ async function updateCameraFrame(cam) {
       cameraFrames.set(cam.ip, { buffer: snapRes.body, timestamp: Date.now() });
       cam.online = true;
       savePlaybackArchiveFrame(cam.ip, snapRes.body);
+      syncLatestFramesToSupabase().catch(() => {});
       return;
     }
   } catch (err) {
     // Mikro-kechikish bo'lsa xotiradagi oldingi kadr o'chmaydi
   }
+}
+
+// Oxirgi kadrlarni Supabase ga uzatish (Global internetda ko'rsatish uchun)
+let lastFramesSyncTime = 0;
+async function syncLatestFramesToSupabase() {
+  const now = Date.now();
+  if (now - lastFramesSyncTime < 4000) return;
+  lastFramesSyncTime = now;
+
+  try {
+    const frames = {};
+    for (const cam of CAMERAS) {
+      const frameObj = cameraFrames.get(cam.ip);
+      if (frameObj && frameObj.buffer && isValidJpeg(frameObj.buffer)) {
+        frames[cam.ip] = `data:image/jpeg;base64,${frameObj.buffer.toString('base64')}`;
+      }
+    }
+    if (Object.keys(frames).length > 0) {
+      await syncModuleToSupabase('camera_latest_frames', frames);
+    }
+  } catch (err) {}
 }
 
 // Har bir kamera uchun alohida, mustaqil va uzluksiz video oqim aylanishi (~2.5 FPS)

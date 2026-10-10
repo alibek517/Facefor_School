@@ -61,7 +61,7 @@ const formatScanTime = (scan) => {
 // Alohida, har bir kamerani silliq va navbat bilan (staggered) yangilovchi komponent
 const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, updateCameraType, recentFaceScans, index, onMoveLeft, onMoveRight }) => {
   const isEntry = cam.type === 'in';
-  const { isLocalConnected, isSchoolLocalOnline, globalStreamUrl } = useSchool();
+  const { isLocalConnected, isSchoolLocalOnline, globalStreamUrl, cameraLatestFrames } = useSchool();
   const isLocalHost = typeof window !== 'undefined' && (
     window.location.hostname === 'localhost' || 
     window.location.hostname === '127.0.0.1' || 
@@ -69,48 +69,62 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
     window.location.hostname.startsWith('10.')
   );
 
-  // Agar lokal Wi-Fi yoki localhost da ochilgan bo'lsa, trycloudflare ishlatilmaydi, faqat mahalliy server ishlatiladi!
-  const effectiveBaseUrl = (isLocalConnected || isLocalHost)
-    ? (bridgeUrl && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
-    : (globalStreamUrl || bridgeUrl || 'http://localhost:5001');
+  // Bulutdagi oxirgi kadr (Supabase yoki statik baseline)
+  const cloudFrame = cameraLatestFrames?.[cam.ip] || `/photos/camera_${cam.ip}.jpg`;
 
-  const canStream = Boolean(effectiveBaseUrl);
-  const [frameSrc, setFrameSrc] = useState(() => `${effectiveBaseUrl}/api/camera/snapshot/${cam.ip}`);
+  // Haqiqiy jonli ulanish bormi?
+  const hasLiveTunnel = Boolean(globalStreamUrl && globalStreamUrl.startsWith('https://'));
+  const canLiveStream = Boolean(isLocalConnected || isLocalHost || hasLiveTunnel);
+  const liveBaseUrl = (isLocalConnected || isLocalHost)
+    ? (bridgeUrl && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
+    : (hasLiveTunnel ? globalStreamUrl : null);
+
+  const [frameSrc, setFrameSrc] = useState(cloudFrame);
+  const [isLiveActive, setIsLiveActive] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const lastScan = cam.lastEvent || (recentFaceScans || []).find(s => s.cameraIp === cam.ip || s.cameraId === cam.id);
 
+  // Bulutdagi yangi kadr kelganda yangilash (agar jonli efir bo'lmasa)
   useEffect(() => {
-    // Agar lokal serverga ham, global tunnelga ham ulanmagan bo'lsa yoki pauza bosilgan bo'lsa, so'rov yuborilmaydi
-    if (!livePlaying || !canStream) return;
+    if (!isLiveActive && cloudFrame) {
+      setFrameSrc(cloudFrame);
+      setHasError(false);
+    }
+  }, [cloudFrame, isLiveActive]);
+
+  useEffect(() => {
+    // Agar jonli efir mavjud bo'lmasa yoki pauza qilingan bo'lsa
+    if (!livePlaying || !canLiveStream || !liveBaseUrl) {
+      setIsLiveActive(false);
+      return;
+    }
 
     let isMounted = true;
     let timer = null;
 
     const loadNext = () => {
-      if (!isMounted || !canStream) return;
-      const nextUrl = `${effectiveBaseUrl}/api/camera/snapshot/${cam.ip}?t=${Date.now()}`;
+      if (!isMounted || !liveBaseUrl) return;
+      const nextUrl = `${liveBaseUrl}/api/camera/snapshot/${cam.ip}?t=${Date.now()}`;
       const img = new Image();
       img.onload = () => {
         img.onload = null;
         img.onerror = null;
         if (!isMounted) return;
         setFrameSrc(nextUrl);
+        setIsLiveActive(true);
+        setHasError(false);
         timer = setTimeout(loadNext, 750);
       };
       img.onerror = () => {
         img.onload = null;
         img.onerror = null;
         if (!isMounted) return;
-        // Agar global tunnel xato bersa, zaxira sifatida to'g'ridan-to'g'ri localhost:5001 dan yuklash
-        if (effectiveBaseUrl.includes('trycloudflare.com')) {
-          const fallbackUrl = `http://localhost:5001/api/camera/snapshot/${cam.ip}?t=${Date.now()}`;
-          const fbImg = new Image();
-          fbImg.onload = () => {
-            if (!isMounted) return;
-            setFrameSrc(fallbackUrl);
-          };
-          fbImg.src = fallbackUrl;
+        setIsLiveActive(false);
+        // Jonli kadr uzilsa, oxirgi bulut kadriga qaytamiz
+        if (cloudFrame) {
+          setFrameSrc(cloudFrame);
         }
-        timer = setTimeout(loadNext, 2000);
+        timer = setTimeout(loadNext, 4000);
       };
       img.src = nextUrl;
     };
@@ -122,7 +136,7 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
       clearTimeout(initTimer);
       if (timer) clearTimeout(timer);
     };
-  }, [cam.ip, livePlaying, index, effectiveBaseUrl, canStream]);
+  }, [cam.ip, livePlaying, index, liveBaseUrl, canLiveStream, cloudFrame]);
 
   return (
     <div className="bg-slate-50 dark:bg-slate-800/70 rounded-xl border border-slate-200 dark:border-slate-700/80 overflow-hidden flex flex-col transition-all hover:border-blue-400 hover:shadow-md">
@@ -200,12 +214,18 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
         className="relative aspect-video bg-slate-900 flex items-center justify-center overflow-hidden cursor-pointer group"
         onClick={() => onEnlarge(cam)}
       >
-        {canStream ? (
+        {!hasError && (frameSrc || cloudFrame) ? (
           <img
-            src={frameSrc || `${effectiveBaseUrl}/api/camera/snapshot/${cam.ip}`}
+            src={frameSrc || cloudFrame}
             alt={cam.name}
             className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
-            onError={() => {}}
+            onError={() => {
+              if (frameSrc !== cloudFrame && cloudFrame) {
+                setFrameSrc(cloudFrame);
+              } else {
+                setHasError(true);
+              }
+            }}
           />
         ) : (
           <div className="flex flex-col items-center justify-center p-3 text-center select-none">
@@ -214,17 +234,15 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
             </div>
             <span className="text-xs font-bold text-slate-200">{cam.name}</span>
             <span className="text-[10px] text-slate-400 mt-0.5 max-w-[200px] leading-tight">
-              {isSchoolLocalOnline 
-                ? "Foye monitorida jonli uzatilmoqda" 
-                : "Maktab Wi-Fi tarmog'iga ulanish kutilmoqda"}
+              Kamera kutish rejimida • Oxirgi kadr kutilmoqda
             </span>
           </div>
         )}
 
         {/* Jonli Efir Belgisi (Live Badge) */}
         <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-xs text-[10px] font-bold text-white border border-white/10">
-          <span className={`w-1.5 h-1.5 rounded-full ${canStream ? 'bg-emerald-500 animate-pulse' : 'bg-blue-400'}`}></span>
-          <span>{isLocalConnected ? 'LIVE' : (globalStreamUrl ? 'GLOBAL LIVE' : 'BULUT')}</span>
+          <span className={`w-1.5 h-1.5 rounded-full ${isLiveActive ? 'bg-emerald-500 animate-pulse' : 'bg-blue-400'}`}></span>
+          <span>{isLiveActive ? (isLocalConnected ? 'LIVE' : 'GLOBAL LIVE') : 'OXIRGI KADR (BULUT)'}</span>
         </div>
 
         {/* Yo'nalish overlay */}
@@ -993,27 +1011,33 @@ export const DirectorDashboard = () => {
             </div>
             
             <div className="relative aspect-video bg-black flex items-center justify-center">
-              {(isLocalConnected || globalStreamUrl) ? (
-                <>
-                  <img
-                    src={`${(isLocalConnected ? bridgeUrl : globalStreamUrl) || 'http://localhost:5001'}/api/camera/stream/${activeModalCam.ip}`}
-                    alt={activeModalCam.name}
-                    className="w-full h-full object-contain"
-                  />
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded bg-black/70 text-xs font-bold text-white border border-white/20">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    {isLocalConnected ? 'LIVE VIDEO OQIMI' : 'GLOBAL LIVE VIDEO OQIMI'}
-                  </div>
-                </>
-              ) : (
-                <div className="text-center p-6 text-slate-400">
-                  <Video className="w-12 h-12 mx-auto mb-2 opacity-40 text-slate-500" />
-                  <p className="text-sm font-semibold text-slate-300">Maktab lokal tarmog'iga ulanmagan</p>
-                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                    Global efir kutilmoqda. Maktab kompyuterida bridge server ishga tushirilganida video avtomatik ko'rinadi.
-                  </p>
-                </div>
-              )}
+              {(() => {
+                const modalCloudFrame = cameraLatestFrames?.[activeModalCam.ip] || `/photos/camera_${activeModalCam.ip}.jpg`;
+                const modalLiveUrl = (isLocalConnected || isLocalHost)
+                  ? `${bridgeUrl || 'http://localhost:5001'}/api/camera/stream/${activeModalCam.ip}`
+                  : (globalStreamUrl && globalStreamUrl.startsWith('https://') ? `${globalStreamUrl}/api/camera/stream/${activeModalCam.ip}` : null);
+
+                return (
+                  <>
+                    <img
+                      src={modalLiveUrl || modalCloudFrame}
+                      alt={activeModalCam.name}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        if (e.target.src !== modalCloudFrame) {
+                          e.target.src = modalCloudFrame;
+                        }
+                      }}
+                    />
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded bg-black/70 text-xs font-bold text-white border border-white/20">
+                      <span className={`w-2 h-2 rounded-full ${modalLiveUrl ? 'bg-emerald-500 animate-pulse' : 'bg-blue-400'}`}></span>
+                      {modalLiveUrl 
+                        ? (isLocalConnected ? 'LIVE VIDEO OQIMI' : 'GLOBAL LIVE VIDEO OQIMI')
+                        : 'OXIRGI KADR (BULUT)'}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
 
             <div className="p-3 bg-slate-800/80 flex items-center justify-between text-xs text-slate-300">

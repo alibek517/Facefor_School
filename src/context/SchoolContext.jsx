@@ -22,7 +22,8 @@ import {
   saveCamerasToSupabase,
   insertFaceScanToSupabase,
   loadTodayFaceScansFromSupabase,
-  getLocalStatusFromSupabase
+  getLocalStatusFromSupabase,
+  getLatestCameraFramesFromSupabase
 } from '../supabase';
 import { promoteAllClasses } from '../utils/excelAndPromotion';
 import { formatPhoneNumber } from '../utils/phoneFormatter';
@@ -195,6 +196,9 @@ export const SchoolProvider = ({ children }) => {
   const [cameras, setCameras] = useState(() => {
     return getSafeStorage('school_cameras', DEFAULT_CAMERAS, (arr) => Array.isArray(arr) && arr.length >= 6);
   });
+
+  // 6 ta kameraning oxirgi bulut kadrlari (Global rejim uchun)
+  const [cameraLatestFrames, setCameraLatestFrames] = useState({});
 
   // Tarmoq holati (Lokal Wi-Fi vs Global Bulut)
   const isLocalHostEnv = typeof window !== 'undefined' && (
@@ -573,6 +577,9 @@ export const SchoolProvider = ({ children }) => {
             const gUrl = typeof cloudData.global_stream_url === 'string' ? cloudData.global_stream_url : cloudData.global_stream_url?.url;
             if (gUrl && !isLocalHostEnv) updateGlobalStreamUrl(gUrl);
           }
+          if (cloudData.camera_latest_frames && typeof cloudData.camera_latest_frames === 'object') {
+            setCameraLatestFrames(cloudData.camera_latest_frames);
+          }
           console.log('[SUPABASE] Barcha ma\'lumotlar Supabase bulut bazasidan yuklandi.');
         }
 
@@ -672,6 +679,9 @@ export const SchoolProvider = ({ children }) => {
               const gUrl = typeof data === 'string' ? data : data?.url;
               if (gUrl && !isLocalHostEnv) updateGlobalStreamUrl(gUrl);
             }
+            else if (key === 'camera_latest_frames' && data && typeof data === 'object') {
+              setCameraLatestFrames(data);
+            }
             else if (key === 'cameras' && Array.isArray(data) && data.length >= 6) {
               setCameras(data);
               try { localStorage.setItem('school_cameras', JSON.stringify(data)); } catch (e) {}
@@ -760,6 +770,14 @@ export const SchoolProvider = ({ children }) => {
         } catch (e) {
           setIsSchoolLocalOnline(false);
         }
+
+        // Supabase dan oxirgi kamera kadrlarini yangilab turish (Global rejim uchun)
+        try {
+          const cloudFrames = await getLatestCameraFramesFromSupabase();
+          if (cloudFrames && typeof cloudFrames === 'object') {
+            setCameraLatestFrames(cloudFrames);
+          }
+        } catch (e) {}
       }
 
       setIsInitialized(true);
@@ -1653,6 +1671,7 @@ export const SchoolProvider = ({ children }) => {
     isSchoolLocalOnline,
     globalStreamUrl,
     setGlobalStreamUrl: updateGlobalStreamUrl,
+    cameraLatestFrames,
     isInitialized,
     localWarningSnoozedUntil,
     dismissLocalWarning

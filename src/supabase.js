@@ -219,3 +219,22 @@ export async function loadTodayFaceScansFromSupabase(dateStr) {
     return [];
   }
 }
+
+/**
+ * 6 ta kameraning oxirgi bulut kadrlarini Supabase dan olish
+ */
+export async function getLatestCameraFramesFromSupabase() {
+  try {
+    const { data, error } = await supabase
+      .from('school_data')
+      .select('data')
+      .eq('key', 'camera_latest_frames')
+      .maybeSingle();
+
+    if (error || !data || !data.data) return null;
+    return data.data;
+  } catch (e) {
+    return null;
+  }
+}
+
