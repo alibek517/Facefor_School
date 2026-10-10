@@ -232,6 +232,8 @@ export const SchoolProvider = ({ children }) => {
       if (clean) localStorage.setItem('school_global_stream_url', clean);
       else localStorage.removeItem('school_global_stream_url');
     } catch (e) {}
+    // Supabase bulut bazasiga ham yangilab qo'yish (boshqa qurilmalar uchun)
+    saveModuleToSupabase('global_stream_url', clean).catch(() => {});
   };
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -486,23 +488,25 @@ export const SchoolProvider = ({ children }) => {
   };
 
   // Hikvision Ko'prik serveri bilan avtomatik bog'lanish (Port 5001)
-  // Hikvision Ko'prik serveri bilan avtomatik bog'lanish (Port 5001)
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
   const bridgeHost = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost';
-  const BRIDGE_API = `http://${bridgeHost}:5001`;
+  const BRIDGE_API = (isLocalHostEnv && !isHttps) ? `http://${bridgeHost}:5001` : '';
 
   // Serverga va Supabase bulut bazasiga markaziy saqlash (Barcha qurilmalar va brauzerlar uchun global)
   const saveToServer = async (key, data) => {
     // 1. Supabase bulut bazasiga zudlik bilan saqlash
     saveModuleToSupabase(key, data).catch(() => {});
 
-    // 2. Mahalliy serverga (face-bridge.cjs) ham zaxira saqlash
-    try {
-      await fetch(`${BRIDGE_API}/api/school/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key, data })
-      });
-    } catch (e) {}
+    // 2. Mahalliy serverga (face-bridge.cjs) ham faqat lokal muhitda saqlash
+    if (isLocalHostEnv && !isHttps && BRIDGE_API) {
+      try {
+        await fetch(`${BRIDGE_API}/api/school/save`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key, data })
+        });
+      } catch (e) {}
+    }
   };
 
   // Butun maktab ma'lumotlarini bir martada Supabase bulutiga to'liq yuklash (Migratsiya)
@@ -817,7 +821,7 @@ export const SchoolProvider = ({ children }) => {
 
     const pollDevice = async () => {
       let localReachable = false;
-      const shouldProbeLocal = localFailuresCount.current === 0 || manualRetryLocal.current || (localFailuresCount.current % 24 === 0);
+      const shouldProbeLocal = isLocalHostEnv && !isHttps && Boolean(BRIDGE_API) && (localFailuresCount.current === 0 || manualRetryLocal.current || (localFailuresCount.current % 24 === 0));
       manualRetryLocal.current = false;
 
       if (shouldProbeLocal) {

@@ -93,15 +93,16 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
   const [frameSrc, setFrameSrc] = useState(cloudFrame);
   const [isLiveActive, setIsLiveActive] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const failCountRef = useRef(0);
   const lastScan = cam.lastEvent || (recentFaceScans || []).find(s => s.cameraIp === cam.ip || s.cameraId === cam.id);
 
-  // Bulutdagi yangi kadr kelganda yangilash (agar jonli efir bo'lmasa)
+  // Bulutdagi yangi kadr kelganda yangilash
   useEffect(() => {
-    if (!isLiveActive && cloudFrame) {
+    if ((!isLiveActive || isCloudRelayLive || failCountRef.current > 0) && cloudFrame) {
       setFrameSrc(cloudFrame);
       setHasError(false);
     }
-  }, [cloudFrame, isLiveActive]);
+  }, [cloudFrame, isLiveActive, isCloudRelayLive]);
 
   useEffect(() => {
     // Agar jonli efir mavjud bo'lmasa yoki pauza qilingan bo'lsa
@@ -123,6 +124,7 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
           img.onload = null;
           img.onerror = null;
           if (!isMounted) return;
+          failCountRef.current = 0;
           setFrameSrc(nextUrl);
           setIsLiveActive(true);
           setHasError(false);
@@ -132,12 +134,25 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
           img.onload = null;
           img.onerror = null;
           if (!isMounted) return;
-          setIsLiveActive(false);
-          // Jonli kadr uzilsa, oxirgi bulut kadriga qaytamiz
+          failCountRef.current += 1;
+          
+          // Jonli kadr uzilsa yoki tunnel (masalan Cloudflare tunnel) o'chgan bo'lsa,
+          // zudlik bilan Supabase bulut kadriga qaytamiz
           if (cloudFrame) {
             setFrameSrc(cloudFrame);
+            if (isCloudRelayLive) {
+              setIsLiveActive(true);
+            } else {
+              setIsLiveActive(false);
+            }
+          } else {
+            setIsLiveActive(false);
           }
-          timer = setTimeout(loadNext, 4000);
+
+          // Agar tashqi tunnel ishlamasa (ERR_NAME_NOT_RESOLVED), brauzer konsolini to'ldirmaymiz
+          // 2 marta xatodan so'ng 90 soniyaga kechiktiramiz
+          const retryDelay = failCountRef.current >= 2 ? 90000 : 4000;
+          timer = setTimeout(loadNext, retryDelay);
         };
         img.src = nextUrl;
       };
@@ -934,7 +949,7 @@ export const DirectorDashboard = () => {
               </button>
             </div>
             <p className="text-[11px] text-slate-600 dark:text-slate-400">
-              Siz maktab Wi-Fi tarmog'idan tashqarida bo'lganingizda (masalan, Vercel yoki mobil internetda) 6 ta kamerani jonli ko'rish uchun maktab kompyuteridagi bepul <b>Cloudflare Tunnel</b> yoki <b>Ngrok</b> havolasini kiriting:
+              Siz maktab Wi-Fi tarmog'idan tashqarida bo'lganingizda (masalan, Vercel yoki mobil internetda) 6 ta kamerani to'liq video ko'rish uchun maktab kompyuteridagi bepul <b>Cloudflare Tunnel</b> havolasini kiritishingiz mumkin. Agar tunnel o'chsa yoki kiritilmasa, tizim avtomatik <b>Supabase Jonli Ko'prigi (Cloud Relay)</b> orqali kameralarni jonli yangilab ko'rsatadi.
             </p>
             <div className="flex items-center gap-2">
               <input
@@ -949,10 +964,23 @@ export const DirectorDashboard = () => {
                   setGlobalStreamUrl(tempGlobalUrl);
                   setShowGlobalSettings(false);
                 }}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs"
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shrink-0"
               >
                 Saqlash
               </button>
+              {globalStreamUrl && (
+                <button
+                  onClick={() => {
+                    setGlobalStreamUrl('');
+                    setTempGlobalUrl('');
+                    setShowGlobalSettings(false);
+                  }}
+                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs shrink-0"
+                  title="Tunnelni o'chirish va to'g'ridan-to'g'ri Supabase jonli ko'prigidan foydalanish"
+                >
+                  O'chirish (Bulut Ko'prigi)
+                </button>
+              )}
             </div>
           </div>
         )}

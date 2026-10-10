@@ -51,8 +51,10 @@ export const getStudentPhotoUrls = (studentOrEmp, effectiveBaseUrl) => {
   const staticUrl = `/photos/${targetName}.jpg`;
 
   // 2. Lokal server yoki Cloudflare tuneli orqali jonli bridge URL
-  const bridgeUrl = effectiveBaseUrl
-    ? `${effectiveBaseUrl}/api/device/photo/${targetName}`
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const isValidBase = effectiveBaseUrl && effectiveBaseUrl.startsWith('http') && (!isHttps || effectiveBaseUrl.startsWith('https:'));
+  const bridgeUrl = isValidBase
+    ? `${effectiveBaseUrl.replace(/\/+$/, '')}/api/device/photo/${targetName}`
     : null;
 
   return {
