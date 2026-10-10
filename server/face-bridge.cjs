@@ -1296,9 +1296,14 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 5. O'quvchining haqiqiy yuz surati (/api/device/photo/:employeeNo)
-  if (pathname.startsWith('/api/device/photo/')) {
-    const rawEmp = pathname.replace('/api/device/photo/', '').trim();
+  // 5. O'quvchining haqiqiy yuz surati (/api/device/photo/:employeeNo, /photos/:name, /api/photo/:name)
+  if (pathname.startsWith('/api/device/photo/') || pathname.startsWith('/api/photo/') || pathname.startsWith('/photos/')) {
+    const rawEmp = pathname
+      .replace('/api/device/photo/', '')
+      .replace('/api/photo/', '')
+      .replace('/photos/', '')
+      .replace(/\.jpg$/i, '')
+      .trim();
     const cleanNo = rawEmp.replace(/^s-/, '').replace(/^0+/, '');
     const paddedNo = cleanNo ? cleanNo.padStart(8, '0') : rawEmp;
 
@@ -1327,7 +1332,8 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(200, {
           'Content-Type': 'image/jpeg',
           'Content-Length': fileData.length,
-          'Cache-Control': 'public, max-age=86400'
+          'Cache-Control': 'public, max-age=86400',
+          'Access-Control-Allow-Origin': '*'
         });
         res.end(fileData);
         return;
@@ -1363,7 +1369,8 @@ const server = http.createServer(async (req, res) => {
           res.writeHead(200, {
             'Content-Type': 'image/jpeg',
             'Content-Length': photoRes.body.length,
-            'Cache-Control': 'public, max-age=86400'
+            'Cache-Control': 'public, max-age=86400',
+            'Access-Control-Allow-Origin': '*'
           });
           res.end(photoRes.body);
           return;

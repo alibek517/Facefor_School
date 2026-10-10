@@ -25,39 +25,7 @@ import {
 import { formatPhoneNumber, handlePhoneInputChange } from '../utils/phoneFormatter';
 import { exportStudentsToExcel } from '../utils/excelAndPromotion';
 import { DAYS_OF_WEEK } from '../mockData';
-
-// O'quvchi avatari (Hikvision yuz surati yoki harfli avatar)
-const StudentAvatar = ({ student, effectiveBaseUrl, size = "w-10 h-10" }) => {
-  const [hasError, setHasError] = useState(false);
-  const isInternalIp = student?.faceURL && (student.faceURL.includes('192.168.') || student.faceURL.includes('10.') || student.faceURL.includes('172.'));
-  const cleanId = String(student?.studentId || student?.faceId || student?.id || '').replace(/^s-/, '');
-  const paddedId = cleanId ? cleanId.padStart(8, '0') : '';
-  const photoSrc = (!isInternalIp && student?.faceURL)
-    ? student.faceURL
-    : (student?.isFaceEnrolled || student?.faceURL || cleanId ? `${effectiveBaseUrl}/api/device/photo/${paddedId || cleanId}` : null);
-
-  useEffect(() => {
-    setHasError(false);
-  }, [photoSrc, student?.id, student?.studentId]);
-
-  return (
-    <div className={`relative ${size} shrink-0 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-2xs`}>
-      {photoSrc && !hasError ? (
-        <img
-          src={photoSrc}
-          alt={student?.fullName || student?.name || "O'quvchi"}
-          className="w-full h-full object-cover"
-          loading="lazy"
-          onError={() => setHasError(true)}
-        />
-      ) : (
-        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-xs">
-          {(student?.fullName || student?.name || 'O').charAt(0).toUpperCase()}
-        </div>
-      )}
-    </div>
-  );
-};
+import { StudentAvatar } from './StudentAvatar';
 
 export const ClassTeacherView = () => {
   const { 

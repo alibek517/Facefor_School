@@ -39,6 +39,8 @@ import {
   FastForward
 } from 'lucide-react';
 import CameraPlaybackView from './CameraPlaybackView';
+import { StudentAvatar } from './StudentAvatar';
+import { getStudentPhotoUrls } from '../utils/photoHelper';
 import { formatPhoneNumber } from '../utils/phoneFormatter';
 
 // Vaqtni kameraning o'zidagi asl soat bo'yicha to'g'ri ko'rsatish
@@ -278,15 +280,25 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
 // Kamera ostidagi oxirgi o'tgan shaxs surati
 const CameraLastScanThumb = ({ lastScan, effectiveBaseUrl }) => {
   const [hasError, setHasError] = useState(false);
-  const scanEmp = (lastScan?.employeeNo || '').replace(/^s-/, '');
-  const paddedScanEmp = scanEmp ? scanEmp.padStart(8, '0') : '';
-  const photoSrc = `${effectiveBaseUrl}/api/device/photo/${paddedScanEmp || lastScan?.employeeNo}`;
+  const [useFallback, setUseFallback] = useState(false);
+  const { primaryUrl, fallbackUrl } = getStudentPhotoUrls(lastScan, effectiveBaseUrl);
 
   useEffect(() => {
     setHasError(false);
-  }, [photoSrc, lastScan?.employeeNo, lastScan?.serialNo]);
+    setUseFallback(false);
+  }, [lastScan?.employeeNo, lastScan?.serialNo, primaryUrl, fallbackUrl]);
 
-  if (hasError || !lastScan?.employeeNo) {
+  const currentSrc = useFallback ? fallbackUrl : primaryUrl;
+
+  const handleError = () => {
+    if (!useFallback && fallbackUrl && fallbackUrl !== primaryUrl) {
+      setUseFallback(true);
+    } else {
+      setHasError(true);
+    }
+  };
+
+  if (hasError || !currentSrc) {
     return (
       <div className="w-full h-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-bold text-[10px] flex items-center justify-center">
         {(lastScan?.name || 'O').charAt(0).toUpperCase()}
@@ -296,10 +308,10 @@ const CameraLastScanThumb = ({ lastScan, effectiveBaseUrl }) => {
 
   return (
     <img
-      src={photoSrc}
-      alt={lastScan.name}
+      src={currentSrc}
+      alt={lastScan?.name || ''}
       className="w-full h-full object-cover"
-      onError={() => setHasError(true)}
+      onError={handleError}
     />
   );
 };
@@ -307,24 +319,34 @@ const CameraLastScanThumb = ({ lastScan, effectiveBaseUrl }) => {
 // Arxivdagi kadr va o'tish kartasi (React xatolarini oldini oluvchi reaktiv komponent)
 const ArchiveCard = ({ scan, effectiveBaseUrl }) => {
   const [hasError, setHasError] = useState(false);
-  const normalizedEmp = (scan.employeeNo || '').replace(/^s-/, '');
-  const paddedEmp = normalizedEmp ? normalizedEmp.padStart(8, '0') : '';
-  const photoSrc = `${effectiveBaseUrl}/api/device/photo/${paddedEmp || scan.employeeNo}`;
+  const [useFallback, setUseFallback] = useState(false);
+  const { primaryUrl, fallbackUrl } = getStudentPhotoUrls(scan, effectiveBaseUrl);
 
   useEffect(() => {
     setHasError(false);
-  }, [photoSrc, scan.id, scan.employeeNo]);
+    setUseFallback(false);
+  }, [scan?.id, scan?.employeeNo, primaryUrl, fallbackUrl]);
+
+  const currentSrc = useFallback ? fallbackUrl : primaryUrl;
+
+  const handleError = () => {
+    if (!useFallback && fallbackUrl && fallbackUrl !== primaryUrl) {
+      setUseFallback(true);
+    } else {
+      setHasError(true);
+    }
+  };
 
   return (
     <div className="bg-slate-50 dark:bg-slate-800/60 p-2 rounded-xl border border-slate-200 dark:border-slate-700/80 text-center space-y-1 hover:border-purple-400 transition-all">
       <div className="w-12 h-12 mx-auto rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 relative shadow-2xs">
-        {!hasError ? (
+        {currentSrc && !hasError ? (
           <img
-            src={photoSrc}
+            src={currentSrc}
             alt={scan.name}
             className="w-full h-full object-cover"
             loading="lazy"
-            onError={() => setHasError(true)}
+            onError={handleError}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-black text-xs flex items-center justify-center">
@@ -1284,15 +1306,12 @@ export const DirectorDashboard = () => {
                       <div className="flex items-center gap-2.5 min-w-0">
                         {/* Avatar */}
                         <div className="relative shrink-0">
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-xs ${
-                            isAbsent
-                              ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
-                              : isExited
-                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
-                              : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-                          }`}>
-                            {(student.fullName || student.name || 'O').charAt(0).toUpperCase()}
-                          </div>
+                          <StudentAvatar
+                            student={student}
+                            effectiveBaseUrl={effectiveBaseUrl}
+                            size="w-9 h-9"
+                            rounded="rounded-full"
+                          />
                           <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${
                             isAbsent ? 'bg-rose-500' : isExited ? 'bg-amber-500' : 'bg-emerald-500'
                           }`}></span>

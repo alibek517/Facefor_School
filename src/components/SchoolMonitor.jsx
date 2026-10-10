@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Search
 } from 'lucide-react';
+import { StudentAvatar } from './StudentAvatar';
 
 const formatScanTime = (scan) => {
   if (!scan) return '--:--:--';
@@ -33,35 +34,6 @@ const formatScanTime = (scan) => {
     return scan.timeFormatted;
   }
   return '--:--:--';
-};
-
-const MonitorStudentAvatar = ({ student, effectiveBaseUrl }) => {
-  const [hasError, setHasError] = useState(false);
-  const cleanId = String(student.studentId || student.faceId || student.id || '').replace(/^s-/, '');
-  const paddedId = cleanId ? cleanId.padStart(8, '0') : '';
-  const photoUrl = `${effectiveBaseUrl}/api/device/photo/${paddedId || cleanId}`;
-
-  useEffect(() => {
-    setHasError(false);
-  }, [photoUrl, student.id, student.studentId]);
-
-  return (
-    <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0">
-      {!hasError && cleanId ? (
-        <img
-          src={photoUrl}
-          alt={student.fullName || student.name}
-          className="w-full h-full object-cover"
-          loading="lazy"
-          onError={() => setHasError(true)}
-        />
-      ) : (
-        <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white font-black text-xs">
-          {(student.fullName || student.name || 'O').charAt(0).toUpperCase()}
-        </div>
-      )}
-    </div>
-  );
 };
 
 export const SchoolMonitor = () => {
@@ -1043,7 +1015,7 @@ export const SchoolMonitor = () => {
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           {/* Face-ID Surati */}
-                          <MonitorStudentAvatar student={st} effectiveBaseUrl={effectiveBaseUrl} />
+                          <StudentAvatar student={st} effectiveBaseUrl={effectiveBaseUrl} size="w-10 h-10" rounded="rounded-xl" />
 
                           <div className="min-w-0">
                             <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">

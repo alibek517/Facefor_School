@@ -21,6 +21,7 @@ import {
   ArrowRight,
   ArrowLeft
 } from 'lucide-react';
+import { StudentAvatar } from './StudentAvatar';
 
 // Soniyalarni "HH:mm:ss" ko'rinishiga o'tkazish
 const secondsToTimeStr = (totalSec) => {
@@ -637,17 +638,12 @@ export const CameraPlaybackView = ({
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-7 h-7 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 shrink-0 border border-slate-300 dark:border-slate-600">
-                        <img
-                          src={`${effectiveBaseUrl}/api/device/photo/${empPadded}`}
-                          alt={ev.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(ev.name)}&background=6366f1&color=fff&size=64`;
-                          }}
-                        />
-                      </div>
+                      <StudentAvatar
+                        student={{ employeeNo: empPadded, name: ev.name }}
+                        effectiveBaseUrl={effectiveBaseUrl}
+                        size="w-7 h-7"
+                        rounded="rounded-lg"
+                      />
                       <div className="min-w-0">
                         <div className="text-[11px] font-bold text-slate-900 dark:text-white truncate">
                           {ev.name}

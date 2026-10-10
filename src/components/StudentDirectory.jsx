@@ -26,38 +26,7 @@ import {
   parseStudentsExcelFile 
 } from '../utils/excelAndPromotion';
 import { formatPhoneNumber, handlePhoneInputChange } from '../utils/phoneFormatter';
-
-const StudentAvatar = ({ student, effectiveBaseUrl }) => {
-  const [hasError, setHasError] = useState(false);
-  const isInternalIp = student.faceURL && (student.faceURL.includes('192.168.') || student.faceURL.includes('10.') || student.faceURL.includes('172.'));
-  const cleanId = String(student.studentId || student.faceId || '').replace(/^s-/, '');
-  const paddedId = cleanId ? cleanId.padStart(8, '0') : '';
-  const photoSrc = (!isInternalIp && student.faceURL)
-    ? student.faceURL
-    : (student.isFaceEnrolled || student.faceURL || cleanId ? `${effectiveBaseUrl}/api/device/photo/${paddedId || cleanId}` : null);
-
-  useEffect(() => {
-    setHasError(false);
-  }, [photoSrc, student.id, student.studentId]);
-
-  return (
-    <div className="relative w-11 h-11 shrink-0 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-xs">
-      {photoSrc && !hasError ? (
-        <img
-          src={photoSrc}
-          alt={student.fullName || student.name}
-          className="w-full h-full object-cover"
-          loading="lazy"
-          onError={() => setHasError(true)}
-        />
-      ) : (
-        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-xs">
-          {(student.fullName || student.name || 'O').charAt(0).toUpperCase()}
-        </div>
-      )}
-    </div>
-  );
-};
+import { StudentAvatar } from './StudentAvatar';
 
 export const StudentDirectory = () => {
   const { 
