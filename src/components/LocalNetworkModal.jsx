@@ -13,14 +13,8 @@ export const LocalNetworkModal = () => {
     refreshLocalStatus
   } = useSchool();
 
-  const [isChecking, setIsChecking] = useState(false);
-
-  // Faqat Direktor va Navbatchiga ko'rsatiladi
-  const isTargetRole = currentUser?.role === 'director' || currentUser?.role === 'inspector';
-  if (!isTargetRole) return null;
-
-  // Agar tizim endigina yuklanayotgan bo'lsa (tekshiruv tugaguncha)
-  if (!isInitialized) return null;
+  // Foydalanuvchini ishdan to'xtatuvchi to'siq oynani butunlay o'chiramiz (tizim bulut/lokal o'rtasida avtomatik erkin ishlaydi)
+  return null;
 
   // Agar maktab lokal tarmog'i online bo'lsa (kamida 1 ta qurilma ulangan bo'lsa) -> modal yo'qoladi!
   if (isSchoolLocalOnline || isLocalConnected) return null;
