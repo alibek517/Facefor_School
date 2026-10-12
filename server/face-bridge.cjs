@@ -739,6 +739,7 @@ async function updateCameraFrame(cam) {
       cameraFrames.set(cam.ip, { buffer: snapRes.body, timestamp: Date.now() });
       cam.online = true;
       savePlaybackArchiveFrame(cam.ip, snapRes.body);
+      syncLatestFramesToSupabase().catch(() => {});
       return;
     }
 

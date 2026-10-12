@@ -106,13 +106,19 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
   const failCountRef = useRef(0);
   const lastScan = cam.lastEvent || (recentFaceScans || []).find(s => s.cameraIp === cam.ip || s.cameraId === cam.id);
 
-  // Bulutdagi yangi kadr kelganda yangilash
+  // Bulutdagi yangi kadr kelganda yangilash (Cloud Relay yoki Jonli ko'prik)
   useEffect(() => {
-    if ((!isLiveActive || isCloudRelayLive || failCountRef.current > 0) && cloudFrame) {
-      setFrameSrc(cloudFrame);
-      setHasError(false);
+    if (cloudFrame) {
+      // Agar lokal to'g'ridan-to'g'ri oqim bo'lmasa yoki xatolik bo'lsa, bulut kadrini doim yangilab turamiz
+      if (!liveBaseUrl || isCloudRelayLive || failCountRef.current > 0 || !isLiveActive) {
+        setFrameSrc(cloudFrame);
+        setHasError(false);
+        if (isCloudRelayLive) {
+          setIsLiveActive(true);
+        }
+      }
     }
-  }, [cloudFrame, isLiveActive, isCloudRelayLive]);
+  }, [cloudFrame, isCloudRelayLive, liveBaseUrl, isLiveActive]);
 
   useEffect(() => {
     // Agar jonli efir mavjud bo'lmasa yoki pauza qilingan bo'lsa
