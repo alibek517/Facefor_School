@@ -43,17 +43,24 @@ import { StudentAvatar } from './StudentAvatar';
 import { getStudentPhotoUrls } from '../utils/photoHelper';
 import { formatPhoneNumber } from '../utils/phoneFormatter';
 
-// Vaqtni kameraning o'zidagi asl soat bo'yicha to'g'ri ko'rsatish
+// Vaqtni kameraning o'zidagi asl soat bo'yicha to'g'ri ko'rsatish (O'zbekiston mahalliy vaqti)
 const formatScanTime = (scan) => {
   if (!scan) return '--:--:--';
-  if (scan.timestamp) {
-    const m = String(scan.timestamp).match(/T(\d{2}:\d{2}:\d{2})/);
-    if (m && m[1]) return m[1];
-  }
   if (scan.timeFormatted) {
     const m = String(scan.timeFormatted).match(/(\d{2}:\d{2}:\d{2})/);
     if (m && m[1]) return m[1];
     return scan.timeFormatted;
+  }
+  if (scan.timestamp) {
+    // Agar faqat UTC timestamp bo'lsa, uni Toshkent (GMT+5) vaqtiga o'giramiz
+    try {
+      const d = new Date(scan.timestamp);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleTimeString('uz-UZ', { hour12: false, timeZone: 'Asia/Tashkent' });
+      }
+    } catch (e) {}
+    const m = String(scan.timestamp).match(/T(\d{2}:\d{2}:\d{2})/);
+    if (m && m[1]) return m[1];
   }
   return '--:--:--';
 };
