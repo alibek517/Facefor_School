@@ -691,38 +691,21 @@ export const StudentDirectory = () => {
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-between gap-1.5 border-t border-slate-100 dark:border-slate-800">
-                {isEditMode ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const curSt = students.find(s => s.id === currentId);
-                      if (curSt) handleOpenMoveToTeacher(curSt);
-                    }}
-                    className="px-2.5 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800 rounded flex items-center gap-1 transition-colors"
-                    title="Ushbu shaxsni o'qituvchilar bo'limiga o'tkazish"
-                  >
-                    <GraduationCap className="w-3.5 h-3.5" />
-                    O'qituvchiga o'tkazish
-                  </button>
-                ) : <div />}
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setModalOpen(false)}
-                    className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-                  >
-                    Bekor qilish
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-3 py-1.5 text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white rounded flex items-center gap-1 shadow-sm transition-colors"
-                  >
-                    <Save className="w-3.5 h-3.5" />
-                    Saqlash
-                  </button>
-                </div>
+              <div className="pt-2 flex items-center justify-end gap-1.5 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  className="px-3 py-1.5 text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white rounded flex items-center gap-1 shadow-sm transition-colors"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  Saqlash
+                </button>
               </div>
             </form>
           </div>
