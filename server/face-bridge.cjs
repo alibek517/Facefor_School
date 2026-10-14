@@ -83,12 +83,12 @@ const CONFIG = {
 
 // 6 ta Turniket Kamera qurilmalari (Foydalanuvchi tanlagan tartib: Chiqish 6, Chiqish 2, Chiqish 1, Kirish 3, Kirish 4, Kirish 5)
 let CAMERAS = [
-  { id: 'cam-6', ip: '192.168.1.13', type: 'out', name: 'Turniket 6 (Chiqish)', location: 'Chiqish yo\'lagi (3)', online: true, lastEvent: null },
-  { id: 'cam-2', ip: '192.168.1.32', type: 'out', name: 'Turniket 2 (Chiqish)', location: 'Bosh kirish eshigi (2)', online: true, lastEvent: null },
-  { id: 'cam-1', ip: '192.168.1.35', type: 'out', name: 'Turniket 1 (Chiqish)', location: 'Bosh kirish eshigi (1)', online: true, lastEvent: null },
-  { id: 'cam-3', ip: '192.168.1.36', type: 'in', name: 'Turniket 3 (Kirish)', location: 'Bosh kirish eshigi (3)', online: true, lastEvent: null },
-  { id: 'cam-4', ip: '192.168.1.86', type: 'in', name: 'Turniket 4 (Kirish)', location: 'Chiqish yo\'lagi (1)', online: true, lastEvent: null },
-  { id: 'cam-5', ip: '192.168.1.33', type: 'in', name: 'Turniket 5 (Kirish)', location: 'Chiqish yo\'lagi (2)', online: true, lastEvent: null },
+  { id: 'cam-6', ip: '192.168.1.13', type: 'out', name: 'Turniket 6 (Chiqish)', location: 'Chiqish yo\'lagi (3)', online: false, lastEvent: null },
+  { id: 'cam-2', ip: '192.168.1.32', type: 'out', name: 'Turniket 2 (Chiqish)', location: 'Bosh kirish eshigi (2)', online: false, lastEvent: null },
+  { id: 'cam-1', ip: '192.168.1.35', type: 'out', name: 'Turniket 1 (Chiqish)', location: 'Bosh kirish eshigi (1)', online: false, lastEvent: null },
+  { id: 'cam-3', ip: '192.168.1.36', type: 'in', name: 'Turniket 3 (Kirish)', location: 'Bosh kirish eshigi (3)', online: false, lastEvent: null },
+  { id: 'cam-4', ip: '192.168.1.86', type: 'in', name: 'Turniket 4 (Kirish)', location: 'Chiqish yo\'lagi (1)', online: false, lastEvent: null },
+  { id: 'cam-5', ip: '192.168.1.33', type: 'in', name: 'Turniket 5 (Kirish)', location: 'Chiqish yo\'lagi (2)', online: false, lastEvent: null },
 ];
 
 // Suratlar keshi papkasi
@@ -464,14 +464,17 @@ if (schoolDB.cameras && Array.isArray(schoolDB.cameras) && schoolDB.cameras.leng
 async function sendHeartbeatToSupabase() {
   try {
     const onlineCameras = CAMERAS.filter(c => c.online).length;
+    const isBridgeConnected = onlineCameras > 0;
     await syncModuleToSupabase('local_status', {
       last_heartbeat: new Date().toISOString(),
       timestamp: Date.now(),
-      online: true,
+      online: isBridgeConnected,
       cameras_online: onlineCameras,
       total_cameras: CAMERAS.length,
       clients_count: sseClients.length,
-      message: "Maktab lokal serveri va Wi-Fi tarmog'i faol"
+      message: isBridgeConnected 
+        ? "Maktab lokal serveri va Wi-Fi tarmog'i faol" 
+        : "Maktab kameralari bilan aloqa yo'q (server boshqa Wi-Fi tarmog'ida yoki kameralar o'chiq)"
     });
   } catch (err) {}
 }
@@ -961,8 +964,11 @@ async function updateCameraFrame(cam) {
       syncLatestFramesToSupabase().catch(() => {});
       return;
     }
+
+    // Ikkala kanal ham javob bermasa kamera oflayn
+    cam.online = false;
   } catch (err) {
-    // Mikro-kechikish bo'lsa xotiradagi oldingi kadr o'chmaydi
+    cam.online = false;
   }
 }
 
@@ -1129,9 +1135,11 @@ async function pollAllCameras() {
             }
           }
         }
+      } else {
+        cam.online = false;
       }
     } catch (err) {
-      // Tarmoqda vaqtincha uzilish bo'lsa
+      cam.online = false;
     }
 
     // Qurilmalar oralig'ida mikro-pauza (tarmoqni yuklamaslik uchun)

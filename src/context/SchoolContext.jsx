@@ -954,7 +954,6 @@ export const SchoolProvider = ({ children }) => {
           const cloudFrames = await getLatestCameraFramesFromSupabase();
           if (cloudFrames && typeof cloudFrames === 'object' && Object.keys(cloudFrames).length > 0) {
             setCameraLatestFrames(prev => ({ ...prev, ...cloudFrames }));
-            setIsSchoolLocalOnline(true);
           }
         } catch (e) {}
       }

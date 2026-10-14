@@ -97,87 +97,95 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
   const hasRealCloudFrame = Boolean(rawCloudFrame && isValidFrameSrc(rawCloudFrame));
   const cloudFrame = hasRealCloudFrame ? rawCloudFrame : `/photos/camera_${cam.ip}.jpg`;
 
-  // Faqat maktab lokal tarmog'iga haqiqatda ulangan bo'lsak, lokal HTTP portdan foydalanamiz
-  const liveBaseUrl = isDirectLocal
+  // Tarmoq ulanish turiga qarab rasm manzilini aniqlash:
+  // 1. Lokal maktab tarmog'ida bo'lsa: bridgeUrl (http://localhost:5001 yoki lokal IP)
+  // 2. Global / boshqa Wi-Fi tarmog'ida bo'lsa: passedEffectiveBaseUrl (Cloudflare tunnel)
+  const streamBaseUrl = isDirectLocal
     ? (bridgeUrl && bridgeUrl.startsWith('http') && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
-    : null;
+    : (passedEffectiveBaseUrl && passedEffectiveBaseUrl.startsWith('http') && !isDeadTunnel(passedEffectiveBaseUrl) ? passedEffectiveBaseUrl : null);
   const effectiveBaseUrl = isDirectLocal
     ? (passedEffectiveBaseUrl && passedEffectiveBaseUrl.startsWith('http') && !passedEffectiveBaseUrl.includes('trycloudflare.com') ? passedEffectiveBaseUrl : 'http://localhost:5001')
-    : '';
+    : (passedEffectiveBaseUrl && passedEffectiveBaseUrl.startsWith('http') && !isDeadTunnel(passedEffectiveBaseUrl) ? passedEffectiveBaseUrl : '');
 
   const [frameSrc, setFrameSrc] = useState(cloudFrame);
-  const [isLiveActive, setIsLiveActive] = useState(Boolean(isDirectLocal || hasRealCloudFrame || isSchoolLocalOnline));
+  const [isStreamingLive, setIsStreamingLive] = useState(false);
   const [hasError, setHasError] = useState(false);
   const failCountRef = useRef(0);
   const lastScan = cam.lastEvent || (recentFaceScans || []).find(s => s.cameraIp === cam.ip || s.cameraId === cam.id);
 
-  // Bulutdagi yangi kadr kelganda yangilash (Boshqa Wi-Fi yoki mobil internet rejimida zudlik bilan aks etadi)
+  // Bulutdagi oxirgi kadr kelganda yangilab turish (oflayn yoki zaxira rejimida)
   useEffect(() => {
-    if (cloudFrame) {
-      if (!isDirectLocal || !liveBaseUrl || failCountRef.current > 0 || !isLiveActive) {
-        setFrameSrc(cloudFrame);
-        setHasError(false);
-        setIsLiveActive(Boolean(hasRealCloudFrame || isSchoolLocalOnline));
-      }
+    if (cloudFrame && !isStreamingLive) {
+      setFrameSrc(cloudFrame);
+      setHasError(false);
     }
-  }, [cloudFrame, isDirectLocal, hasRealCloudFrame, isSchoolLocalOnline, liveBaseUrl, isLiveActive]);
+  }, [cloudFrame, isStreamingLive]);
 
   useEffect(() => {
     // Agar jonli efir pauza qilingan bo'lsa
     if (!livePlaying) {
-      setIsLiveActive(false);
+      setIsStreamingLive(false);
       return;
     }
 
-    // 1. Faqat lokal maktab tarmog'ida bo'lsak, to'g'ridan-to'g'ri lokal ko'prikdan yuqori FPS bilan olinadi
-    if (isDirectLocal && liveBaseUrl) {
+    // Jonli oqim olish (Lokal tarmoq yoki Global Cloudflare Tunnel orqali)
+    if (streamBaseUrl && (isDirectLocal || isSchoolLocalOnline)) {
       let isMounted = true;
       let timer = null;
 
       const loadNext = () => {
-        if (!isMounted || !isDirectLocal || !liveBaseUrl) return;
-        const cleanBase = liveBaseUrl.replace(/\/+$/, '');
+        if (!isMounted || !streamBaseUrl) return;
+        const cleanBase = streamBaseUrl.replace(/\/+$/, '');
         const nextUrl = `${cleanBase}/api/camera/snapshot/${cam.ip}?t=${Date.now()}`;
         const img = new Image();
         img.onload = () => {
           img.onload = null;
           img.onerror = null;
           if (!isMounted) return;
-          failCountRef.current = 0;
-          setFrameSrc(nextUrl);
-          setIsLiveActive(true);
-          setHasError(false);
-          timer = setTimeout(loadNext, 750);
+          // Dummy 1x1 qora piksel tekshiruvi: faol kameradan kelgan haqiqiy rasm eni > 20px bo'ladi
+          if (img.naturalWidth > 20) {
+            failCountRef.current = 0;
+            setFrameSrc(nextUrl);
+            setIsStreamingLive(true);
+            setHasError(false);
+            // Lokal rejimda har 750ms, tunnel orqali har 1750ms yangilanadi
+            timer = setTimeout(loadNext, isDirectLocal ? 750 : 1750);
+          } else {
+            // Kamera vaqtincha javob bermayapti (1x1 dummy rasm)
+            failCountRef.current += 1;
+            setIsStreamingLive(false);
+            if (cloudFrame) setFrameSrc(cloudFrame);
+            timer = setTimeout(loadNext, 4000);
+          }
         };
         img.onerror = () => {
           img.onload = null;
           img.onerror = null;
           if (!isMounted) return;
           failCountRef.current += 1;
+          setIsStreamingLive(false);
           if (cloudFrame) {
             setFrameSrc(cloudFrame);
-            setIsLiveActive(Boolean(hasRealCloudFrame || isSchoolLocalOnline));
           }
-          timer = setTimeout(loadNext, 5000);
+          timer = setTimeout(loadNext, isDirectLocal ? 4000 : 8000);
         };
         img.src = nextUrl;
       };
 
-      const initTimer = setTimeout(loadNext, (index % 6) * 125);
+      const initTimer = setTimeout(loadNext, (index % 6) * 150);
       return () => {
         isMounted = false;
         clearTimeout(initTimer);
         if (timer) clearTimeout(timer);
       };
+    } else {
+      setIsStreamingLive(false);
+      if (cloudFrame) {
+        setFrameSrc(cloudFrame);
+        setHasError(false);
+      }
     }
-
-    // 2. Boshqa Wi-Fi, uy tarmog'i yoki mobil internetda (Supabase Cloud Relay orqali jonli efir)
-    if (cloudFrame) {
-      setFrameSrc(cloudFrame);
-      setIsLiveActive(Boolean(hasRealCloudFrame || isSchoolLocalOnline));
-      setHasError(false);
-    }
-  }, [cam.ip, livePlaying, index, isDirectLocal, liveBaseUrl, cloudFrame, hasRealCloudFrame, isSchoolLocalOnline]);
+  }, [cam.ip, livePlaying, index, isDirectLocal, streamBaseUrl, cloudFrame, isSchoolLocalOnline]);
 
   return (
     <div className="bg-slate-50 dark:bg-slate-800/70 rounded-xl border border-slate-200 dark:border-slate-700/80 overflow-hidden flex flex-col transition-all hover:border-blue-400 hover:shadow-md">
@@ -281,12 +289,16 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
         )}
 
         {/* Jonli Efir Belgisi (Live Badge) */}
-        <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-xs text-[10px] font-bold text-white border border-white/10">
-          <span className={`w-1.5 h-1.5 rounded-full ${isLiveActive ? 'bg-emerald-500 animate-pulse' : 'bg-blue-400'}`}></span>
+        <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-xs text-[10px] font-bold text-white border border-white/10">
+          <span className={`w-1.5 h-1.5 rounded-full ${
+            isStreamingLive 
+              ? 'bg-emerald-500 animate-pulse' 
+              : (isSchoolLocalOnline ? 'bg-amber-400' : 'bg-slate-400')
+          }`}></span>
           <span>
-            {isLiveActive 
-              ? (isLocalConnected ? 'LIVE' : 'JONLI KO\'PRIK') 
-              : 'OXIRGI KADR (BULUT)'}
+            {isStreamingLive 
+              ? (isDirectLocal ? 'LIVE' : 'JONLI (TUNNEL)') 
+              : (isSchoolLocalOnline ? 'KADR KUTILMOQDA' : 'OXIRGI KADR (OFFLAYN)')}
           </span>
         </div>
 
@@ -1256,9 +1268,11 @@ export const DirectorDashboard = () => {
                 const modalCloudFrame = (rawModalFrame && isValidSrc(rawModalFrame)) ? rawModalFrame : `/photos/camera_${activeModalCam.ip}.jpg`;
                 const cleanStreamBase = isLocalConnected
                   ? (bridgeUrl && bridgeUrl.startsWith('http') ? bridgeUrl : 'http://localhost:5001')
+                  : (globalStreamUrl && globalStreamUrl.startsWith('http') && !isDeadTunnel(globalStreamUrl) ? globalStreamUrl : null);
+                const modalLiveUrl = cleanStreamBase && (isLocalConnected || isSchoolLocalOnline) 
+                  ? `${cleanStreamBase.replace(/\/+$/, '')}/api/camera/stream/${activeModalCam.ip}` 
                   : null;
-                const modalLiveUrl = cleanStreamBase ? `${cleanStreamBase.replace(/\/+$/, '')}/api/camera/stream/${activeModalCam.ip}` : null;
-                const isModalLive = Boolean(modalLiveUrl || (isSchoolLocalOnline && rawModalFrame && isValidSrc(rawModalFrame)));
+                const isModalLive = Boolean(modalLiveUrl && (isLocalConnected || isSchoolLocalOnline));
 
                 return (
                   <>
@@ -1273,10 +1287,10 @@ export const DirectorDashboard = () => {
                       }}
                     />
                     <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded bg-black/70 text-xs font-bold text-white border border-white/20">
-                      <span className={`w-2 h-2 rounded-full ${isModalLive ? 'bg-emerald-500 animate-pulse' : 'bg-blue-400'}`}></span>
-                      {modalLiveUrl 
-                        ? (isLocalConnected ? 'LIVE VIDEO OQIMI' : 'GLOBAL LIVE VIDEO OQIMI')
-                        : (isModalLive ? 'JONLI BULUT KO\'PRIGI (LIVE)' : 'OXIRGI KADR (BULUT)')}
+                      <span className={`w-2 h-2 rounded-full ${isModalLive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                      {isModalLive
+                        ? (isLocalConnected ? 'LIVE VIDEO OQIMI (LOKAL)' : 'JONLI EFIR (TUNNEL)')
+                        : 'OXIRGI KADR (MAKTAB OFFLAYN)'}
                     </div>
                   </>
                 );
