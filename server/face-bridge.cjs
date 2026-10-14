@@ -479,8 +479,43 @@ async function sendHeartbeatToSupabase() {
   } catch (err) {}
 }
 
+async function loadRecentScansFromSupabase() {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/face_scans?created_at=gte.${today}T00:00:00&order=id.desc&limit=1000`, {
+      headers: {
+        'apikey': SUPABASE_CONFIG.KEY,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`
+      }
+    });
+    if (res.ok) {
+      const rows = await res.json();
+      if (Array.isArray(rows) && rows.length > 0) {
+        rows.forEach(r => {
+          const scan = {
+            id: `scan-${r.id}`,
+            serialNo: r.id,
+            employeeNo: r.employee_no,
+            name: r.name,
+            cameraName: r.camera_name,
+            cameraIp: r.camera_ip,
+            direction: r.direction,
+            timeFormatted: r.time_formatted,
+            timestamp: r.created_at
+          };
+          if (!recentScans.some(s => s.serialNo === scan.serialNo && s.cameraIp === scan.cameraIp)) {
+            recentScans.push(scan);
+          }
+        });
+        console.log(`[PLAYBACK] Supabase dan bugungi ${rows.length} ta o'tish voqealari xotiraga yuklandi.`);
+      }
+    }
+  } catch (err) {}
+}
+
 loadCamerasFromSupabase();
 loadSchoolDataFromSupabase();
+loadRecentScansFromSupabase();
 setTimeout(sendHeartbeatToSupabase, 1500);
 
 // Eski bazada o'chirilgan, lekin apparat xotirasida qolib ketgan foydalanuvchilarni tozalash (masalan, 424 va 433)

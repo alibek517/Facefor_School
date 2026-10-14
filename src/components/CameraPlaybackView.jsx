@@ -67,6 +67,8 @@ export const CameraPlaybackView = ({
   // Kamera tanlash: 'all' (barchasi sinxron) yoki aniq kamera id / ip
   const [selectedCameraIp, setSelectedCameraIp] = useState(initialCameraIp || cameras[0]?.ip || '192.168.1.35');
   const [viewMode, setViewMode] = useState('single'); // 'single' yoki 'grid'
+  const [eventsScope, setEventsScope] = useState('camera'); // 'camera' yoki 'all'
+  const [eventsSearch, setEventsSearch] = useState('');
 
   useEffect(() => {
     if (initialCameraIp) {
@@ -181,10 +183,20 @@ export const CameraPlaybackView = ({
 
   // Turniket voqealari (hozirgi kamera va sana uchun)
   const cameraEvents = useMemo(() => {
-    const list = timelineData?.events || (allScans || []).filter(s => 
-      (s.cameraIp === selectedCameraIp || s.cameraId === selectedCameraIp) &&
-      (!s.timestamp || s.timestamp.startsWith(selectedDate))
-    ).map(s => {
+    // 1. Agar bridge timeline da voqealar mavjud bo'lsa (uzunligi > 0)
+    if (timelineData?.events && Array.isArray(timelineData.events) && timelineData.events.length > 0) {
+      return [...timelineData.events].sort((a, b) => a.seconds - b.seconds);
+    }
+
+    // 2. Aks holda Supabase allScans dan shu kamera bo'yicha olamiz
+    const filtered = (allScans || []).filter(s => {
+      const matchCam = (
+        s.cameraIp === selectedCameraIp || 
+        s.cameraId === selectedCameraIp ||
+        (s.cameraName && activeCam?.name && s.cameraName.toLowerCase().includes(activeCam.name.toLowerCase().split(' ')[0]))
+      );
+      return matchCam;
+    }).map(s => {
       const [hh, mm, ss] = (s.timeFormatted || '00:00:00').split(':').map(Number);
       return {
         id: s.id,
@@ -192,12 +204,43 @@ export const CameraPlaybackView = ({
         employeeNo: s.employeeNo,
         timeFormatted: s.timeFormatted,
         seconds: (hh || 0) * 3600 + (mm || 0) * 60 + (ss || 0),
-        direction: s.direction
+        direction: s.direction,
+        cameraIp: s.cameraIp,
+        cameraName: s.cameraName
       };
     });
 
-    return list.sort((a, b) => a.seconds - b.seconds);
-  }, [timelineData, allScans, selectedCameraIp, selectedDate]);
+    return filtered.sort((a, b) => a.seconds - b.seconds);
+  }, [timelineData, allScans, selectedCameraIp, activeCam]);
+
+  // Barcha kameralar bo'yicha jami voqealar
+  const allCameraEvents = useMemo(() => {
+    return (allScans || []).map(s => {
+      const [hh, mm, ss] = (s.timeFormatted || '00:00:00').split(':').map(Number);
+      return {
+        id: s.id,
+        name: s.name,
+        employeeNo: s.employeeNo,
+        timeFormatted: s.timeFormatted,
+        seconds: (hh || 0) * 3600 + (mm || 0) * 60 + (ss || 0),
+        direction: s.direction,
+        cameraIp: s.cameraIp,
+        cameraName: s.cameraName
+      };
+    }).sort((a, b) => a.seconds - b.seconds);
+  }, [allScans]);
+
+  // Ko'rsatiladigan voqealar (Scope va Qidiruv bo'yicha)
+  const displayedEvents = useMemo(() => {
+    const base = eventsScope === 'all' ? allCameraEvents : cameraEvents;
+    if (!eventsSearch.trim()) return base;
+    const q = eventsSearch.toLowerCase().trim();
+    return base.filter(ev => 
+      (ev.name && ev.name.toLowerCase().includes(q)) ||
+      (ev.employeeNo && String(ev.employeeNo).includes(q)) ||
+      (ev.timeFormatted && ev.timeFormatted.includes(q))
+    );
+  }, [eventsScope, allCameraEvents, cameraEvents, eventsSearch]);
 
   // Eng yaqin voqealarni filtrlash (Joriy vaqt atrofidagi voqealar)
   const nearbyEvents = useMemo(() => {
@@ -664,7 +707,7 @@ export const CameraPlaybackView = ({
         </div>
 
         {/* O'ng qism (1 ustun): Shu vaqtdagi Turniket Voqealari ro'yxati */}
-        <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3 border border-slate-200 dark:border-slate-700/80 space-y-3 flex flex-col h-full max-h-[580px]">
+        <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3 border border-slate-200 dark:border-slate-700/80 space-y-2.5 flex flex-col h-full max-h-[580px]">
           
           <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-1.5">
@@ -674,22 +717,58 @@ export const CameraPlaybackView = ({
               </h3>
             </div>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-mono font-bold">
-              {cameraEvents.length} ta qayd
+              {displayedEvents.length} ta qayd
             </span>
           </div>
 
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-            Ro'yxatdagi istalgan o'quvchi yoki o'qituvchini bosganingizda, video darhol u o'tgan soniyaga o'tadi:
+          {/* Scope almashtirish: Shu kamera / Barcha kameralar */}
+          <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-200/80 dark:bg-slate-900/60 rounded-lg text-[10px] font-bold">
+            <button
+              onClick={() => setEventsScope('camera')}
+              className={`py-1 rounded-md transition-all ${
+                eventsScope === 'camera'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Shu kamera ({cameraEvents.length})
+            </button>
+            <button
+              onClick={() => setEventsScope('all')}
+              className={`py-1 rounded-md transition-all ${
+                eventsScope === 'all'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Barchasi ({allCameraEvents.length})
+            </button>
+          </div>
+
+          {/* Qidiruv */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="O'quvchi ismi yoki ID..."
+              value={eventsSearch}
+              onChange={(e) => setEventsSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-1 bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-purple-500 text-slate-800 dark:text-slate-200"
+            />
+          </div>
+
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+            Istalgan shaxsni tanlaganingizda, video darhol u o'tgan soniyaga o'tadi:
           </p>
 
           {/* O'tishlar ro'yxati (Scrollable) */}
           <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 text-xs">
-            {cameraEvents.length === 0 ? (
+            {displayedEvents.length === 0 ? (
               <div className="py-8 text-center text-slate-400 text-xs">
-                Bu kamera uchun o'tishlar topilmadi
+                {eventsSearch ? "Qidiruv bo'yicha o'tishlar topilmadi" : "Bu kamera uchun o'tishlar topilmadi"}
               </div>
             ) : (
-              cameraEvents.map((ev, idx) => {
+              displayedEvents.map((ev, idx) => {
                 const isSelected = Math.abs(ev.seconds - currentSeconds) <= 2;
                 const isEntry = ev.direction === 'in';
                 const empPadded = (ev.employeeNo || '').replace(/^s-/, '').padStart(8, '0');
@@ -698,13 +777,16 @@ export const CameraPlaybackView = ({
                   <div
                     key={ev.id || idx}
                     onClick={() => {
+                      if (ev.cameraIp && ev.cameraIp !== selectedCameraIp) {
+                        setSelectedCameraIp(ev.cameraIp);
+                      }
                       setCurrentSeconds(ev.seconds);
                       setSelectedEvent(ev);
                       setFrameNotFound(false);
                     }}
                     className={`p-2 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-2 ${
                       isSelected
-                        ? 'bg-purple-100 dark:bg-purple-950/80 border-purple-400 shadow-xs'
+                        ? 'bg-purple-100 dark:bg-purple-950/80 border-purple-400 shadow-xs ring-1 ring-purple-400'
                         : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-purple-300'
                     }`}
                   >
@@ -719,8 +801,13 @@ export const CameraPlaybackView = ({
                         <div className="text-[11px] font-bold text-slate-900 dark:text-white truncate">
                           {ev.name}
                         </div>
-                        <div className="text-[10px] text-slate-400 font-mono">
-                          #{ev.employeeNo}
+                        <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                          <span>#{ev.employeeNo}</span>
+                          {eventsScope === 'all' && ev.cameraName && (
+                            <span className="text-[9px] px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300">
+                              {ev.cameraName.split(' ')[0]} {ev.cameraName.split(' ')[1] || ''}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
