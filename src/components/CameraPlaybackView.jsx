@@ -44,13 +44,17 @@ const timeStrToSeconds = (timeStr) => {
 
 export const CameraPlaybackView = ({ 
   cameras = [], 
-  effectiveBaseUrl, 
+  effectiveBaseUrl: passedEffectiveBaseUrl, 
   initialDate,
   initialCameraIp,
   allScans = [],
   onSwitchToLive
 }) => {
-  const { isLocalConnected, cameraLatestFrames } = useSchool();
+  const { isLocalConnected, cameraLatestFrames, globalStreamUrl } = useSchool();
+  const activeBaseUrl = (passedEffectiveBaseUrl && passedEffectiveBaseUrl.startsWith('http') ? passedEffectiveBaseUrl : '') ||
+    (globalStreamUrl && globalStreamUrl.startsWith('http') ? globalStreamUrl : '') ||
+    (isLocalConnected ? 'http://localhost:5001' : '');
+
   const todayStr = useMemo(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -106,8 +110,8 @@ export const CameraPlaybackView = ({
 
   // Mavjud sanalarni yuklash
   useEffect(() => {
-    if (!effectiveBaseUrl) return;
-    fetch(`${effectiveBaseUrl}/api/camera/playback/dates`)
+    if (!activeBaseUrl) return;
+    fetch(`${activeBaseUrl}/api/camera/playback/dates`)
       .then(r => r.json())
       .then(d => {
         if (d?.success && Array.isArray(d.dates) && d.dates.length > 0) {
@@ -115,13 +119,13 @@ export const CameraPlaybackView = ({
         }
       })
       .catch(() => {});
-  }, [effectiveBaseUrl]);
+  }, [activeBaseUrl]);
 
   // Tanlangan kamera va sana bo'yicha timeline ma'lumotlarini olish
   useEffect(() => {
-    if (!effectiveBaseUrl || !selectedCameraIp) return;
+    if (!activeBaseUrl || !selectedCameraIp) return;
     setIsLoadingTimeline(true);
-    fetch(`${effectiveBaseUrl}/api/camera/playback/timeline?ip=${selectedCameraIp}&date=${selectedDate}`)
+    fetch(`${activeBaseUrl}/api/camera/playback/timeline?ip=${selectedCameraIp}&date=${selectedDate}`)
       .then(r => r.json())
       .then(d => {
         if (d?.success) {
@@ -130,7 +134,7 @@ export const CameraPlaybackView = ({
       })
       .catch(() => {})
       .finally(() => setIsLoadingTimeline(false));
-  }, [effectiveBaseUrl, selectedCameraIp, selectedDate]);
+  }, [activeBaseUrl, selectedCameraIp, selectedDate]);
 
   // Play / Pause timer tsikli
   useEffect(() => {
@@ -190,7 +194,11 @@ export const CameraPlaybackView = ({
   // Kadr URL manzili
   const getFrameUrl = (ip, seconds) => {
     const tStr = secondsToTimeStr(seconds);
-    return `${effectiveBaseUrl}/api/camera/playback/frame?ip=${ip}&date=${selectedDate}&time=${tStr}&_=${Math.floor(seconds / 2)}`;
+    if (!activeBaseUrl) {
+      const freshCloud = cameraLatestFrames?.[ip];
+      return (freshCloud && typeof freshCloud === 'string') ? freshCloud : `/photos/camera_${ip}.jpg`;
+    }
+    return `${activeBaseUrl}/api/camera/playback/frame?ip=${ip}&date=${selectedDate}&time=${tStr}&_=${Math.floor(seconds / 2)}`;
   };
 
   // Slider orqali vaqtni surish
@@ -245,17 +253,22 @@ export const CameraPlaybackView = ({
             />
           </div>
 
-          {/* Bugun tugmasi */}
-          <button
-            onClick={() => setSelectedDate(todayStr)}
-            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-              selectedDate === todayStr
-                ? 'bg-purple-50 dark:bg-purple-950/60 border-purple-300 text-purple-700 dark:text-purple-300'
-                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900'
-            }`}
-          >
-            Bugun
-          </button>
+          {/* Arxivdagi mavjud sanalar tugmalari */}
+          <div className="flex items-center gap-1 flex-wrap">
+            {availableDates.map(d => (
+              <button
+                key={d}
+                onClick={() => setSelectedDate(d)}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                  selectedDate === d
+                    ? 'bg-purple-600 border-purple-600 text-white shadow-xs'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:border-purple-300'
+                }`}
+              >
+                {d === todayStr ? `Bugun (${d})` : d}
+              </button>
+            ))}
+          </div>
 
           {/* Rejim: Yagona kamera vs 6 ta Grid */}
           <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700">
@@ -387,8 +400,6 @@ export const CameraPlaybackView = ({
                     const freshCloud = cameraLatestFrames?.[selectedCameraIp];
                     if (freshCloud && typeof freshCloud === 'string' && (freshCloud.startsWith('data:image/') || freshCloud.startsWith('http'))) {
                       e.target.src = freshCloud;
-                    } else {
-                      e.target.src = `/photos/camera_${selectedCameraIp}.jpg`;
                     }
                   }}
                 />
@@ -439,7 +450,10 @@ export const CameraPlaybackView = ({
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = `/photos/camera_${c.ip}.jpg`;
+                        const freshCloud = cameraLatestFrames?.[c.ip];
+                        if (freshCloud && typeof freshCloud === 'string' && (freshCloud.startsWith('data:image/') || freshCloud.startsWith('http'))) {
+                          e.target.src = freshCloud;
+                        }
                       }}
                     />
                     <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-bold text-white">
@@ -669,7 +683,7 @@ export const CameraPlaybackView = ({
                     <div className="flex items-center gap-2 min-w-0">
                       <StudentAvatar
                         student={{ employeeNo: empPadded, name: ev.name }}
-                        effectiveBaseUrl={effectiveBaseUrl}
+                        effectiveBaseUrl={activeBaseUrl}
                         size="w-7 h-7"
                         rounded="rounded-lg"
                       />
@@ -731,6 +745,13 @@ export const CameraPlaybackView = ({
                 src={getFrameUrl(fullscreenCam.ip, currentSeconds)}
                 alt={fullscreenCam.name}
                 className="w-full h-full object-contain"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  const freshCloud = cameraLatestFrames?.[fullscreenCam.ip];
+                  if (freshCloud && typeof freshCloud === 'string' && (freshCloud.startsWith('data:image/') || freshCloud.startsWith('http'))) {
+                    e.target.src = freshCloud;
+                  }
+                }}
               />
             </div>
 

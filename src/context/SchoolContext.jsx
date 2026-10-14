@@ -220,12 +220,7 @@ export const SchoolProvider = ({ children }) => {
   const manualRetryLocal = useRef(false);
   const [globalStreamUrl, setGlobalStreamUrl] = useState(() => {
     try {
-      const saved = localStorage.getItem('school_global_stream_url') || '';
-      if (saved.includes('trycloudflare.com')) {
-        localStorage.removeItem('school_global_stream_url');
-        return '';
-      }
-      return saved;
+      return localStorage.getItem('school_global_stream_url') || '';
     } catch (e) {
       return '';
     }

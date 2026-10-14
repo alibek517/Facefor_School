@@ -453,8 +453,8 @@ export const DirectorDashboard = () => {
     window.location.hostname.startsWith('10.')
   );
   const effectiveBaseUrl = isLocalConnected
-    ? (bridgeUrl && bridgeUrl.startsWith('http') && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
-    : (globalStreamUrl && globalStreamUrl.startsWith('http') && !globalStreamUrl.includes('trycloudflare.com') && !isDeadTunnel(globalStreamUrl) ? globalStreamUrl : '');
+    ? (bridgeUrl && bridgeUrl.startsWith('http') ? bridgeUrl : 'http://localhost:5001')
+    : (globalStreamUrl && globalStreamUrl.startsWith('http') && !isDeadTunnel(globalStreamUrl) ? globalStreamUrl : '');
   const [selectedClass, setSelectedClass] = useState('all');
   const [cameraFilter, setCameraFilter] = useState('all'); // 'all', 'in', 'out'
   const [cameraMode, setCameraMode] = useState('live'); // 'live' yoki 'playback'
