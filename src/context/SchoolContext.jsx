@@ -111,68 +111,16 @@ export const SchoolProvider = ({ children }) => {
     }
   });
 
-  // Asosiy ma'lumotlar
-  const [classes, setClasses] = useState(() => {
-    return getSafeStorage('school_classes', INITIAL_CLASSES, (arr) => Array.isArray(arr) && arr.length >= 20);
-  });
-
-  const [teachers, setTeachers] = useState(() => {
-    try {
-      const saved = localStorage.getItem('school_teachers');
-      if (saved) {
-        const arr = JSON.parse(saved);
-        // Agar eski to'qima o'qituvchilar bo'lsa, tozalaymiz
-        if (Array.isArray(arr) && arr.some(t => t.id === 't-urazmetov' || (t.name && t.name.includes("O'razmetov")))) {
-          localStorage.removeItem('school_teachers');
-          return [];
-        }
-        return arr;
-      }
-    } catch (e) {}
-    return [];
-  });
-
-  const [students, setStudents] = useState(() => {
-    return getSafeStorage('school_students', INITIAL_STUDENTS, (arr) => Array.isArray(arr) && arr.length >= 700);
-  });
-
-  const [schedules, setSchedules] = useState(() => {
-    return getSafeStorage('school_schedules', INITIAL_SCHEDULE, (arr) => Array.isArray(arr) && arr.length >= 500 && arr.some(x => x.day === 'Seshanba'));
-  });
-
-  const [attendanceList, setAttendanceList] = useState(() => {
-    return getSafeStorage('school_attendance', INITIAL_ATTENDANCE, (arr) => Array.isArray(arr));
-  });
-
-  const [teacherAttendance, setTeacherAttendance] = useState(() => {
-    try {
-      const saved = localStorage.getItem('school_teacher_attendance');
-      if (saved) {
-        const arr = JSON.parse(saved);
-        if (Array.isArray(arr) && arr.some(t => t.teacherId === 't-urazmetov')) {
-          localStorage.removeItem('school_teacher_attendance');
-          return [];
-        }
-        return arr;
-      }
-    } catch (e) {}
-    return [];
-  });
-
-  const [hourlyAttendance, setHourlyAttendance] = useState(() => {
-    return getSafeStorage('school_hourly_attendance', INITIAL_HOURLY_ATTENDANCE);
-  });
-
-  // Rahbariyat va Administratorlar ro'yxati (Barcha ruxsatlar bilan)
-  const [leadership, setLeadership] = useState(() => {
-    return getSafeStorage('school_leadership', SCHOOL_LEADERSHIP, (arr) => Array.isArray(arr) && arr.length > 0);
-  });
-
-  const [notifications, setNotifications] = useState(() => {
-    const list = getSafeStorage('school_notifications', INITIAL_NOTIFICATIONS, (arr) => Array.isArray(arr));
-    return (list || []).filter(n => !n.message?.includes('Qodirov Alijon'));
-  });
-
+  // Asosiy ma'lumotlar - 100% DINAMIK: LocalStorage'da saqlanmaydi, doimo Supabase bulutidan olinadi
+  const [classes, setClasses] = useState(INITIAL_CLASSES);
+  const [teachers, setTeachers] = useState([]);
+  const [students, setStudents] = useState(INITIAL_STUDENTS);
+  const [schedules, setSchedules] = useState(INITIAL_SCHEDULE);
+  const [attendanceList, setAttendanceList] = useState(INITIAL_ATTENDANCE);
+  const [teacherAttendance, setTeacherAttendance] = useState([]);
+  const [hourlyAttendance, setHourlyAttendance] = useState(INITIAL_HOURLY_ATTENDANCE);
+  const [leadership, setLeadership] = useState(SCHOOL_LEADERSHIP);
+  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [activeToast, setActiveToast] = useState(null);
 
   // Hikvision Face-ID qurilmasi holati (192.168.1.35)
@@ -195,9 +143,7 @@ export const SchoolProvider = ({ children }) => {
     { id: 'cam-5', ip: '192.168.1.33', type: 'in', name: 'Turniket 5 (Kirish)', location: 'Chiqish yo\'lagi (2)', online: true },
   ];
 
-  const [cameras, setCameras] = useState(() => {
-    return getSafeStorage('school_cameras', DEFAULT_CAMERAS, (arr) => Array.isArray(arr) && arr.length >= 6);
-  });
+  const [cameras, setCameras] = useState(DEFAULT_CAMERAS);
 
   // 6 ta kameraning oxirgi bulut kadrlari (Global rejim uchun)
   const [cameraLatestFrames, setCameraLatestFrames] = useState({});
@@ -343,7 +289,25 @@ export const SchoolProvider = ({ children }) => {
     };
   }, []);
 
-  // LocalStorage saqlash
+  // LocalStorage keshlarini tozalash va faqat foydalanuvchi sessiyasini saqlash (100% dinamik bulut rejimi)
+  useEffect(() => {
+    const keysToPurge = [
+      'school_classes',
+      'school_teachers',
+      'school_students',
+      'school_schedules',
+      'school_attendance',
+      'school_notifications',
+      'school_teacher_attendance',
+      'school_hourly_attendance',
+      'school_leadership',
+      'school_cameras'
+    ];
+    keysToPurge.forEach(k => {
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
+  }, []);
+
   useEffect(() => {
     try {
       if (currentUser) {
@@ -353,20 +317,8 @@ export const SchoolProvider = ({ children }) => {
       }
       localStorage.setItem('school_teacher_id', selectedTeacherId);
       localStorage.setItem('school_inspector_name', inspectorName);
-      localStorage.setItem('school_classes', JSON.stringify(classes));
-      localStorage.setItem('school_teachers', JSON.stringify(teachers));
-      localStorage.setItem('school_students', JSON.stringify(students));
-      localStorage.setItem('school_schedules', JSON.stringify(schedules));
-      localStorage.setItem('school_attendance', JSON.stringify(attendanceList));
-      localStorage.setItem('school_notifications', JSON.stringify(notifications));
-      localStorage.setItem('school_teacher_attendance', JSON.stringify(teacherAttendance));
-      localStorage.setItem('school_hourly_attendance', JSON.stringify(hourlyAttendance));
-      localStorage.setItem('school_leadership', JSON.stringify(leadership));
-      localStorage.setItem('school_cameras', JSON.stringify(cameras));
-    } catch (e) {
-      console.warn('LocalStorage error:', e);
-    }
-  }, [currentUser, selectedTeacherId, inspectorName, classes, teachers, students, schedules, attendanceList, notifications, teacherAttendance, hourlyAttendance, leadership, cameras]);
+    } catch (e) {}
+  }, [currentUser, selectedTeacherId, inspectorName]);
 
   // O'qituvchi holatini o'zgartirish (maktab ichida / tashqarida)
   const toggleTeacherPresence = (teacherId) => {
@@ -574,24 +526,31 @@ export const SchoolProvider = ({ children }) => {
     );
   };
 
-  // Hikvision Ko'prik serveri bilan avtomatik bog'lanish (Port 5001)
+  // Hikvision Ko'prik serveri bilan avtomatik bog'lanish (Port 5001 yoki Cloudflare tunnel)
   const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
   const bridgeHost = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost';
   const BRIDGE_API = (isLocalHostEnv && !isHttps) ? `http://${bridgeHost}:5001` : '';
+
+  const getActiveBridgeUrl = () => {
+    if (isLocalHostEnv && !isHttps && BRIDGE_API) return BRIDGE_API;
+    if (globalStreamUrl && globalStreamUrl.startsWith('http')) return globalStreamUrl;
+    return '';
+  };
 
   // Serverga va Supabase bulut bazasiga markaziy saqlash (Barcha qurilmalar va brauzerlar uchun global)
   const saveToServer = async (key, data) => {
     // 1. Supabase bulut bazasiga zudlik bilan saqlash
     saveModuleToSupabase(key, data).catch(() => {});
 
-    // 2. Mahalliy serverga (face-bridge.cjs) ham faqat lokal muhitda saqlash
-    if (isLocalHostEnv && !isHttps && BRIDGE_API) {
+    // 2. Faol ko'prik serveriga (lokal yoki Cloudflare tunnel orqali) xabar berish
+    const targetUrl = getActiveBridgeUrl();
+    if (targetUrl) {
       try {
-        await fetch(`${BRIDGE_API}/api/school/save`, {
+        fetch(`${targetUrl}/api/school/save`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ key, data })
-        });
+        }).catch(() => {});
       } catch (e) {}
     }
   };
@@ -787,7 +746,6 @@ export const SchoolProvider = ({ children }) => {
             }
             else if (key === 'cameras' && Array.isArray(data) && data.length >= 6) {
               setCameras(data);
-              try { localStorage.setItem('school_cameras', JSON.stringify(data)); } catch (e) {}
             }
           }
         })
@@ -1090,7 +1048,6 @@ export const SchoolProvider = ({ children }) => {
       return c;
     });
     setCameras(updated);
-    try { localStorage.setItem('school_cameras', JSON.stringify(updated)); } catch (e) {}
 
     // 1. Supabase bulut bazasiga saqlash (Tartibi bilan ham saqlanadi)
     await saveCamerasToSupabase(updated);
@@ -1111,7 +1068,6 @@ export const SchoolProvider = ({ children }) => {
   const reorderCameras = async (newOrder) => {
     if (!Array.isArray(newOrder) || newOrder.length === 0) return;
     setCameras(newOrder);
-    try { localStorage.setItem('school_cameras', JSON.stringify(newOrder)); } catch (e) {}
     
     // Supabase bulutiga aynan yangi tartibi bilan saqlaymiz
     await saveCamerasToSupabase(newOrder);
@@ -1287,18 +1243,43 @@ export const SchoolProvider = ({ children }) => {
     }
   };
 
-  // =================== CRUD: O'QUVCHILAR ===================
+  // =================== CRUD: O'QUVCHILAR (100% DINAMIK VA FACE-ID SINXRON) ===================
   const addStudent = (studentData) => {
+    // Eng katta mavjud ID raqamini aniqlash (Face-ID kamerasi uchun to'g'ri 8 xonali raqam)
+    let maxEmp = 0;
+    (students || []).forEach(s => {
+      const num = parseInt(String(s.studentId || s.employeeNo || s.id || '').replace(/^s-/, ''), 10);
+      if (!isNaN(num) && num > maxEmp && num < 90000000) {
+        maxEmp = num;
+      }
+    });
+    const nextEmpNo = String(maxEmp + 1).padStart(8, '0');
     const newStudent = {
       ...studentData,
-      id: 's-' + Date.now()
+      id: studentData.id || `s-${nextEmpNo}`,
+      studentId: studentData.studentId || nextEmpNo,
+      employeeNo: studentData.employeeNo || nextEmpNo,
+      isFaceEnrolled: false
     };
+
     setStudents(prev => {
       const next = [newStudent, ...prev];
       saveToServer('students', next);
       return next;
     });
-    showToast('Qo\'shildi', 'Yangi o\'quvchi serverga saqlandi.', 'success');
+
+    const targetUrl = getActiveBridgeUrl();
+    if (targetUrl) {
+      try {
+        fetch(`${targetUrl}/api/school/add-student`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ student: newStudent })
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    showToast('Qo\'shildi', 'Yangi o\'quvchi saqlandi va Face-ID ga kiritildi.', 'success');
   };
 
   const updateStudent = (studentId, updatedData) => {
@@ -1307,24 +1288,35 @@ export const SchoolProvider = ({ children }) => {
       const cls = classes.find(c => c.id === updatedData.classId);
       if (cls) resolvedData.className = cls.name;
     }
+    let updatedStudentObj = null;
     setStudents(prev => {
-      const next = prev.map(s => (s.id === studentId || s.studentId === studentId) ? { ...s, ...resolvedData } : s);
+      const next = prev.map(s => {
+        if (s.id === studentId || s.studentId === studentId) {
+          updatedStudentObj = { ...s, ...resolvedData };
+          return updatedStudentObj;
+        }
+        return s;
+      });
       saveToServer('students', next);
       return next;
     });
-    try {
-      fetch(`${BRIDGE_API}/api/school/update-student`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId, updatedData: resolvedData })
-      }).catch(() => {});
-    } catch (e) {}
-    showToast('Yangilandi', 'O\'quvchi ma\'lumotlari Supabase bulut bazasida yangilandi.', 'info');
+
+    const targetUrl = getActiveBridgeUrl();
+    if (targetUrl && updatedStudentObj) {
+      try {
+        fetch(`${targetUrl}/api/school/update-student`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentId, updatedData: resolvedData, student: updatedStudentObj })
+        }).catch(() => {});
+      } catch (e) {}
+    }
+    showToast('Yangilandi', 'O\'quvchi ma\'lumotlari yangilandi va Face-ID apparatlariga uzatildi.', 'info');
   };
 
   const deleteStudent = async (studentId) => {
     const studentToDel = students.find(s => s.id === studentId || s.studentId === studentId);
-    const empNo = studentToDel ? (studentToDel.studentId || String(studentToDel.id).replace(/^s-/, '')) : studentId;
+    const empNo = studentToDel ? (studentToDel.studentId || String(studentToDel.id).replace(/^s-/, '')) : String(studentId).replace(/^s-/, '');
 
     // 1. Frontend & Supabase holatidan o'chirish
     setStudents(prev => {
@@ -1333,10 +1325,11 @@ export const SchoolProvider = ({ children }) => {
       return next;
     });
 
-    // 2. Lokal ko'prik serveri orqali barcha 6 ta Hikvision kameralarining o'zidan ham o'chirish
-    if (BRIDGE_API) {
+    // 2. Face-ID apparatlaridan o'chirish
+    const targetUrl = getActiveBridgeUrl();
+    if (targetUrl) {
       try {
-        fetch(`${BRIDGE_API}/api/school/delete-student`, {
+        fetch(`${targetUrl}/api/school/delete-student`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ studentId, employeeNo: empNo })
@@ -1933,9 +1926,6 @@ export const SchoolProvider = ({ children }) => {
           if (json.data && Array.isArray(json.data) && json.data.length > 0) {
             setStudents(json.data);
             saveModuleToSupabase('students', json.data).catch(() => {});
-            try {
-              localStorage.setItem('school_students', JSON.stringify(json.data));
-            } catch (e) {}
             showToast('Muvaffaqiyatli sinxronlandi!', `Face-ID apparatidagi barcha ${json.total || 737} ta yuz sinxronlandi va Supabase ga saqlandi. Barcha sinflar va kiritilgan o'zgarishlaringiz saqlab qolindi!`, 'success');
             return;
           }

@@ -229,6 +229,113 @@ async function syncModuleToSupabase(key, data) {
   } catch (err) {}
 }
 
+// ==================== FACE-ID QURILMALARI (6 TA KAMERA) APPARAT SINXRONIZATSIYASI ====================
+async function syncStudentToHardware(action, studentData) {
+  if (!studentData) return;
+  const rawEmp = String(studentData.employeeNo || studentData.studentId || studentData.id || '').replace(/^s-/, '').trim();
+  if (!rawEmp) return;
+
+  const empPadded = rawEmp.padStart(8, '0');
+  const empClean = rawEmp.replace(/^0+/, '');
+  const name = (studentData.fullName || studentData.name || '').replace(/''/g, "'").trim();
+  const gender = (studentData.gender === 'Qiz' || studentData.gender === 'female') ? 'female' : 'male';
+
+  if (action === 'delete') {
+    console.log(`[HARDWARE SYNC] #${rawEmp} (${name || 'Oquvchi'}) Face-ID kameralaridan o'chirilmoqda...`);
+    // usersMap va keshdan olib tashlash
+    usersMap.delete(rawEmp);
+    usersMap.delete(empPadded);
+    usersMap.delete(empClean);
+    cachedUsers = cachedUsers.filter(u => u.employeeNo !== rawEmp && u.employeeNo !== empPadded && u.employeeNo !== empClean);
+
+    const deletePayload = JSON.stringify({
+      UserInfoDelCond: {
+        EmployeeNoList: [
+          { employeeNo: empPadded },
+          { employeeNo: rawEmp },
+          { employeeNo: empClean }
+        ]
+      }
+    });
+
+    for (const cam of CAMERAS) {
+      try {
+        const delRes = await digestRequest({
+          host: cam.ip,
+          port: 80,
+          path: '/ISAPI/AccessControl/UserInfo/Delete?format=json',
+          method: 'PUT',
+          body: deletePayload,
+          username: CONFIG.DEVICE_USER,
+          password: CONFIG.DEVICE_PASS,
+          timeout: 2500
+        });
+        if (delRes && delRes.status === 200) {
+          console.log(`[DELETE] Kamera ${cam.name} (${cam.ip}): #${rawEmp} o'chirildi`);
+        }
+      } catch (e) {}
+    }
+    console.log(`[HARDWARE SYNC] #${rawEmp} barcha Face-ID terminallaridan butunlay o'chirildi.`);
+  } else if (action === 'update' || action === 'add') {
+    console.log(`[HARDWARE SYNC] #${empPadded} (${name}) Face-ID kameralariga ${action === 'add' ? "qo'shilmoqda" : "yangilanmoqda"}...`);
+
+    const userObj = {
+      employeeNo: empPadded,
+      name: name || `O'quvchi #${empPadded}`,
+      gender: gender,
+      role: 'student'
+    };
+    usersMap.set(empPadded, userObj);
+    usersMap.set(rawEmp, userObj);
+    usersMap.set(empClean, userObj);
+
+    const existingCached = cachedUsers.find(u => u.employeeNo === empPadded || u.employeeNo === rawEmp || u.employeeNo === empClean);
+    if (existingCached) {
+      existingCached.name = name;
+      existingCached.gender = gender;
+    } else {
+      cachedUsers.push(userObj);
+    }
+
+    const setUpPayload = JSON.stringify({
+      UserInfo: {
+        employeeNo: empPadded,
+        name: name,
+        userType: 'normal',
+        closeDelayEnabled: false,
+        Valid: {
+          enable: true,
+          beginTime: '2026-01-01T00:00:00',
+          endTime: '2036-12-31T23:59:59',
+          timeType: 'local'
+        },
+        doorRight: '1',
+        RightPlan: [{ doorNo: 1, planTemplateNo: '1' }],
+        gender: gender
+      }
+    });
+
+    for (const cam of CAMERAS) {
+      try {
+        const setRes = await digestRequest({
+          host: cam.ip,
+          port: 80,
+          path: '/ISAPI/AccessControl/UserInfo/SetUp?format=json',
+          method: 'PUT',
+          body: setUpPayload,
+          username: CONFIG.DEVICE_USER,
+          password: CONFIG.DEVICE_PASS,
+          timeout: 2500
+        });
+        if (setRes && setRes.status === 200) {
+          console.log(`[SETUP] Kamera ${cam.name} (${cam.ip}): #${empPadded} (${name}) saqlandi`);
+        }
+      } catch (e) {}
+    }
+    console.log(`[HARDWARE SYNC] #${empPadded} (${name}) barcha Face-ID terminallariga saqlandi.`);
+  }
+}
+
 async function loadSchoolDataFromSupabase() {
   try {
     const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/school_data?select=*`, {
@@ -257,6 +364,43 @@ async function loadSchoolDataFromSupabase() {
               });
               CAMERAS.forEach(c => { if (!reordered.includes(c)) reordered.push(c); });
               CAMERAS = reordered;
+            }
+
+            if (r.key === 'students' && Array.isArray(r.data)) {
+              const oldStudents = schoolDB.students || [];
+              const newStudents = r.data;
+
+              if (oldStudents.length > 0 && JSON.stringify(oldStudents) !== JSON.stringify(newStudents)) {
+                // 1. O'chirilganlarni aniqlash va Face-ID apparatlaridan o'chirish
+                const newIds = new Set(newStudents.map(s => String(s.studentId || s.id || '').replace(/^s-/, '').replace(/^0+/, '')));
+                for (const oldS of oldStudents) {
+                  const empNo = String(oldS.studentId || oldS.id || '').replace(/^s-/, '').replace(/^0+/, '');
+                  if (empNo && !newIds.has(empNo)) {
+                    console.log(`[SUPABASE AUTO-SYNC] O'chirilgan o'quvchi aniqlandi: #${empNo} (${oldS.fullName || oldS.name})`);
+                    syncStudentToHardware('delete', oldS).catch(() => {});
+                  }
+                }
+
+                // 2. Yangi qo'shilgan yoki tahrirlanganlarni aniqlash
+                const oldMap = new Map();
+                oldStudents.forEach(s => {
+                  const empNo = String(s.studentId || s.id || '').replace(/^s-/, '').replace(/^0+/, '');
+                  if (empNo) oldMap.set(empNo, s);
+                });
+
+                for (const newS of newStudents) {
+                  const empNo = String(newS.studentId || newS.id || '').replace(/^s-/, '').replace(/^0+/, '');
+                  if (!empNo) continue;
+                  const oldS = oldMap.get(empNo);
+                  if (!oldS) {
+                    console.log(`[SUPABASE AUTO-SYNC] Yangi o'quvchi aniqlandi: #${empNo} (${newS.fullName || newS.name})`);
+                    syncStudentToHardware('add', newS).catch(() => {});
+                  } else if ((newS.fullName || newS.name) !== (oldS.fullName || oldS.name) || newS.gender !== oldS.gender) {
+                    console.log(`[SUPABASE AUTO-SYNC] Tahrirlangan o'quvchi aniqlandi: #${empNo} (${newS.fullName || newS.name})`);
+                    syncStudentToHardware('update', newS).catch(() => {});
+                  }
+                }
+              }
             }
 
             if (JSON.stringify(schoolDB[r.key]) !== JSON.stringify(r.data)) {
@@ -335,6 +479,22 @@ async function sendHeartbeatToSupabase() {
 loadCamerasFromSupabase();
 loadSchoolDataFromSupabase();
 setTimeout(sendHeartbeatToSupabase, 1500);
+
+// Eski bazada o'chirilgan, lekin apparat xotirasida qolib ketgan foydalanuvchilarni tozalash (masalan, 424 va 433)
+setTimeout(() => {
+  if (schoolDB.students && Array.isArray(schoolDB.students)) {
+    const activeStudentIds = new Set(schoolDB.students.map(s => String(s.studentId || s.id || '').replace(/^s-/, '').replace(/^0+/, '')));
+    const teacherFaceIds = new Set((schoolDB.teachers || []).map(t => String(t.faceId || t.id || '').replace(/^t-/, '').replace(/^0+/, '')));
+
+    cachedUsers.forEach(cu => {
+      const k = String(cu.employeeNo || '').replace(/^0+/, '');
+      if (k && !activeStudentIds.has(k) && !teacherFaceIds.has(k)) {
+        console.log(`[CLEANUP] Baza o'chirilgan, lekin apparat xotirasida qolgan: #${cu.employeeNo} (${cu.name}). Kameralardan o'chirilmoqda...`);
+        syncStudentToHardware('delete', { employeeNo: cu.employeeNo, name: cu.name }).catch(() => {});
+      }
+    });
+  }
+}, 4000);
 
 setInterval(() => {
   sendHeartbeatToSupabase();
@@ -504,7 +664,7 @@ if (!fs.existsSync(PLAYBACK_DIR)) {
 
 const lastSavedPlaybackTime = new Map();
 
-function savePlaybackArchiveFrame(camIp, buf, customTimeStr = null) {
+function savePlaybackArchiveFrame(camIp, buf, customTimeStr = null, customDateStr = null) {
   if (!isValidJpeg(buf)) return;
   const now = new Date();
   
@@ -515,10 +675,13 @@ function savePlaybackArchiveFrame(camIp, buf, customTimeStr = null) {
     lastSavedPlaybackTime.set(camIp, now.getTime());
   }
 
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  const dateStr = `${y}-${m}-${d}`;
+  let dateStr = customDateStr;
+  if (!dateStr || !dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    dateStr = `${y}-${m}-${d}`;
+  }
 
   let timeParts;
   if (customTimeStr && typeof customTimeStr === 'string' && customTimeStr.includes(':')) {
@@ -540,7 +703,8 @@ function savePlaybackArchiveFrame(camIp, buf, customTimeStr = null) {
       fs.mkdirSync(dirPath, { recursive: true });
     }
     const targetFile = path.join(dirPath, fileTimeStr);
-    if (!fs.existsSync(targetFile)) {
+    // Maxsus vaqt (masalan skanerlash hodisasi yoki yuz rasmi) bo'lsa har doim yangilaymiz
+    if (customTimeStr || !fs.existsSync(targetFile)) {
       fs.writeFileSync(targetFile, buf);
     }
   } catch (err) {}
@@ -702,19 +866,28 @@ function getCameraPlaybackFrame(camIp, dateStr, targetTimeStr) {
     } catch (e) {}
   }
 
-  if (bestFilePath && fs.existsSync(bestFilePath)) {
+  // Agar arxivdan topilgan kadr so'ralgan vaqtdan ko'pi bilan 120 soniya (2 daqiqa) farq qilsa, uni qaytaramiz
+  if (bestFilePath && fs.existsSync(bestFilePath) && minDiff <= 120) {
     try {
       const buf = fs.readFileSync(bestFilePath);
-      return { buffer: buf, actualTime: bestTimeStr, diffSeconds: minDiff, found: true };
+      if (isValidJpeg(buf)) {
+        return { buffer: buf, actualTime: bestTimeStr, diffSeconds: minDiff, found: true };
+      }
     } catch (e) {}
   }
 
-  // Agar arxiv kadr topilmasa, RAM keshdagi joriy kadrni uzatamiz
-  const cached = cameraFrames.get(camIp);
-  if (cached && isValidJpeg(cached.buffer)) {
-    return { buffer: cached.buffer, actualTime: tStr, diffSeconds: 0, found: false };
+  // Faqat bugungi sana bo'lsa va so'ralgan vaqt hozirgi vaqtga juda yaqin (60s) bo'lsa jonli kadr beriladi
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const nowSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+  if (dStr === todayStr && Math.abs(targetSeconds - nowSeconds) <= 60) {
+    const cached = cameraFrames.get(camIp);
+    if (cached && isValidJpeg(cached.buffer)) {
+      return { buffer: cached.buffer, actualTime: tStr, diffSeconds: 0, found: true };
+    }
   }
 
+  // Agar yozuv topilmasa null qaytaramiz (noto'g'ri kadr ko'rsatmaslik uchun)
   return null;
 }
 
@@ -1008,10 +1181,32 @@ function addScanEvent(rawEvent, camera, isNew = true) {
       broadcastSSE('scan', scan);
       logScanToSupabase(scan);
 
-      // Skanerlash kadrini arxivga ham aniq vaqti bilan saqlaymiz
+      const dStr = (scan.timestamp || '').split('T')[0];
+
+      // 1. Agar Face-ID apparatida haqiqiy rasm (pictureURL) mavjud bo'lsa, zudlik bilan yuklab arxivga saqlaymiz
+      if (rawEvent.pictureURL) {
+        try {
+          const picPath = new URL(rawEvent.pictureURL).pathname;
+          digestRequest({
+            host: camera.ip,
+            path: picPath,
+            method: 'GET'
+          }).then(picRes => {
+            if (picRes && isValidJpeg(picRes.body)) {
+              savePlaybackArchiveFrame(camera.ip, picRes.body, scan.timeFormatted, dStr);
+              const picCacheDir = path.join(__dirname, 'photo_cache', 'events');
+              if (!fs.existsSync(picCacheDir)) fs.mkdirSync(picCacheDir, { recursive: true });
+              const picFile = path.join(picCacheDir, `${scan.employeeNo}_${scan.timeFormatted.replace(/:/g, '-')}.jpg`);
+              fs.writeFileSync(picFile, picRes.body);
+            }
+          }).catch(() => {});
+        } catch (e) {}
+      }
+
+      // 2. Zaxira sifatida joriy kamera kadrini ham saqlaymiz
       const curSnap = cameraFrames.get(camera.ip);
       if (curSnap && isValidJpeg(curSnap.buffer)) {
-        savePlaybackArchiveFrame(camera.ip, curSnap.buffer, scan.timeFormatted);
+        savePlaybackArchiveFrame(camera.ip, curSnap.buffer, scan.timeFormatted, dStr);
       }
     }
   }
@@ -1528,24 +1723,26 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 12. Bitta o'quvchini serverda to'g'ridan-to'g'ri yangilash (Sinfi, ismi, tel)
-  if (pathname === '/api/school/update-student' && req.method === 'POST') {
+  // 12.0 Yangi o'quvchini qo'shish va Face-ID ga kiritish
+  if (pathname === '/api/school/add-student' && req.method === 'POST') {
     let body = '';
     req.on('data', c => body += c);
-    req.on('end', () => {
+    req.on('end', async () => {
       try {
-        const { studentId, updatedData } = JSON.parse(body);
-        if (schoolDB.students && Array.isArray(schoolDB.students)) {
-          schoolDB.students = schoolDB.students.map(s => 
-            (s.id === studentId || s.studentId === studentId) ? { ...s, ...updatedData } : s
-          );
+        const { student } = JSON.parse(body);
+        if (student) {
+          if (!Array.isArray(schoolDB.students)) schoolDB.students = [];
+          const exists = schoolDB.students.some(s => s.id === student.id || s.studentId === student.studentId);
+          if (!exists) {
+            schoolDB.students.unshift(student);
+          }
           saveSchoolDB(schoolDB);
           syncModuleToSupabase('students', schoolDB.students);
-          broadcastSSE('student_updated', { studentId, updatedData });
           broadcastSSE('school_data_sync', schoolDB);
+          await syncStudentToHardware('add', student);
         }
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ success: true, message: 'O\'quvchi yangilandi' }));
+        res.end(JSON.stringify({ success: true, message: "O'quvchi saqlandi va Face-ID ga kiritildi" }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ error: err.message }));
@@ -1554,7 +1751,41 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 12.1 O'quvchini BAZADAN VA BARCHA HIKVISION FACE-ID TERMINALLARIDAN BUTUNLAY O'CHIRISH
+  // 12.1 Bitta o'quvchini serverda va Face-ID terminallarida to'g'ridan-to'g'ri yangilash
+  if (pathname === '/api/school/update-student' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { studentId, updatedData, student } = JSON.parse(body);
+        let updatedObj = student;
+        if (schoolDB.students && Array.isArray(schoolDB.students)) {
+          schoolDB.students = schoolDB.students.map(s => {
+            if (s.id === studentId || s.studentId === studentId) {
+              updatedObj = { ...s, ...(updatedData || {}), ...(student || {}) };
+              return updatedObj;
+            }
+            return s;
+          });
+          saveSchoolDB(schoolDB);
+          syncModuleToSupabase('students', schoolDB.students);
+          broadcastSSE('student_updated', { studentId, updatedData });
+          broadcastSSE('school_data_sync', schoolDB);
+        }
+        if (updatedObj) {
+          await syncStudentToHardware('update', updatedObj);
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true, message: "O'quvchi ma'lumotlari Face-ID apparatlarida yangilandi" }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 12.2 O'quvchini BAZADAN VA BARCHA HIKVISION FACE-ID TERMINALLARIDAN BUTUNLAY O'CHIRISH
   if (pathname === '/api/school/delete-student' && req.method === 'POST') {
     let body = '';
     req.on('data', c => body += c);
@@ -1574,32 +1805,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         // 2. Barcha 6 ta Hikvision kameralarining o'zidan ISAPI orqali yuzni va foydalanuvchini o'chirish
-        if (empNoToDel) {
-          const deletePayload = JSON.stringify({
-            UserInfoDelCond: {
-              EmployeeNoList: [{ employeeNo: empNoToDel }]
-            }
-          });
-
-          console.log(`[DELETE] Hikvision kameralaridan #${empNoToDel} ni o'chirish boshlandi...`);
-          for (const cam of CAMERAS) {
-            try {
-              const delRes = await digestRequest({
-                host: cam.ip,
-                port: 80,
-                path: '/ISAPI/AccessControl/UserInfo/Delete?format=json',
-                method: 'PUT',
-                body: deletePayload,
-                username: CONFIG.DEVICE_USER,
-                password: CONFIG.DEVICE_PASS,
-                timeout: 3000
-              });
-              console.log(`[DELETE] Kamera ${cam.name} (${cam.ip}) javobi:`, delRes.status);
-            } catch (camErr) {
-              console.warn(`[DELETE] Kamera ${cam.name} ga ulanishda ogohlantirish:`, camErr.message);
-            }
-          }
-        }
+        await syncStudentToHardware('delete', { studentId, employeeNo: empNoToDel });
 
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ 

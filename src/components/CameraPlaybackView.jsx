@@ -91,6 +91,12 @@ export const CameraPlaybackView = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1); // 0.5, 1, 2, 4, 8
   const [fullscreenCam, setFullscreenCam] = useState(null);
+  const [frameNotFound, setFrameNotFound] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
+  useEffect(() => {
+    setFrameNotFound(false);
+  }, [selectedCameraIp, selectedDate, currentSeconds]);
 
   // Timeline ma'lumotlari (yozib olingan soatlar va skanerlash voqealari)
   const [timelineData, setTimelineData] = useState(null);
@@ -390,19 +396,30 @@ export const CameraPlaybackView = ({
             {viewMode === 'single' ? (
               <>
                 <img 
-                  key={`${selectedCameraIp}-${Math.floor(currentSeconds / 2)}`}
+                  key={`${selectedCameraIp}-${selectedDate}-${Math.floor(currentSeconds / 2)}`}
                   src={getFrameUrl(selectedCameraIp, currentSeconds)}
                   alt={activeCam.name}
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    // Agar arxiv kadr topilmasa zaxira sifatida Supabase bulutdagi jonli kadr
-                    e.target.onerror = null;
-                    const freshCloud = cameraLatestFrames?.[selectedCameraIp];
-                    if (freshCloud && typeof freshCloud === 'string' && (freshCloud.startsWith('data:image/') || freshCloud.startsWith('http'))) {
-                      e.target.src = freshCloud;
-                    }
-                  }}
+                  className={`w-full h-full object-contain ${frameNotFound ? 'hidden' : 'block'}`}
+                  onLoad={() => setFrameNotFound(false)}
+                  onError={() => setFrameNotFound(true)}
                 />
+
+                {frameNotFound && (
+                  <div className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center z-10">
+                    <div className="w-14 h-14 rounded-2xl bg-purple-950/50 border border-purple-800/60 flex items-center justify-center text-purple-400 mb-3 shadow-lg">
+                      <Film className="w-7 h-7" />
+                    </div>
+                    <div className="text-white font-black text-sm sm:text-base mb-1">
+                      Ushbu vaqtda yozuv mavjud emas
+                    </div>
+                    <div className="text-purple-300 font-mono text-xs px-2.5 py-1 rounded-md bg-purple-900/40 border border-purple-700/50 mb-3">
+                      {selectedDate} • {currentTimeStr}
+                    </div>
+                    <p className="text-slate-400 text-xs max-w-sm leading-relaxed">
+                      Tanlangan vaqtda kamera o'chiq bo'lgan yoki yozuv olinmagan. O'ng paneldagi <b>O'tish Voqealari</b>dan birini bosing yoki vaqt chizig'idagi yozuv bor daqiqalarni tanlang.
+                    </p>
+                  </div>
+                )}
 
                 {/* Video OSD Yozuvi (Yuqori chap: Kamera, Vaqt, Holat) */}
                 <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
@@ -673,7 +690,11 @@ export const CameraPlaybackView = ({
                 return (
                   <div
                     key={ev.id || idx}
-                    onClick={() => setCurrentSeconds(ev.seconds)}
+                    onClick={() => {
+                      setCurrentSeconds(ev.seconds);
+                      setSelectedEvent(ev);
+                      setFrameNotFound(false);
+                    }}
                     className={`p-2 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-2 ${
                       isSelected
                         ? 'bg-purple-100 dark:bg-purple-950/80 border-purple-400 shadow-xs'
