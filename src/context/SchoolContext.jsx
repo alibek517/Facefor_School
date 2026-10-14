@@ -1004,7 +1004,7 @@ export const SchoolProvider = ({ children }) => {
     };
 
     pollDevice();
-    const interval = setInterval(pollDevice, 2500);
+    const interval = setInterval(pollDevice, 2000);
 
     return () => {
       clearInterval(interval);
@@ -1045,7 +1045,7 @@ export const SchoolProvider = ({ children }) => {
               }
 
               const now = Date.now();
-              if (now - lastSavedFramesTime.current > 3500) {
+              if (now - lastSavedFramesTime.current > 1500) {
                 lastSavedFramesTime.current = now;
                 saveLatestCameraFramesToSupabase(json.frames).catch(() => {});
               }
@@ -1321,13 +1321,29 @@ export const SchoolProvider = ({ children }) => {
     showToast('Yangilandi', 'O\'quvchi ma\'lumotlari Supabase bulut bazasida yangilandi.', 'info');
   };
 
-  const deleteStudent = (studentId) => {
+  const deleteStudent = async (studentId) => {
+    const studentToDel = students.find(s => s.id === studentId || s.studentId === studentId);
+    const empNo = studentToDel ? (studentToDel.studentId || String(studentToDel.id).replace(/^s-/, '')) : studentId;
+
+    // 1. Frontend & Supabase holatidan o'chirish
     setStudents(prev => {
       const next = prev.filter(s => s.id !== studentId && s.studentId !== studentId);
       saveToServer('students', next);
       return next;
     });
-    showToast('O\'chirildi', 'O\'quvchi bazadan o\'chirildi.', 'info');
+
+    // 2. Lokal ko'prik serveri orqali barcha 6 ta Hikvision kameralarining o'zidan ham o'chirish
+    if (BRIDGE_API) {
+      try {
+        fetch(`${BRIDGE_API}/api/school/delete-student`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentId, employeeNo: empNo })
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    showToast('O\'chirildi', 'O\'quvchi bazadan va barcha Face-ID terminallaridan o\'chirildi.', 'success');
   };
 
   // O'quvchini O'qituvchiga o'tkazish (Turniketdan adashib o'quvchiga tushgan o'qituvchilar uchun)

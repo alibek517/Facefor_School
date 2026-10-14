@@ -1552,6 +1552,66 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // 12.1 O'quvchini BAZADAN VA BARCHA HIKVISION FACE-ID TERMINALLARIDAN BUTUNLAY O'CHIRISH
+  if (pathname === '/api/school/delete-student' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { studentId, employeeNo } = JSON.parse(body);
+        const empNoToDel = String(employeeNo || studentId || '').replace(/^s-/, '');
+
+        // 1. schoolDB dan o'chirish
+        if (schoolDB.students && Array.isArray(schoolDB.students)) {
+          schoolDB.students = schoolDB.students.filter(s => 
+            s.id !== studentId && s.studentId !== studentId && s.studentId !== empNoToDel && s.id !== `s-${empNoToDel}`
+          );
+          saveSchoolDB(schoolDB);
+          syncModuleToSupabase('students', schoolDB.students);
+          broadcastSSE('school_data_sync', schoolDB);
+        }
+
+        // 2. Barcha 6 ta Hikvision kameralarining o'zidan ISAPI orqali yuzni va foydalanuvchini o'chirish
+        if (empNoToDel) {
+          const deletePayload = JSON.stringify({
+            UserInfoDelCond: {
+              EmployeeNoList: [{ employeeNo: empNoToDel }]
+            }
+          });
+
+          console.log(`[DELETE] Hikvision kameralaridan #${empNoToDel} ni o'chirish boshlandi...`);
+          for (const cam of CAMERAS) {
+            try {
+              const delRes = await digestRequest({
+                host: cam.ip,
+                port: 80,
+                path: '/ISAPI/AccessControl/UserInfo/Delete?format=json',
+                method: 'PUT',
+                body: deletePayload,
+                username: CONFIG.DEVICE_USER,
+                password: CONFIG.DEVICE_PASS,
+                timeout: 3000
+              });
+              console.log(`[DELETE] Kamera ${cam.name} (${cam.ip}) javobi:`, delRes.status);
+            } catch (camErr) {
+              console.warn(`[DELETE] Kamera ${cam.name} ga ulanishda ogohlantirish:`, camErr.message);
+            }
+          }
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ 
+          success: true, 
+          message: `O'quvchi bazadan va barcha Face-ID terminallaridan o'chirildi (#${empNoToDel})` 
+        }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
   // 13. Face-ID O'quvchilarini XAVFSIZ SINXRONLASH (Smart Merge - Sinflar yoki o'zgarishlar o'chmaydi!)
   if (pathname === '/api/school/sync-face-students' && req.method === 'POST') {
     let baseList = schoolDB.students || [];
