@@ -164,23 +164,22 @@ export const SchoolProvider = ({ children }) => {
   const lastSavedFramesTime = useRef(0);
   const localFailuresCount = useRef(0);
   const manualRetryLocal = useRef(false);
-  const [globalStreamUrl, setGlobalStreamUrl] = useState(() => {
-    try {
-      return localStorage.getItem('school_global_stream_url') || '';
-    } catch (e) {
-      return '';
-    }
-  });
+  const [globalStreamUrl, setGlobalStreamUrl] = useState('');
+  const globalStreamUrlRef = useRef('');
 
-  const updateGlobalStreamUrl = (url) => {
+  const updateGlobalStreamUrl = (url, syncToCloud = false) => {
     const clean = (url || '').trim();
+    if (globalStreamUrlRef.current === clean && !syncToCloud) return;
+    globalStreamUrlRef.current = clean;
     setGlobalStreamUrl(clean);
-    try {
-      if (clean) localStorage.setItem('school_global_stream_url', clean);
-      else localStorage.removeItem('school_global_stream_url');
-    } catch (e) {}
-    // Supabase bulut bazasiga ham yangilab qo'yish (boshqa qurilmalar uchun)
-    saveModuleToSupabase('global_stream_url', clean).catch(() => {});
+    // Faqat foydalanuvchi interfeysdan qo'lda o'zgartirganda Supabase ga saqlash (cheksiz Realtime siklidan himoya)
+    if (syncToCloud) {
+      saveModuleToSupabase('global_stream_url', clean).catch(() => {});
+    }
+  };
+
+  const setManualGlobalStreamUrl = (url) => {
+    updateGlobalStreamUrl(url, true);
   };
 
   // URL Routing tizimi: path va mos rol/tab tahlili
@@ -1939,7 +1938,8 @@ export const SchoolProvider = ({ children }) => {
     localBridgeInfo,
     refreshLocalStatus,
     globalStreamUrl,
-    setGlobalStreamUrl: updateGlobalStreamUrl,
+    setGlobalStreamUrl: setManualGlobalStreamUrl,
+    updateGlobalStreamUrl,
     cameraLatestFrames,
     isInitialized,
     localWarningSnoozedUntil,
