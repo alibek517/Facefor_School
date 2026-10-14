@@ -1343,6 +1343,27 @@ const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = parsedUrl.pathname;
 
+  // 0. Bosh sahifa (Cloudflare tunnel tekshiruvi uchun ma'lumot)
+  if (pathname === '/' || pathname === '/status') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+      service: "Maktab Face-ID Cloudflare Global Ko'prigi",
+      status: "online",
+      message: "Ko'prik serveri va Cloudflare Global Tunnel muvaffaqiyatli ishlamoqda",
+      total_cameras: CAMERAS.length,
+      cameras_online: CAMERAS.filter(c => c.online).length,
+      global_tunnel_url: currentTunnelUrl,
+      endpoints: {
+        status: "/api/device/status",
+        cameras: "/api/device/cameras",
+        camera_snapshot: "/api/camera/snapshot/:ip",
+        playback_dates: "/api/camera/playback/dates",
+        playback_timeline: "/api/camera/playback/timeline?ip=192.168.1.35&date=2026-10-14"
+      }
+    }, null, 2));
+    return;
+  }
+
   // 1. Holat (Status)
   if (pathname === '/api/device/status') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
