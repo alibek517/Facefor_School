@@ -280,7 +280,7 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
           <span className={`w-1.5 h-1.5 rounded-full ${isLiveActive ? 'bg-emerald-500 animate-pulse' : 'bg-blue-400'}`}></span>
           <span>
             {isLiveActive 
-              ? (isLocalConnected ? 'LIVE' : (hasLiveTunnel ? 'GLOBAL LIVE' : 'JONLI KO\'PRIK')) 
+              ? (isLocalConnected ? 'LIVE' : 'JONLI KO\'PRIK') 
               : 'OXIRGI KADR (BULUT)'}
           </span>
         </div>
