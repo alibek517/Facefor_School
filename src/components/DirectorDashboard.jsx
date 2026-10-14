@@ -976,6 +976,7 @@ export const DirectorDashboard = () => {
             initialDate={selectedDate}
             initialCameraIp={playbackCamIp}
             allScans={selectedDateScans}
+            onSwitchToLive={() => setCameraMode('live')}
           />
         ) : (
           <>

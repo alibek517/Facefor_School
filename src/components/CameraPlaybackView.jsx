@@ -22,6 +22,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { StudentAvatar } from './StudentAvatar';
+import { useSchool } from '../context/SchoolContext';
 
 // Soniyalarni "HH:mm:ss" ko'rinishiga o'tkazish
 const secondsToTimeStr = (totalSec) => {
@@ -46,8 +47,10 @@ export const CameraPlaybackView = ({
   effectiveBaseUrl, 
   initialDate,
   initialCameraIp,
-  allScans = [] 
+  allScans = [],
+  onSwitchToLive
 }) => {
+  const { isLocalConnected, cameraLatestFrames } = useSchool();
   const todayStr = useMemo(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -348,6 +351,27 @@ export const CameraPlaybackView = ({
         {/* Chap qism (3 ustun): Video o'yinchi */}
         <div className="lg:col-span-3 space-y-3">
           
+          {/* Tashqi Wi-Fi va mobil internet uchun xabardor qilish */}
+          {!isLocalConnected && (
+            <div className="bg-purple-950/40 border border-purple-800/60 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 text-purple-200">
+                <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+                <span>
+                  Siz hozir <b>Arxiv & Playback (videoni ortga qaytarish)</b> ko'rinishidasiz. 6 ta kamerani <b>real vaqtda jonli (Live)</b> tomosha qilish uchun:
+                </span>
+              </div>
+              {onSwitchToLive && (
+                <button
+                  onClick={onSwitchToLive}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs shrink-0 flex items-center gap-1.5 shadow-xs transition-all"
+                >
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                  <span>🟢 Jonli Efirga O'tish</span>
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Video Oyna */}
           <div className="relative aspect-video bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-xl flex items-center justify-center group">
             {viewMode === 'single' ? (
@@ -358,9 +382,14 @@ export const CameraPlaybackView = ({
                   alt={activeCam.name}
                   className="w-full h-full object-contain"
                   onError={(e) => {
-                    // Agar arxiv kadr topilmasa zaxira statik kadr
+                    // Agar arxiv kadr topilmasa zaxira sifatida Supabase bulutdagi jonli kadr
                     e.target.onerror = null;
-                    e.target.src = `/photos/camera_${selectedCameraIp}.jpg`;
+                    const freshCloud = cameraLatestFrames?.[selectedCameraIp];
+                    if (freshCloud && typeof freshCloud === 'string' && (freshCloud.startsWith('data:image/') || freshCloud.startsWith('http'))) {
+                      e.target.src = freshCloud;
+                    } else {
+                      e.target.src = `/photos/camera_${selectedCameraIp}.jpg`;
+                    }
                   }}
                 />
 

@@ -510,8 +510,8 @@ function savePlaybackArchiveFrame(camIp, buf, customTimeStr = null) {
   
   if (!customTimeStr) {
     const last = lastSavedPlaybackTime.get(camIp) || 0;
-    // Har ~1.8 soniyada bitta arxiv kadr saqlanadi (diskni to'ldirmaydi va silliq orqaga qaytarishni ta'minlaydi)
-    if (now.getTime() - last < 1800) return;
+    // Har ~15 soniyada bitta arxiv kadr saqlanadi (disk to'lib ketmasligi va xotirani tejash uchun)
+    if (now.getTime() - last < 15000) return;
     lastSavedPlaybackTime.set(camIp, now.getTime());
   }
 
