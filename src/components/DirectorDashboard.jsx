@@ -36,7 +36,12 @@ import {
   ExternalLink,
   Film,
   Rewind,
-  FastForward
+  FastForward,
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  ZoomIn
 } from 'lucide-react';
 import CameraPlaybackView from './CameraPlaybackView';
 import { StudentAvatar } from './StudentAvatar';
@@ -374,8 +379,40 @@ const CameraLastScanThumb = ({ lastScan, effectiveBaseUrl }) => {
   );
 };
 
-// Arxivdagi kadr va o'tish kartasi (React xatolarini oldini oluvchi reaktiv komponent)
-const ArchiveCard = ({ scan, effectiveBaseUrl }) => {
+// Turniket kamerasi nomini aniqlash (Turniket 1, Turniket 2, Turniket 6, ...)
+const getCameraLabel = (scan, cameras) => {
+  if (!scan) return 'Turniket';
+  if (scan.cameraName) return scan.cameraName;
+  const found = (cameras || []).find(c => c.ip === scan.cameraIp || c.id === scan.cameraId);
+  if (found?.name) return found.name;
+  if (scan.cameraIp) {
+    const lastOctet = scan.cameraIp.split('.').pop();
+    return `Turniket .${lastOctet}`;
+  }
+  return scan.direction === 'in' ? 'Kirish Turniketi' : 'Chiqish Turniketi';
+};
+
+// O'quvchining sinfini aniqlash
+const getStudentClass = (scan, students, classes) => {
+  if (!scan) return '';
+  const sEmp = String(scan.employeeNo || '').replace(/^0+/, '');
+  const sName = (scan.name || '').toLowerCase().trim();
+  const st = (students || []).find(s => {
+    const emp = String(s.employeeNo || s.id || '').replace(/^0+/, '');
+    if (sEmp && emp && sEmp === emp) return true;
+    const name = (s.fullName || s.name || '').toLowerCase().trim();
+    return sName && name && (sName === name || sName.includes(name) || name.includes(sName));
+  });
+  if (st?.className) return st.className;
+  if (st?.classId) {
+    const cl = (classes || []).find(c => c.id === st.classId);
+    if (cl?.name) return cl.name;
+  }
+  return '';
+};
+
+// Katta modal uchun yuqori sifatli rasm
+const ArchiveDetailPhoto = ({ scan, effectiveBaseUrl }) => {
   const [hasError, setHasError] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
   const { primaryUrl, fallbackUrl } = getStudentPhotoUrls(scan, effectiveBaseUrl);
@@ -395,36 +432,101 @@ const ArchiveCard = ({ scan, effectiveBaseUrl }) => {
     }
   };
 
+  if (hasError || !currentSrc) {
+    return (
+      <div className="w-full h-full bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-800 text-white font-black text-4xl flex items-center justify-center">
+        {(scan?.name || 'O').charAt(0).toUpperCase()}
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-slate-50 dark:bg-slate-800/60 p-2 rounded-xl border border-slate-200 dark:border-slate-700/80 text-center space-y-1 hover:border-purple-400 transition-all">
-      <div className="w-12 h-12 mx-auto rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 relative shadow-2xs">
-        {currentSrc && !hasError ? (
-          <img
-            src={currentSrc}
-            alt={scan.name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            onError={handleError}
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-black text-xs flex items-center justify-center">
-            {(scan.name || 'O').charAt(0).toUpperCase()}
+    <img
+      src={currentSrc}
+      alt={scan?.name || ''}
+      className="w-full h-full object-cover"
+      onError={handleError}
+    />
+  );
+};
+
+// Arxivdagi kadr va o'tish kartasi (Barcha kameralar ko'rsatiladi va bosganda kattalashadi)
+const ArchiveCard = ({ scan, effectiveBaseUrl, cameras, onSelect }) => {
+  const [hasError, setHasError] = useState(false);
+  const [useFallback, setUseFallback] = useState(false);
+  const { primaryUrl, fallbackUrl } = getStudentPhotoUrls(scan, effectiveBaseUrl);
+
+  useEffect(() => {
+    setHasError(false);
+    setUseFallback(false);
+  }, [scan?.id, scan?.employeeNo, primaryUrl, fallbackUrl]);
+
+  const currentSrc = useFallback ? fallbackUrl : primaryUrl;
+
+  const handleError = () => {
+    if (!useFallback && fallbackUrl && fallbackUrl !== primaryUrl) {
+      setUseFallback(true);
+    } else {
+      setHasError(true);
+    }
+  };
+
+  const cameraName = getCameraLabel(scan, cameras);
+  const isEntry = scan.direction === 'in';
+
+  return (
+    <div 
+      onClick={() => onSelect && onSelect(scan)}
+      className="group relative bg-slate-50 dark:bg-slate-800/70 p-2 rounded-2xl border border-slate-200 dark:border-slate-700/80 text-center space-y-1.5 hover:border-purple-500 hover:shadow-lg dark:hover:border-purple-400 cursor-pointer transition-all duration-200 hover:-translate-y-1 select-none flex flex-col justify-between"
+      title={`${scan.name} • ${cameraName} • ${formatScanTime(scan)} (Batafsil ko'rish uchun bosing)`}
+    >
+      <div>
+        {/* Rasm va hoverda kattalashtirish belgisi */}
+        <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-700 relative shadow-xs group-hover:ring-2 ring-purple-500/60 transition-all">
+          {currentSrc && !hasError ? (
+            <img
+              src={currentSrc}
+              alt={scan.name}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              loading="lazy"
+              onError={handleError}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-black text-sm flex items-center justify-center">
+              {(scan.name || 'O').charAt(0).toUpperCase()}
+            </div>
+          )}
+          {/* Hover overlay: Kattalashtirish ko'zi */}
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white backdrop-blur-[1px]">
+            <Eye className="w-4 h-4 drop-shadow" />
           </div>
-        )}
+        </div>
+
+        {/* O'quvchi ismi */}
+        <div className="text-[10.5px] font-bold text-slate-800 dark:text-slate-100 truncate mt-1 leading-tight" title={scan.name}>
+          {scan.name}
+        </div>
+
+        {/* 📷 Qaysi kameradan o'tgani (Turniket 1, Turniket 2...) */}
+        <div className="mt-1 flex items-center justify-center gap-1 text-[9px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100/70 dark:bg-purple-950/70 border border-purple-200 dark:border-purple-800/70 rounded-md px-1.5 py-0.5 truncate">
+          <Camera className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400 shrink-0" />
+          <span className="truncate">{cameraName}</span>
+        </div>
       </div>
-      <div className="text-[10px] font-bold text-slate-800 dark:text-slate-200 truncate" title={scan.name}>
-        {scan.name}
+
+      {/* Vaqt va Kirish/Chiqish belgisi */}
+      <div className="pt-1 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between gap-1 text-[9px]">
+        <span className="font-mono font-bold text-slate-500 dark:text-slate-400">
+          {formatScanTime(scan)}
+        </span>
+        <span className={`font-black px-1.5 py-0.2 rounded text-[8.5px] ${
+          isEntry 
+            ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40' 
+            : 'bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300/40'
+        }`}>
+          {isEntry ? '↓ Kirish' : '↑ Chiqish'}
+        </span>
       </div>
-      <div className="text-[9px] text-slate-400 font-mono">
-        {formatScanTime(scan)}
-      </div>
-      <span className={`inline-block text-[9px] font-bold px-1.5 py-0.2 rounded ${
-        scan.direction === 'in' 
-          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' 
-          : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
-      }`}>
-        {scan.direction === 'in' ? '↓ Kirish' : '↑ Chiqish'}
-      </span>
     </div>
   );
 };
@@ -459,8 +561,14 @@ export const DirectorDashboard = () => {
   const [cameraFilter, setCameraFilter] = useState('all'); // 'all', 'in', 'out'
   const [cameraMode, setCameraMode] = useState('live'); // 'live' yoki 'playback'
   const [playbackCamIp, setPlaybackCamIp] = useState(null);
-  const [livePlaying, setLivePlaying] = useState(true);
   const [activeModalCam, setActiveModalCam] = useState(null);
+  const [selectedScanDetail, setSelectedScanDetail] = useState(null);
+  const [isAllArchiveModalOpen, setIsAllArchiveModalOpen] = useState(false);
+  const [archiveSearch, setArchiveSearch] = useState('');
+  const [archiveCameraFilter, setArchiveCameraFilter] = useState('all');
+  const [archiveDirectionFilter, setArchiveDirectionFilter] = useState('all');
+  const [archivePage, setArchivePage] = useState(1);
+  const ARCHIVE_PER_PAGE = 36;
 
   const handleMoveCamera = (cameraId, direction) => {
     const list = [...(cameras || [])];
@@ -509,6 +617,45 @@ export const DirectorDashboard = () => {
       return String(s.timestamp).startsWith(selectedDate);
     });
   }, [recentFaceScans, selectedDate]);
+
+  // Barcha arxiv modali uchun filtrlangan ro'yxat
+  const filteredArchiveScans = useMemo(() => {
+    let list = [...selectedDateScans];
+    if (archiveSearch.trim()) {
+      const q = archiveSearch.toLowerCase().trim();
+      list = list.filter(s => 
+        (s.name && s.name.toLowerCase().includes(q)) ||
+        (s.employeeNo && String(s.employeeNo).includes(q))
+      );
+    }
+    if (archiveCameraFilter !== 'all') {
+      list = list.filter(s => s.cameraIp === archiveCameraFilter || s.cameraId === archiveCameraFilter);
+    }
+    if (archiveDirectionFilter !== 'all') {
+      list = list.filter(s => s.direction === archiveDirectionFilter);
+    }
+    return list;
+  }, [selectedDateScans, archiveSearch, archiveCameraFilter, archiveDirectionFilter]);
+
+  const totalArchivePages = Math.max(1, Math.ceil(filteredArchiveScans.length / ARCHIVE_PER_PAGE));
+  const paginatedArchiveScans = useMemo(() => {
+    const start = (archivePage - 1) * ARCHIVE_PER_PAGE;
+    return filteredArchiveScans.slice(start, start + ARCHIVE_PER_PAGE);
+  }, [filteredArchiveScans, archivePage]);
+
+  // Modal ichida o'tishlarni oldinga/orqaga almashtirish
+  const selectedScanIndex = useMemo(() => {
+    if (!selectedScanDetail) return -1;
+    return selectedDateScans.findIndex(s => s.id === selectedScanDetail.id || (s.employeeNo === selectedScanDetail.employeeNo && s.timeFormatted === selectedScanDetail.timeFormatted));
+  }, [selectedScanDetail, selectedDateScans]);
+
+  const handleNavigateScan = (delta) => {
+    if (selectedScanIndex < 0) return;
+    const nextIdx = selectedScanIndex + delta;
+    if (nextIdx >= 0 && nextIdx < selectedDateScans.length) {
+      setSelectedScanDetail(selectedDateScans[nextIdx]);
+    }
+  };
 
   // Barcha faol (1-11 sinf) o'quvchilarining tanlangan sana bo'yicha aniq holati (Bitiruvchilarsiz)
   const enrichedStudents = useMemo(() => {
@@ -1010,15 +1157,29 @@ export const DirectorDashboard = () => {
             </div>
 
             {/* 🎞️ OXIRGI 7 KUNLIK KADRLAR VA O'TISHLAR ARXIVI */}
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
                   <History className="w-4 h-4 text-purple-600" />
                   <span>{selectedDate} Sanasidagi Kadrlar va O'tishlar Arxivi ({selectedDateScans.length} ta qayd)</span>
                 </div>
-                <span className="text-[10px] text-slate-400">
-                  Oxirgi 7 kunlik yuzlar va o'tish kadrlarini ko'rish
-                </span>
+                
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setArchiveSearch('');
+                      setArchiveCameraFilter('all');
+                      setArchiveDirectionFilter('all');
+                      setArchivePage(1);
+                      setIsAllArchiveModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer hover:shadow-md"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Barchasini ko'rish ({selectedDateScans.length} ta qayd)</span>
+                    <ExternalLink className="w-3 h-3 opacity-80" />
+                  </button>
+                </div>
               </div>
 
               {selectedDateScans.length === 0 ? (
@@ -1026,15 +1187,38 @@ export const DirectorDashboard = () => {
                   Bu sanada saqlangan kadrlar yoki turniket o'tishlari mavjud emas. Yuqoridagi sanalardan birini tanlab ko'ring.
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                  {selectedDateScans.slice(0, 18).map((scan, sIdx) => (
-                    <ArchiveCard
-                      key={scan.id || `${scan.serialNo || ''}-${scan.employeeNo || ''}-${scan.timeFormatted || sIdx}`}
-                      scan={scan}
-                      effectiveBaseUrl={effectiveBaseUrl}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+                    {selectedDateScans.slice(0, 18).map((scan, sIdx) => (
+                      <ArchiveCard
+                        key={scan.id || `${scan.serialNo || ''}-${scan.employeeNo || ''}-${scan.timeFormatted || sIdx}`}
+                        scan={scan}
+                        effectiveBaseUrl={effectiveBaseUrl}
+                        cameras={cameras}
+                        onSelect={(s) => setSelectedScanDetail(s)}
+                      />
+                    ))}
+                  </div>
+
+                  {selectedDateScans.length > 18 && (
+                    <div className="pt-1 text-center">
+                      <button
+                        onClick={() => {
+                          setArchiveSearch('');
+                          setArchiveCameraFilter('all');
+                          setArchiveDirectionFilter('all');
+                          setArchivePage(1);
+                          setIsAllArchiveModalOpen(true);
+                        }}
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-bold transition-all flex items-center justify-center gap-2 mx-auto shadow-2xs cursor-pointer"
+                      >
+                        <History className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                        <span>Qolgan barcha {selectedDateScans.length - 18} ta o'tish kadrlari ro'yxatini ochish ({selectedDateScans.length} ta qayd)</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </>
@@ -1120,6 +1304,321 @@ export const DirectorDashboard = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🔍 TANLANGAN O'TISHNING KATTA TAFSILOTLARI MODALI */}
+      {selectedScanDetail && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4"
+          onClick={() => setSelectedScanDetail(null)}
+        >
+          <div 
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 max-w-lg w-full overflow-hidden shadow-2xl space-y-0"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal sarlavhasi */}
+            <div className="p-4 bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white flex items-center justify-between border-b border-purple-800/40">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md">
+                  <Camera className="w-4 h-4 text-purple-200" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black">Turniket O'tish Kadrining To'liq Ma'lumoti</h3>
+                  <p className="text-[10px] text-purple-200/80 font-mono">
+                    ID: #{selectedScanDetail.employeeNo || '---'} • {selectedDate}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedScanDetail(null)}
+                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal tanasi */}
+            <div className="p-5 space-y-4">
+              {/* Katta rasm va o'quvchi ma'lumotlari */}
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="w-36 h-36 sm:w-40 sm:h-40 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border-2 border-purple-500/40 shadow-lg shrink-0 relative group">
+                  <ArchiveDetailPhoto scan={selectedScanDetail} effectiveBaseUrl={effectiveBaseUrl} />
+                  <span className={`absolute bottom-2 right-2 text-[10px] font-black px-2 py-0.5 rounded-full shadow-md ${
+                    selectedScanDetail.direction === 'in'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-rose-600 text-white'
+                  }`}>
+                    {selectedScanDetail.direction === 'in' ? '🟢 KIRISH' : '🔴 CHIQISH'}
+                  </span>
+                </div>
+
+                <div className="space-y-2 flex-1 text-center sm:text-left min-w-0">
+                  <div>
+                    <div className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
+                      {selectedScanDetail.name}
+                    </div>
+                    <div className="text-xs text-purple-600 dark:text-purple-400 font-mono font-bold mt-0.5">
+                      Tab raqami: #{selectedScanDetail.employeeNo || '---'}
+                    </div>
+                  </div>
+
+                  {/* Sinf ma'lumoti */}
+                  {(() => {
+                    const cName = getStudentClass(selectedScanDetail, students, classes);
+                    return cName ? (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold border border-indigo-200 dark:border-indigo-800">
+                        <Users className="w-3.5 h-3.5" />
+                        <span>Sinfi: {cName}</span>
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* 📷 O'tgan kamerasi */}
+                  <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-1">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      O'tgan Turniket & Kamerasi
+                    </div>
+                    <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs font-black text-slate-800 dark:text-slate-100">
+                      <Camera className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span>{getCameraLabel(selectedScanDetail, cameras)}</span>
+                    </div>
+                    {selectedScanDetail.cameraIp && (
+                      <div className="text-[10px] text-slate-400 font-mono">
+                        IP: {selectedScanDetail.cameraIp}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Vaqt va holat kartasi */}
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <div className="text-[10px] text-slate-400 font-bold">O'tgan Aniq Vaqti</div>
+                  <div className="text-sm font-mono font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                    {formatScanTime(selectedScanDetail)}
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-mono">{selectedDate}</div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <div className="text-[10px] text-slate-400 font-bold">Autentifikatsiya</div>
+                  <div className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1 mt-0.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Face-ID Terminal</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400">Tasdiqlangan</div>
+                </div>
+              </div>
+
+              {/* Tugmalar: Playback da ko'rish va oldingi/keyingi navigatsiya */}
+              <div className="pt-2 flex flex-col sm:flex-row items-center gap-2 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  onClick={() => {
+                    setPlaybackCamIp(selectedScanDetail.cameraIp);
+                    setCameraMode('playback');
+                    setSelectedScanDetail(null);
+                    setIsAllArchiveModalOpen(false);
+                  }}
+                  className="w-full sm:flex-1 py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                >
+                  <Film className="w-4 h-4" />
+                  <span>Videoni Shu Vaqtdan Ko'rish (Playback)</span>
+                </button>
+
+                {/* Oldingi va Keyingi */}
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                  <button
+                    onClick={() => handleNavigateScan(-1)}
+                    disabled={selectedScanIndex <= 0}
+                    className="flex-1 sm:flex-initial p-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition-colors text-xs font-bold flex items-center justify-center gap-1 cursor-pointer"
+                    title="Oldingi o'tish"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Oldingi</span>
+                  </button>
+                  <button
+                    onClick={() => handleNavigateScan(1)}
+                    disabled={selectedScanIndex >= selectedDateScans.length - 1}
+                    className="flex-1 sm:flex-initial p-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition-colors text-xs font-bold flex items-center justify-center gap-1 cursor-pointer"
+                    title="Keyingi o'tish"
+                  >
+                    <span>Keyingi</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🌐 BARCHA O'TISHLARNI TO'LIQ KO'RISH MODALI (950+ TA QAYD) */}
+      {isAllArchiveModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4"
+          onClick={() => setIsAllArchiveModalOpen(false)}
+        >
+          <div 
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 w-full max-w-6xl h-[92vh] flex flex-col overflow-hidden shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-4 bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white flex items-center justify-between border-b border-purple-800/40 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-2xl bg-white/10 backdrop-blur-md">
+                  <History className="w-5 h-5 text-purple-300" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base sm:text-lg font-black text-white">
+                      {selectedDate} Sanasidagi Barcha Kadrlar va O'tishlar Arxivi
+                    </h2>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-500/30 text-purple-200 border border-purple-400/30">
+                      {selectedDateScans.length} ta qayd
+                    </span>
+                  </div>
+                  <p className="text-xs text-purple-200/80">
+                    Turniket kameralaridan o'tgan barcha o'quvchilar, vaqti va qaysi kameradan o'tganligi
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAllArchiveModalOpen(false)}
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Filterlar paneli */}
+            <div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+              {/* Qidiruv */}
+              <div className="relative flex-1 min-w-[200px] max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="O'quvchi ismi yoki #ID bo'yicha qidirish..."
+                  value={archiveSearch}
+                  onChange={e => {
+                    setArchiveSearch(e.target.value);
+                    setArchivePage(1);
+                  }}
+                  className="w-full pl-9 pr-8 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:border-purple-500 shadow-2xs"
+                />
+                {archiveSearch && (
+                  <button 
+                    onClick={() => { setArchiveSearch(''); setArchivePage(1); }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Kamera va Yo'nalish filterlari */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                {/* Kamera filteri */}
+                <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <Camera className="w-3.5 h-3.5 text-purple-600" />
+                  <select
+                    value={archiveCameraFilter}
+                    onChange={e => {
+                      setArchiveCameraFilter(e.target.value);
+                      setArchivePage(1);
+                    }}
+                    className="bg-transparent text-slate-800 dark:text-slate-200 outline-none text-xs font-bold cursor-pointer"
+                  >
+                    <option value="all">Barcha Kameralar ({cameras?.length || 6} ta)</option>
+                    {(cameras || []).map(c => (
+                      <option key={c.id || c.ip} value={c.ip}>
+                        {c.name} ({c.type === 'in' ? 'Kirish' : 'Chiqish'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Yo'nalish filteri */}
+                <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                  {['all', 'in', 'out'].map(dir => (
+                    <button
+                      key={dir}
+                      onClick={() => {
+                        setArchiveDirectionFilter(dir);
+                        setArchivePage(1);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        archiveDirectionFilter === dir
+                          ? 'bg-purple-600 text-white shadow-2xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {dir === 'all' ? 'Barchasi' : dir === 'in' ? '🟢 Kirish' : '🔴 Chiqish'}
+                    </button>
+                  ))}
+                </div>
+
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-2">
+                  Topildi: <b className="text-purple-600 dark:text-purple-400">{filteredArchiveScans.length}</b> ta
+                </span>
+              </div>
+            </div>
+
+            {/* Grid Ro'yxat */}
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+              {filteredArchiveScans.length === 0 ? (
+                <div className="py-16 text-center text-slate-400 space-y-2">
+                  <Camera className="w-10 h-10 mx-auto opacity-40 text-purple-400" />
+                  <div className="text-sm font-bold text-slate-600 dark:text-slate-300">
+                    Mos keluvchi o'tishlar topilmadi
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Qidiruv so'zini yoki tanlangan filterlarni o'zgartirib ko'ring
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3">
+                  {paginatedArchiveScans.map((scan, sIdx) => (
+                    <ArchiveCard
+                      key={scan.id || `${scan.serialNo || ''}-${scan.employeeNo || ''}-${sIdx}`}
+                      scan={scan}
+                      effectiveBaseUrl={effectiveBaseUrl}
+                      cameras={cameras}
+                      onSelect={(s) => setSelectedScanDetail(s)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Pagination Footer */}
+            {totalArchivePages > 1 && (
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 shrink-0">
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  Sahifa {archivePage} / {totalArchivePages} (Jami {filteredArchiveScans.length} ta o'tish)
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setArchivePage(p => Math.max(1, p - 1))}
+                    disabled={archivePage <= 1}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Oldingi</span>
+                  </button>
+                  <button
+                    onClick={() => setArchivePage(p => Math.min(totalArchivePages, p + 1))}
+                    disabled={archivePage >= totalArchivePages}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Keyingi</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
