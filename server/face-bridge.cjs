@@ -54,6 +54,8 @@ function startCloudflareTunnel() {
 
     cloudflareProcess.on('exit', (code) => {
       console.log(`[TUNNEL] cloudflared to'xtadi (kod: ${code}), 8 soniyada qayta uriniladi...`);
+      currentTunnelUrl = null;
+      syncModuleToSupabase('global_stream_url', '');
       setTimeout(startCloudflareTunnel, 8000);
     });
 

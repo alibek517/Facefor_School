@@ -78,13 +78,8 @@ const isDeadTunnel = (url) => {
 // Alohida, har bir kamerani silliq va navbat bilan (staggered) yangilovchi komponent
 const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, updateCameraType, recentFaceScans, index, onMoveLeft, onMoveRight, effectiveBaseUrl: passedEffectiveBaseUrl }) => {
   const isEntry = cam.type === 'in';
-  const { isLocalConnected, isSchoolLocalOnline, globalStreamUrl, cameraLatestFrames } = useSchool();
-  const isLocalHost = typeof window !== 'undefined' && (
-    window.location.hostname === 'localhost' || 
-    window.location.hostname === '127.0.0.1' || 
-    window.location.hostname.startsWith('192.168.') || 
-    window.location.hostname.startsWith('10.')
-  );
+  const { isLocalConnected, isSchoolLocalOnline, cameraLatestFrames } = useSchool();
+  const isDirectLocal = Boolean(isLocalConnected);
 
   // Kadr formati tekshiruvi (xom IP yoki noto'g'ri string brauzerda ERR_NAME_NOT_RESOLVED chaqirmasligi uchun)
   const isValidFrameSrc = (src) => {
@@ -94,52 +89,48 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
 
   // Bulutdagi oxirgi kadr (Supabase yoki statik baseline)
   const rawCloudFrame = cameraLatestFrames?.[cam.ip];
-  const cloudFrame = isValidFrameSrc(rawCloudFrame) ? rawCloudFrame : `/photos/camera_${cam.ip}.jpg`;
+  const hasRealCloudFrame = Boolean(rawCloudFrame && isValidFrameSrc(rawCloudFrame));
+  const cloudFrame = hasRealCloudFrame ? rawCloudFrame : `/photos/camera_${cam.ip}.jpg`;
 
-  // Haqiqiy jonli ulanish bormi?
-  const hasLiveTunnel = Boolean(globalStreamUrl && (globalStreamUrl.startsWith('https://') || globalStreamUrl.startsWith('http://')) && !isDeadTunnel(globalStreamUrl));
-  const isCloudRelayLive = Boolean(!isLocalConnected && !isLocalHost && (isSchoolLocalOnline || (rawCloudFrame && isValidFrameSrc(rawCloudFrame))));
-  const canLiveStream = Boolean(isLocalConnected || isLocalHost || hasLiveTunnel || isCloudRelayLive);
-  const liveBaseUrl = (isLocalConnected || isLocalHost)
+  // Faqat maktab lokal tarmog'iga haqiqatda ulangan bo'lsak, lokal HTTP portdan foydalanamiz
+  const liveBaseUrl = isDirectLocal
     ? (bridgeUrl && bridgeUrl.startsWith('http') && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
-    : (hasLiveTunnel ? globalStreamUrl : null);
-  const effectiveBaseUrl = (passedEffectiveBaseUrl && passedEffectiveBaseUrl.startsWith('http') && (!isLocalHost || !passedEffectiveBaseUrl.includes('trycloudflare.com')) && !isDeadTunnel(passedEffectiveBaseUrl))
-    ? passedEffectiveBaseUrl
-    : ((isLocalConnected || isLocalHost) ? 'http://localhost:5001' : (liveBaseUrl && liveBaseUrl.startsWith('http') ? liveBaseUrl : ''));
+    : null;
+  const effectiveBaseUrl = isDirectLocal
+    ? (passedEffectiveBaseUrl && passedEffectiveBaseUrl.startsWith('http') && !passedEffectiveBaseUrl.includes('trycloudflare.com') ? passedEffectiveBaseUrl : 'http://localhost:5001')
+    : '';
 
   const [frameSrc, setFrameSrc] = useState(cloudFrame);
-  const [isLiveActive, setIsLiveActive] = useState(false);
+  const [isLiveActive, setIsLiveActive] = useState(Boolean(isDirectLocal || hasRealCloudFrame || isSchoolLocalOnline));
   const [hasError, setHasError] = useState(false);
   const failCountRef = useRef(0);
   const lastScan = cam.lastEvent || (recentFaceScans || []).find(s => s.cameraIp === cam.ip || s.cameraId === cam.id);
 
-  // Bulutdagi yangi kadr kelganda yangilash (Cloud Relay yoki Jonli ko'prik)
+  // Bulutdagi yangi kadr kelganda yangilash (Boshqa Wi-Fi yoki mobil internet rejimida zudlik bilan aks etadi)
   useEffect(() => {
     if (cloudFrame) {
-      // Agar lokal to'g'ridan-to'g'ri oqim bo'lmasa yoki xatolik bo'lsa, bulut kadrini doim yangilab turamiz
-      if (!liveBaseUrl || isCloudRelayLive || failCountRef.current > 0 || !isLiveActive) {
+      if (!isDirectLocal || !liveBaseUrl || failCountRef.current > 0 || !isLiveActive) {
         setFrameSrc(cloudFrame);
         setHasError(false);
-        if (isCloudRelayLive) {
-          setIsLiveActive(true);
-        }
+        setIsLiveActive(Boolean(hasRealCloudFrame || isSchoolLocalOnline));
       }
     }
-  }, [cloudFrame, isCloudRelayLive, liveBaseUrl, isLiveActive]);
+  }, [cloudFrame, isDirectLocal, hasRealCloudFrame, isSchoolLocalOnline, liveBaseUrl, isLiveActive]);
 
   useEffect(() => {
-    // Agar jonli efir mavjud bo'lmasa yoki pauza qilingan bo'lsa
-    if (!livePlaying || !canLiveStream) {
+    // Agar jonli efir pauza qilingan bo'lsa
+    if (!livePlaying) {
       setIsLiveActive(false);
       return;
     }
 
-    if (liveBaseUrl && !isDeadTunnel(liveBaseUrl)) {
+    // 1. Faqat lokal maktab tarmog'ida bo'lsak, to'g'ridan-to'g'ri lokal ko'prikdan yuqori FPS bilan olinadi
+    if (isDirectLocal && liveBaseUrl) {
       let isMounted = true;
       let timer = null;
 
       const loadNext = () => {
-        if (!isMounted || !liveBaseUrl || !liveBaseUrl.startsWith('http') || isDeadTunnel(liveBaseUrl)) return;
+        if (!isMounted || !isDirectLocal || !liveBaseUrl) return;
         const cleanBase = liveBaseUrl.replace(/\/+$/, '');
         const nextUrl = `${cleanBase}/api/camera/snapshot/${cam.ip}?t=${Date.now()}`;
         const img = new Image();
@@ -158,42 +149,16 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
           img.onerror = null;
           if (!isMounted) return;
           failCountRef.current += 1;
-
-          // Agar tashqi tunnel (trycloudflare.com) xatolik bersa, uni o'chgan deb belgilaymiz
-          if (liveBaseUrl.includes('trycloudflare.com')) {
-            try {
-              const u = new URL(liveBaseUrl);
-              deadTunnelsSet.add(u.hostname);
-            } catch (e) {
-              deadTunnelsSet.add(liveBaseUrl);
-            }
-          }
-          
-          // Jonli kadr uzilsa yoki tunnel o'chgan bo'lsa,
-          // zudlik bilan Supabase bulut kadriga qaytamiz va so'rovni to'xtatamiz
           if (cloudFrame) {
             setFrameSrc(cloudFrame);
-            if (isCloudRelayLive) {
-              setIsLiveActive(true);
-            } else {
-              setIsLiveActive(false);
-            }
-          } else {
-            setIsLiveActive(false);
+            setIsLiveActive(Boolean(hasRealCloudFrame || isSchoolLocalOnline));
           }
-
-          // Agar tunnel o'chgan bo'lsa qayta so'rov yubormaymiz, aks holda lokal qayta urinish
-          if (isDeadTunnel(liveBaseUrl)) {
-            return;
-          }
-          const retryDelay = failCountRef.current >= 2 ? 60000 : 5000;
-          timer = setTimeout(loadNext, retryDelay);
+          timer = setTimeout(loadNext, 5000);
         };
         img.src = nextUrl;
       };
 
       const initTimer = setTimeout(loadNext, (index % 6) * 125);
-
       return () => {
         isMounted = false;
         clearTimeout(initTimer);
@@ -201,13 +166,13 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
       };
     }
 
-    // Global rejimda (lokal profil orqali jonli bulut efiri)
-    if (isCloudRelayLive && cloudFrame) {
+    // 2. Boshqa Wi-Fi, uy tarmog'i yoki mobil internetda (Supabase Cloud Relay orqali jonli efir)
+    if (cloudFrame) {
       setFrameSrc(cloudFrame);
-      setIsLiveActive(true);
+      setIsLiveActive(Boolean(hasRealCloudFrame || isSchoolLocalOnline));
       setHasError(false);
     }
-  }, [cam.ip, livePlaying, index, liveBaseUrl, canLiveStream, cloudFrame, isCloudRelayLive]);
+  }, [cam.ip, livePlaying, index, isDirectLocal, liveBaseUrl, cloudFrame, hasRealCloudFrame, isSchoolLocalOnline]);
 
   return (
     <div className="bg-slate-50 dark:bg-slate-800/70 rounded-xl border border-slate-200 dark:border-slate-700/80 overflow-hidden flex flex-col transition-all hover:border-blue-400 hover:shadow-md">
@@ -487,9 +452,9 @@ export const DirectorDashboard = () => {
     window.location.hostname.startsWith('192.168.') || 
     window.location.hostname.startsWith('10.')
   );
-  const effectiveBaseUrl = (isLocalConnected || isLocalHost)
+  const effectiveBaseUrl = isLocalConnected
     ? (bridgeUrl && bridgeUrl.startsWith('http') && !bridgeUrl.includes('trycloudflare.com') ? bridgeUrl : 'http://localhost:5001')
-    : (globalStreamUrl && globalStreamUrl.startsWith('http') && !isDeadTunnel(globalStreamUrl) ? globalStreamUrl : (bridgeUrl && bridgeUrl.startsWith('http') && !isDeadTunnel(bridgeUrl) ? bridgeUrl : 'http://localhost:5001'));
+    : (globalStreamUrl && globalStreamUrl.startsWith('http') && !globalStreamUrl.includes('trycloudflare.com') && !isDeadTunnel(globalStreamUrl) ? globalStreamUrl : '');
   const [selectedClass, setSelectedClass] = useState('all');
   const [cameraFilter, setCameraFilter] = useState('all'); // 'all', 'in', 'out'
   const [cameraMode, setCameraMode] = useState('live'); // 'live' yoki 'playback'
@@ -1105,7 +1070,7 @@ export const DirectorDashboard = () => {
                 const modalCloudFrame = (rawModalFrame && isValidSrc(rawModalFrame)) ? rawModalFrame : `/photos/camera_${activeModalCam.ip}.jpg`;
                 const cleanStreamBase = isLocalConnected
                   ? (bridgeUrl && bridgeUrl.startsWith('http') ? bridgeUrl : 'http://localhost:5001')
-                  : (globalStreamUrl && (globalStreamUrl.startsWith('https://') || globalStreamUrl.startsWith('http://')) && !isDeadTunnel(globalStreamUrl) ? globalStreamUrl : null);
+                  : null;
                 const modalLiveUrl = cleanStreamBase ? `${cleanStreamBase.replace(/\/+$/, '')}/api/camera/stream/${activeModalCam.ip}` : null;
                 const isModalLive = Boolean(modalLiveUrl || (isSchoolLocalOnline && rawModalFrame && isValidSrc(rawModalFrame)));
 

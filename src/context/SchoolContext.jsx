@@ -220,7 +220,12 @@ export const SchoolProvider = ({ children }) => {
   const manualRetryLocal = useRef(false);
   const [globalStreamUrl, setGlobalStreamUrl] = useState(() => {
     try {
-      return localStorage.getItem('school_global_stream_url') || '';
+      const saved = localStorage.getItem('school_global_stream_url') || '';
+      if (saved.includes('trycloudflare.com')) {
+        localStorage.removeItem('school_global_stream_url');
+        return '';
+      }
+      return saved;
     } catch (e) {
       return '';
     }
@@ -994,8 +999,9 @@ export const SchoolProvider = ({ children }) => {
         // Supabase dan oxirgi kamera kadrlarini yangilab turish (Global rejim uchun)
         try {
           const cloudFrames = await getLatestCameraFramesFromSupabase();
-          if (cloudFrames && typeof cloudFrames === 'object') {
+          if (cloudFrames && typeof cloudFrames === 'object' && Object.keys(cloudFrames).length > 0) {
             setCameraLatestFrames(prev => ({ ...prev, ...cloudFrames }));
+            setIsSchoolLocalOnline(true);
           }
         } catch (e) {}
       }
