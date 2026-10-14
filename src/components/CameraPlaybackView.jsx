@@ -19,7 +19,8 @@ import {
   ShieldCheck,
   Sparkles,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  AlertCircle
 } from 'lucide-react';
 import { StudentAvatar } from './StudentAvatar';
 import { useSchool } from '../context/SchoolContext';
@@ -136,6 +137,12 @@ export const CameraPlaybackView = ({
       .then(d => {
         if (d?.success) {
           setTimelineData(d);
+          if (d.latestTime) {
+            const latestSec = timeStrToSeconds(d.latestTime);
+            if (latestSec > 0 && (!currentSeconds || currentSeconds < 14 * 3600)) {
+              setCurrentSeconds(latestSec);
+            }
+          }
         }
       })
       .catch(() => {})
@@ -399,25 +406,25 @@ export const CameraPlaybackView = ({
                   key={`${selectedCameraIp}-${selectedDate}-${Math.floor(currentSeconds / 2)}`}
                   src={getFrameUrl(selectedCameraIp, currentSeconds)}
                   alt={activeCam.name}
-                  className={`w-full h-full object-contain ${frameNotFound ? 'hidden' : 'block'}`}
+                  className="w-full h-full object-contain"
                   onLoad={() => setFrameNotFound(false)}
-                  onError={() => setFrameNotFound(true)}
+                  onError={(e) => {
+                    const freshCloud = cameraLatestFrames?.[selectedCameraIp];
+                    if (freshCloud && typeof freshCloud === 'string' && (freshCloud.startsWith('data:image/') || freshCloud.startsWith('http'))) {
+                      e.target.onerror = null;
+                      e.target.src = freshCloud;
+                    } else {
+                      e.target.onerror = null;
+                      e.target.src = `/photos/camera_${selectedCameraIp}.jpg`;
+                    }
+                    setFrameNotFound(true);
+                  }}
                 />
 
                 {frameNotFound && (
-                  <div className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center z-10">
-                    <div className="w-14 h-14 rounded-2xl bg-purple-950/50 border border-purple-800/60 flex items-center justify-center text-purple-400 mb-3 shadow-lg">
-                      <Film className="w-7 h-7" />
-                    </div>
-                    <div className="text-white font-black text-sm sm:text-base mb-1">
-                      Ushbu vaqtda yozuv mavjud emas
-                    </div>
-                    <div className="text-purple-300 font-mono text-xs px-2.5 py-1 rounded-md bg-purple-900/40 border border-purple-700/50 mb-3">
-                      {selectedDate} • {currentTimeStr}
-                    </div>
-                    <p className="text-slate-400 text-xs max-w-sm leading-relaxed">
-                      Tanlangan vaqtda kamera o'chiq bo'lgan yoki yozuv olinmagan. O'ng paneldagi <b>O'tish Voqealari</b>dan birini bosing yoki vaqt chizig'idagi yozuv bor daqiqalarni tanlang.
-                    </p>
+                  <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-10 px-3.5 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-md border border-amber-500/50 text-amber-300 text-xs font-bold shadow-2xl flex items-center gap-2 select-none pointer-events-none">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+                    <span>Tanlangan vaqt ({currentTimeStr}) bo'yicha eng yaqin kadr ko'rsatilmoqda</span>
                   </div>
                 )}
 

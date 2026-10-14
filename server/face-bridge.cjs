@@ -866,28 +866,52 @@ function getCameraPlaybackFrame(camIp, dateStr, targetTimeStr) {
     } catch (e) {}
   }
 
-  // Agar arxivdan topilgan kadr so'ralgan vaqtdan ko'pi bilan 120 soniya (2 daqiqa) farq qilsa, uni qaytaramiz
-  if (bestFilePath && fs.existsSync(bestFilePath) && minDiff <= 120) {
+  // 1. Agar nomzod soatlardan kadr topilsa, uni qaytaramiz
+  if (bestFilePath && fs.existsSync(bestFilePath)) {
     try {
       const buf = fs.readFileSync(bestFilePath);
       if (isValidJpeg(buf)) {
-        return { buffer: buf, actualTime: bestTimeStr, diffSeconds: minDiff, found: true };
+        return { buffer: buf, actualTime: bestTimeStr, diffSeconds: minDiff, found: minDiff <= 60 };
       }
     } catch (e) {}
   }
 
-  // Faqat bugungi sana bo'lsa va so'ralgan vaqt hozirgi vaqtga juda yaqin (60s) bo'lsa jonli kadr beriladi
-  const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const nowSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-  if (dStr === todayStr && Math.abs(targetSeconds - nowSeconds) <= 60) {
-    const cached = cameraFrames.get(camIp);
-    if (cached && isValidJpeg(cached.buffer)) {
-      return { buffer: cached.buffer, actualTime: tStr, diffSeconds: 0, found: true };
-    }
+  // 2. Agar tanlangan soatda kadr topilmasa, shu sananing barcha mavjud soatlaridan eng yaqin kadrni topamiz
+  if (fs.existsSync(camDir)) {
+    try {
+      const allHours = fs.readdirSync(camDir).sort();
+      for (const h of allHours) {
+        const hPath = path.join(camDir, h);
+        if (!fs.statSync(hPath).isDirectory()) continue;
+        const files = fs.readdirSync(hPath).filter(f => f.endsWith('.jpg'));
+        for (const f of files) {
+          const parts = f.replace('.jpg', '').split('-').map(Number);
+          if (parts.length === 3) {
+            const fSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            const diff = Math.abs(fSeconds - targetSeconds);
+            if (diff < minDiff) {
+              minDiff = diff;
+              bestFilePath = path.join(hPath, f);
+              bestTimeStr = `${String(parts[0]).padStart(2, '0')}:${String(parts[1]).padStart(2, '0')}:${String(parts[2]).padStart(2, '0')}`;
+            }
+          }
+        }
+      }
+      if (bestFilePath && fs.existsSync(bestFilePath)) {
+        const buf = fs.readFileSync(bestFilePath);
+        if (isValidJpeg(buf)) {
+          return { buffer: buf, actualTime: bestTimeStr, diffSeconds: minDiff, found: false };
+        }
+      }
+    } catch (e) {}
   }
 
-  // Agar yozuv topilmasa null qaytaramiz (noto'g'ri kadr ko'rsatmaslik uchun)
+  // 3. Agar arxiv fayli topilmasa, qora ekran bo'lib qolmasligi uchun kamera keshidagi kadrni qaytaramiz
+  const cached = cameraFrames.get(camIp);
+  if (cached && isValidJpeg(cached.buffer)) {
+    return { buffer: cached.buffer, actualTime: tStr, diffSeconds: 0, found: false };
+  }
+
   return null;
 }
 
