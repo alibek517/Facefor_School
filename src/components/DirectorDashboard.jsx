@@ -561,6 +561,7 @@ export const DirectorDashboard = () => {
   const [cameraFilter, setCameraFilter] = useState('all'); // 'all', 'in', 'out'
   const [cameraMode, setCameraMode] = useState('live'); // 'live' yoki 'playback'
   const [playbackCamIp, setPlaybackCamIp] = useState(null);
+  const [livePlaying, setLivePlaying] = useState(true);
   const [activeModalCam, setActiveModalCam] = useState(null);
   const [selectedScanDetail, setSelectedScanDetail] = useState(null);
   const [isAllArchiveModalOpen, setIsAllArchiveModalOpen] = useState(false);
