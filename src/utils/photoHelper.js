@@ -26,7 +26,7 @@ export const getCleanIdAndPadded = (studentOrEmp) => {
   return { cleanId, paddedId, rawId };
 };
 
-export const getStudentPhotoUrls = (studentOrEmp, effectiveBaseUrl) => {
+export const getStudentPhotoUrls = (studentOrEmp, effectiveBaseUrl, allStudents = [], allTeachers = []) => {
   if (!studentOrEmp) {
     return { primaryUrl: null, fallbackUrl: null };
   }
@@ -45,6 +45,31 @@ export const getStudentPhotoUrls = (studentOrEmp, effectiveBaseUrl) => {
     const isInternal = u.includes('192.168.') || u.includes('10.') || u.includes('172.');
     if (!isInternal && (u.startsWith('http://') || u.startsWith('https://'))) {
       return { primaryUrl: u, fallbackUrl: null };
+    }
+  }
+
+  // Agar scan hodisasi bo'lsa (o'zida rasm bo'lmasa), bazadagi o'quvchi yoki o'qituvchi profilidan rasmni qidiramiz
+  if (typeof studentOrEmp === 'object' && !studentOrEmp.photo && !studentOrEmp.photoUrl) {
+    const { cleanId } = getCleanIdAndPadded(studentOrEmp);
+    const scanName = (studentOrEmp.name || '').toLowerCase().trim();
+
+    const matched = (allStudents || []).find(s => {
+      const sId = String(s.studentId || s.employeeNo || s.id || '').replace(/^s-/, '').replace(/^0+/, '');
+      if (cleanId && sId && cleanId === sId) return true;
+      const sName = (s.fullName || s.name || '').toLowerCase().trim();
+      return scanName && sName && (scanName === sName);
+    }) || (allTeachers || []).find(t => {
+      const tId = String(t.employeeNo || t.id || '').replace(/^t-/, '').replace(/^0+/, '');
+      if (cleanId && tId && cleanId === tId) return true;
+      const tName = (t.fullName || t.name || '').toLowerCase().trim();
+      return scanName && tName && (scanName === tName);
+    });
+
+    if (matched && (matched.photo || matched.photoUrl)) {
+      const dbPhoto = matched.photo || matched.photoUrl;
+      if (typeof dbPhoto === 'string' && (dbPhoto.startsWith('data:image/') || dbPhoto.startsWith('http://') || dbPhoto.startsWith('https://') || dbPhoto.startsWith('blob:'))) {
+        return { primaryUrl: dbPhoto, fallbackUrl: null };
+      }
     }
   }
 

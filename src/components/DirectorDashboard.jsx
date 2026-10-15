@@ -354,9 +354,10 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
 
 // Kamera ostidagi oxirgi o'tgan shaxs surati
 const CameraLastScanThumb = ({ lastScan, effectiveBaseUrl }) => {
+  const { students, teachers } = useSchool();
   const [hasError, setHasError] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
-  const { primaryUrl, fallbackUrl } = getStudentPhotoUrls(lastScan, effectiveBaseUrl);
+  const { primaryUrl, fallbackUrl } = getStudentPhotoUrls(lastScan, effectiveBaseUrl, students, teachers);
 
   useEffect(() => {
     setHasError(false);
@@ -425,9 +426,10 @@ const getStudentClass = (scan, students, classes) => {
 
 // Katta modal uchun yuqori sifatli rasm
 const ArchiveDetailPhoto = ({ scan, effectiveBaseUrl }) => {
+  const { students, teachers } = useSchool();
   const [hasError, setHasError] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
-  const { primaryUrl, fallbackUrl } = getStudentPhotoUrls(scan, effectiveBaseUrl);
+  const { primaryUrl, fallbackUrl } = getStudentPhotoUrls(scan, effectiveBaseUrl, students, teachers);
 
   useEffect(() => {
     setHasError(false);
@@ -464,9 +466,10 @@ const ArchiveDetailPhoto = ({ scan, effectiveBaseUrl }) => {
 
 // Arxivdagi kadr va o'tish kartasi (Barcha kameralar ko'rsatiladi va bosganda kattalashadi)
 const ArchiveCard = ({ scan, effectiveBaseUrl, cameras, onSelect }) => {
+  const { students, teachers } = useSchool();
   const [hasError, setHasError] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
-  const { primaryUrl, fallbackUrl } = getStudentPhotoUrls(scan, effectiveBaseUrl);
+  const { primaryUrl, fallbackUrl } = getStudentPhotoUrls(scan, effectiveBaseUrl, students, teachers);
 
   useEffect(() => {
     setHasError(false);
