@@ -934,6 +934,20 @@ export const SchoolProvider = ({ children }) => {
         setIsLocalConnected(false);
         setNetworkMode('global');
 
+        // Agar Cloudflare global stream tunnel faol bo'lsa, voqealarni tunnel orqali to'liq yuklaymiz
+        const activeTunnel = getActiveBridgeUrl();
+        if (activeTunnel) {
+          try {
+            const evRes = await fetch(`${activeTunnel}/api/device/events`).catch(() => null);
+            if (evRes && evRes.ok) {
+              const evJson = await evRes.json().catch(() => null);
+              if (evJson && Array.isArray(evJson.data) && evJson.data.length > 0) {
+                setRecentFaceScans(evJson.data);
+              }
+            }
+          } catch (e) {}
+        }
+
         // Supabase dan "local_status" heartbeat ni tekshiramiz
         try {
           const localStatus = await getLocalStatusFromSupabase();
