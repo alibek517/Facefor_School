@@ -31,6 +31,14 @@ export const getStudentPhotoUrls = (studentOrEmp, effectiveBaseUrl) => {
     return { primaryUrl: null, fallbackUrl: null };
   }
 
+  // Agar yuklangan maxsus rasm bo'lsa (Base64 yoki Cloud URL)
+  if (typeof studentOrEmp === 'object') {
+    const customPhoto = studentOrEmp.photo || studentOrEmp.photoUrl;
+    if (customPhoto && typeof customPhoto === 'string' && (customPhoto.startsWith('data:image/') || customPhoto.startsWith('http://') || customPhoto.startsWith('https://') || customPhoto.startsWith('blob:'))) {
+      return { primaryUrl: customPhoto, fallbackUrl: null };
+    }
+  }
+
   // Agar to'g'ridan-to'g'ri tashqi ochiq internet URL bo'lsa (192.168 yoki 10. kabi lokal bo'lmasa)
   if (typeof studentOrEmp === 'object' && studentOrEmp.faceURL) {
     const u = String(studentOrEmp.faceURL);

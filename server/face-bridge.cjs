@@ -248,6 +248,41 @@ async function syncStudentToHardware(action, studentData) {
     usersMap.delete(empClean);
     cachedUsers = cachedUsers.filter(u => u.employeeNo !== rawEmp && u.employeeNo !== empPadded && u.employeeNo !== empClean);
 
+    // 1. Hikvision FDLib (blackFD va infraredFD) dan yuz biometrik ma'lumotlarini tozalash
+    const fdDelPayload = JSON.stringify({
+      FPID: [
+        { value: empPadded },
+        { value: rawEmp },
+        { value: empClean }
+      ]
+    });
+
+    for (const cam of CAMERAS) {
+      try {
+        await digestRequest({
+          host: cam.ip,
+          port: 80,
+          path: '/ISAPI/Intelligent/FDLib/FDSearch/Delete?format=json&FDID=1&faceLibType=blackFD',
+          method: 'PUT',
+          body: fdDelPayload,
+          username: CONFIG.DEVICE_USER,
+          password: CONFIG.DEVICE_PASS,
+          timeout: 2500
+        });
+        await digestRequest({
+          host: cam.ip,
+          port: 80,
+          path: '/ISAPI/Intelligent/FDLib/FDSearch/Delete?format=json&FDID=2&faceLibType=infraredFD',
+          method: 'PUT',
+          body: fdDelPayload,
+          username: CONFIG.DEVICE_USER,
+          password: CONFIG.DEVICE_PASS,
+          timeout: 2500
+        });
+      } catch (e) {}
+    }
+
+    // 2. UserInfo dan butunlay o'chirish
     const deletePayload = JSON.stringify({
       UserInfoDelCond: {
         EmployeeNoList: [
@@ -275,6 +310,13 @@ async function syncStudentToHardware(action, studentData) {
         }
       } catch (e) {}
     }
+
+    // Lokal fotosurat faylini o'chirish
+    try {
+      const p1 = path.join(__dirname, '..', 'public', 'photos', `${empPadded}.jpg`);
+      if (fs.existsSync(p1)) fs.unlinkSync(p1);
+    } catch (e) {}
+
     console.log(`[HARDWARE SYNC] #${rawEmp} barcha Face-ID terminallaridan butunlay o'chirildi.`);
   } else if (action === 'update' || action === 'add') {
     console.log(`[HARDWARE SYNC] #${empPadded} (${name}) Face-ID kameralariga ${action === 'add' ? "qo'shilmoqda" : "yangilanmoqda"}...`);
@@ -297,6 +339,7 @@ async function syncStudentToHardware(action, studentData) {
       cachedUsers.push(userObj);
     }
 
+    // 1. Foydalanuvchi ma'lumotlarini (Ismi, jinsi, kirish huquqi) o'rnatish
     const setUpPayload = JSON.stringify({
       UserInfo: {
         employeeNo: empPadded,
@@ -330,9 +373,136 @@ async function syncStudentToHardware(action, studentData) {
         if (setRes && setRes.status === 200) {
           console.log(`[SETUP] Kamera ${cam.name} (${cam.ip}): #${empPadded} (${name}) saqlandi`);
         }
+        if (action === 'update') {
+          await digestRequest({
+            host: cam.ip,
+            port: 80,
+            path: '/ISAPI/AccessControl/UserInfo/Modify?format=json',
+            method: 'PUT',
+            body: setUpPayload,
+            username: CONFIG.DEVICE_USER,
+            password: CONFIG.DEVICE_PASS,
+            timeout: 2500
+          });
+        }
       } catch (e) {}
     }
+
+    // 2. Agar yangi rasm taqdim etilgan bo'lsa, uni barcha Face-ID terminallarining FDLib (Yuz bazasi) ga yuklash
+    if (studentData.photo && typeof studentData.photo === 'string') {
+      try {
+        let imgBuffer = null;
+        if (studentData.photo.startsWith('data:image/')) {
+          const base64Data = studentData.photo.replace(/^data:image\/[a-zA-Z+]+;base64,/, '');
+          imgBuffer = Buffer.from(base64Data, 'base64');
+        } else if (studentData.photo.startsWith('http')) {
+          const r = await fetch(studentData.photo);
+          if (r.ok) {
+            const arr = await r.arrayBuffer();
+            imgBuffer = Buffer.from(arr);
+          }
+        }
+
+        if (imgBuffer && imgBuffer.length > 500) {
+          try {
+            const photosDir = path.join(__dirname, '..', 'public', 'photos');
+            if (!fs.existsSync(photosDir)) fs.mkdirSync(photosDir, { recursive: true });
+            fs.writeFileSync(path.join(photosDir, `${empPadded}.jpg`), imgBuffer);
+          } catch (e) {}
+
+          const boundary = `----WebKitFormBoundaryFace${Date.now()}`;
+          const jsonMeta = JSON.stringify({
+            faceLibType: 'blackFD',
+            FDID: '1',
+            FPID: empPadded
+          });
+          const multipartBody = Buffer.concat([
+            Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="FaceDataRecord"\r\nContent-Type: text/json\r\n\r\n${jsonMeta}\r\n`),
+            Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="img"; filename="face.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`),
+            imgBuffer,
+            Buffer.from(`\r\n--${boundary}--\r\n`)
+          ]);
+
+          for (const cam of CAMERAS) {
+            try {
+              // Eskisini o'chirish (agar bo'lsa)
+              await digestRequest({
+                host: cam.ip,
+                port: 80,
+                path: '/ISAPI/Intelligent/FDLib/FDSearch/Delete?format=json&FDID=1&faceLibType=blackFD',
+                method: 'PUT',
+                body: JSON.stringify({ FPID: [{ value: empPadded }] }),
+                username: CONFIG.DEVICE_USER,
+                password: CONFIG.DEVICE_PASS,
+                timeout: 2500
+              });
+
+              // Yangisini yuklash
+              const faceRes = await digestRequest({
+                host: cam.ip,
+                port: 80,
+                path: '/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json',
+                method: 'POST',
+                body: multipartBody,
+                contentType: `multipart/form-data; boundary=${boundary}`,
+                username: CONFIG.DEVICE_USER,
+                password: CONFIG.DEVICE_PASS,
+                timeout: 5000
+              });
+              if (faceRes && faceRes.status === 200) {
+                console.log(`[PHOTO SYNC] Kamera ${cam.name} (${cam.ip}): #${empPadded} fotosi muvaffaqiyatli yuklandi`);
+              }
+            } catch (err) {
+              console.log(`[PHOTO SYNC ERR] Kamera ${cam.name} (${cam.ip}): ${err.message}`);
+            }
+          }
+        }
+      } catch (err) {
+        console.error(`[PHOTO SYNC ERROR] #${empPadded}:`, err.message);
+      }
+    }
+
     console.log(`[HARDWARE SYNC] #${empPadded} (${name}) barcha Face-ID terminallariga saqlandi.`);
+  }
+}
+
+// Baza va apparat o'rtasidagi farqlarni aniqlash va avtomatik sinxronlash
+function detectAndSyncStudentDifferences(oldStudents, newStudents) {
+  if (!Array.isArray(oldStudents) || !Array.isArray(newStudents)) return;
+  if (oldStudents.length === 0) return; // Boshlang'ich yuklashda o'chirishni oldini olish
+
+  // 1. O'chirilganlarni aniqlash va Face-ID apparatlaridan o'chirish
+  const newIds = new Set(newStudents.map(s => String(s.studentId || s.id || '').replace(/^s-/, '').replace(/^0+/, '')));
+  for (const oldS of oldStudents) {
+    const empNo = String(oldS.studentId || oldS.id || '').replace(/^s-/, '').replace(/^0+/, '');
+    if (empNo && !newIds.has(empNo)) {
+      console.log(`[STUDENT DIFF SYNC] O'chirilgan o'quvchi aniqlandi: #${empNo} (${oldS.fullName || oldS.name}). Kameralardan butunlay o'chirilmoqda...`);
+      syncStudentToHardware('delete', oldS).catch(() => {});
+    }
+  }
+
+  // 2. Yangi qo'shilgan yoki tahrirlanganlarni aniqlash
+  const oldMap = new Map();
+  oldStudents.forEach(s => {
+    const empNo = String(s.studentId || s.id || '').replace(/^s-/, '').replace(/^0+/, '');
+    if (empNo) oldMap.set(empNo, s);
+  });
+
+  for (const newS of newStudents) {
+    const empNo = String(newS.studentId || newS.id || '').replace(/^s-/, '').replace(/^0+/, '');
+    if (!empNo) continue;
+    const oldS = oldMap.get(empNo);
+    if (!oldS) {
+      console.log(`[STUDENT DIFF SYNC] Yangi o'quvchi aniqlandi: #${empNo} (${newS.fullName || newS.name}). Kameralarga kiritilmoqda...`);
+      syncStudentToHardware('add', newS).catch(() => {});
+    } else if (
+      (newS.fullName || newS.name) !== (oldS.fullName || oldS.name) ||
+      newS.gender !== oldS.gender ||
+      (newS.photo && newS.photo !== oldS.photo)
+    ) {
+      console.log(`[STUDENT DIFF SYNC] Tahrirlangan o'quvchi aniqlandi: #${empNo} (${newS.fullName || newS.name}). Kameralarda yangilanmoqda...`);
+      syncStudentToHardware('update', newS).catch(() => {});
+    }
   }
 }
 
@@ -367,39 +537,10 @@ async function loadSchoolDataFromSupabase() {
             }
 
             if (r.key === 'students' && Array.isArray(r.data)) {
-              const oldStudents = schoolDB.students || [];
+              const oldStudents = Array.isArray(schoolDB.students) ? JSON.parse(JSON.stringify(schoolDB.students)) : [];
               const newStudents = r.data;
-
               if (oldStudents.length > 0 && JSON.stringify(oldStudents) !== JSON.stringify(newStudents)) {
-                // 1. O'chirilganlarni aniqlash va Face-ID apparatlaridan o'chirish
-                const newIds = new Set(newStudents.map(s => String(s.studentId || s.id || '').replace(/^s-/, '').replace(/^0+/, '')));
-                for (const oldS of oldStudents) {
-                  const empNo = String(oldS.studentId || oldS.id || '').replace(/^s-/, '').replace(/^0+/, '');
-                  if (empNo && !newIds.has(empNo)) {
-                    console.log(`[SUPABASE AUTO-SYNC] O'chirilgan o'quvchi aniqlandi: #${empNo} (${oldS.fullName || oldS.name})`);
-                    syncStudentToHardware('delete', oldS).catch(() => {});
-                  }
-                }
-
-                // 2. Yangi qo'shilgan yoki tahrirlanganlarni aniqlash
-                const oldMap = new Map();
-                oldStudents.forEach(s => {
-                  const empNo = String(s.studentId || s.id || '').replace(/^s-/, '').replace(/^0+/, '');
-                  if (empNo) oldMap.set(empNo, s);
-                });
-
-                for (const newS of newStudents) {
-                  const empNo = String(newS.studentId || newS.id || '').replace(/^s-/, '').replace(/^0+/, '');
-                  if (!empNo) continue;
-                  const oldS = oldMap.get(empNo);
-                  if (!oldS) {
-                    console.log(`[SUPABASE AUTO-SYNC] Yangi o'quvchi aniqlandi: #${empNo} (${newS.fullName || newS.name})`);
-                    syncStudentToHardware('add', newS).catch(() => {});
-                  } else if ((newS.fullName || newS.name) !== (oldS.fullName || oldS.name) || newS.gender !== oldS.gender) {
-                    console.log(`[SUPABASE AUTO-SYNC] Tahrirlangan o'quvchi aniqlandi: #${empNo} (${newS.fullName || newS.name})`);
-                    syncStudentToHardware('update', newS).catch(() => {});
-                  }
-                }
+                detectAndSyncStudentDifferences(oldStudents, newStudents);
               }
             }
 
@@ -1793,9 +1934,17 @@ const server = http.createServer(async (req, res) => {
       try {
         const payload = JSON.parse(body);
         if (payload.key && payload.data) {
+          if (payload.key === 'students' && Array.isArray(payload.data)) {
+            const oldStudents = Array.isArray(schoolDB.students) ? JSON.parse(JSON.stringify(schoolDB.students)) : [];
+            detectAndSyncStudentDifferences(oldStudents, payload.data);
+          }
           schoolDB[payload.key] = payload.data;
           syncModuleToSupabase(payload.key, payload.data);
         } else {
+          if (payload.students && Array.isArray(payload.students)) {
+            const oldStudents = Array.isArray(schoolDB.students) ? JSON.parse(JSON.stringify(schoolDB.students)) : [];
+            detectAndSyncStudentDifferences(oldStudents, payload.students);
+          }
           Object.assign(schoolDB, payload);
           Object.keys(payload).forEach(k => syncModuleToSupabase(k, payload[k]));
         }

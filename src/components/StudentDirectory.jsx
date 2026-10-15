@@ -18,7 +18,9 @@ import {
   FileText, 
   AlertTriangle,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Camera,
+  Image as ImageIcon
 } from 'lucide-react';
 import { 
   downloadStudentTemplate, 
@@ -58,10 +60,12 @@ export const StudentDirectory = () => {
   // Forma maydonlari
   const [fullName, setFullName] = useState('');
   const [classId, setClassId] = useState(classes[0]?.id || 'c-1a');
+  const [gender, setGender] = useState("O'g'il");
   const [address, setAddress] = useState('');
   const [parentName, setParentName] = useState('');
   const [parentPhone, setParentPhone] = useState('');
   const [phone, setPhone] = useState('');
+  const [photo, setPhoto] = useState('');
 
   // Excel Import Modali
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -127,15 +131,61 @@ export const StudentDirectory = () => {
     }
   };
 
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Rasm hajmi juda katta (maksimal 10MB).");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        // Standart Face-ID portret ruxsatiga siqish (max 480x480)
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 480;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+        setPhoto(compressedBase64);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const openAddModal = () => {
     setIsEditMode(false);
     setCurrentId(null);
     setFullName('');
     setClassId(selectedClass !== 'all' ? selectedClass : (classes[0]?.id || 'c-1a'));
+    setGender("O'g'il");
     setAddress('');
     setParentName('');
     setParentPhone('');
     setPhone('');
+    setPhoto('');
     setModalOpen(true);
   };
 
@@ -144,10 +194,12 @@ export const StudentDirectory = () => {
     setCurrentId(student.id);
     setFullName(student.fullName || student.name);
     setClassId(student.classId);
-    setAddress(student.address);
-    setParentName(student.parentName);
+    setGender(student.gender || "O'g'il");
+    setAddress(student.address || '');
+    setParentName(student.parentName || '');
     setParentPhone(formatPhoneNumber(student.parentPhone || student.phone || ''));
     setPhone(formatPhoneNumber(student.phone || student.parentPhone || ''));
+    setPhoto(student.photo || student.photoUrl || '');
     setModalOpen(true);
   };
 
@@ -168,7 +220,8 @@ export const StudentDirectory = () => {
       parentName,
       parentPhone: formattedPhone,
       phone: formattedPhone,
-      gender: 'O\'g\'il'
+      gender: gender || "O'g'il",
+      photo: photo || undefined
     };
 
     if (isEditMode) {
@@ -629,6 +682,52 @@ export const StudentDirectory = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-2.5">
+              {/* Face-ID Yuz Surati Yuklash */}
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 flex items-center gap-3">
+                <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-700 shrink-0 border border-slate-300 dark:border-slate-600 flex items-center justify-center">
+                  {photo ? (
+                    <img src={photo} alt="Yuz surati" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-slate-400">
+                      <Camera className="w-5 h-5 mb-0.5" />
+                      <span className="text-[9px] font-bold">Rasm</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1">
+                    <span>Face-ID Yuz Surati</span>
+                    <span className="text-[10px] text-blue-600 dark:text-blue-400 font-normal">(Kamera uchun)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <label className="cursor-pointer px-2.5 py-1 text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-1 shadow-xs">
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>{photo ? "O'zgartirish" : "Rasm tanlash"}</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        capture="user"
+                        className="hidden" 
+                        onChange={handlePhotoSelect} 
+                      />
+                    </label>
+                    {photo && (
+                      <button
+                        type="button"
+                        onClick={() => setPhoto('')}
+                        className="px-2 py-1 text-[11px] font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+                      >
+                        O'chirish
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[9px] text-slate-400 mt-1 leading-tight">
+                    O'quvchining yuzi to'g'ri ko'ringan selfi yoki hujjat rasmi
+                  </p>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-0.5">F.I.Sh:</label>
                 <input
@@ -641,17 +740,31 @@ export const StudentDirectory = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-0.5">Sinfi:</label>
-                <select
-                  value={classId}
-                  onChange={(e) => setClassId(e.target.value)}
-                  className="w-full text-xs p-1.5 border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none font-bold"
-                >
-                  {classes.map(c => (
-                    <option key={c.id} value={c.id}>{c.name} sinfi</option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-0.5">Sinfi:</label>
+                  <select
+                    value={classId}
+                    onChange={(e) => setClassId(e.target.value)}
+                    className="w-full text-xs p-1.5 border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none font-bold"
+                  >
+                    {classes.map(c => (
+                      <option key={c.id} value={c.id}>{c.name} sinfi</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-0.5">Jinsi:</label>
+                  <select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                    className="w-full text-xs p-1.5 border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none font-bold"
+                  >
+                    <option value="O'g'il">O'g'il bola</option>
+                    <option value="Qiz">Qiz bola</option>
+                  </select>
+                </div>
               </div>
 
               <div>
