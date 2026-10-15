@@ -167,7 +167,7 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
           if (cloudFrame) {
             setFrameSrc(cloudFrame);
           }
-          timer = setTimeout(loadNext, isDirectLocal ? 4000 : 8000);
+          timer = setTimeout(loadNext, 1500);
         };
         img.src = nextUrl;
       };
@@ -293,12 +293,12 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
           <span className={`w-1.5 h-1.5 rounded-full ${
             isStreamingLive 
               ? 'bg-emerald-500 animate-pulse' 
-              : (isSchoolLocalOnline ? 'bg-amber-400' : 'bg-slate-400')
+              : (isSchoolLocalOnline ? 'bg-amber-400 animate-pulse' : 'bg-slate-400')
           }`}></span>
           <span>
             {isStreamingLive 
-              ? (isDirectLocal ? 'LIVE' : 'JONLI (TUNNEL)') 
-              : (isSchoolLocalOnline ? 'KADR KUTILMOQDA' : 'OXIRGI KADR (OFFLAYN)')}
+              ? (isDirectLocal ? 'LIVE (LOKAL)' : 'JONLI (TUNNEL)') 
+              : (isSchoolLocalOnline ? 'ULANYAPTI...' : 'OXIRGI KADR (OFFLAYN)')}
           </span>
         </div>
 

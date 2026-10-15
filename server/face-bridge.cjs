@@ -1484,8 +1484,9 @@ const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = parsedUrl.pathname;
 
-  // 0. Bosh sahifa (Cloudflare tunnel tekshiruvi uchun ma'lumot)
-  if (pathname === '/' || pathname === '/status') {
+  // 0. Bosh sahifa (Status JSON faqat API yoki /status orqali chaqirilganda, brauzerda esa veb-ilova ochiladi)
+  const isHtmlReq = Boolean(req.headers['accept'] && req.headers['accept'].includes('text/html'));
+  if (pathname === '/status' || (pathname === '/' && !isHtmlReq)) {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({
       service: "Maktab Face-ID Cloudflare Global Ko'prigi",
@@ -2122,6 +2123,45 @@ const server = http.createServer(async (req, res) => {
       data: baseList
     }));
     return;
+  }
+
+  // 14. Frontend ilovasini (dist) lokal Wi-Fi foydalanuvchilariga to'g'ridan-to'g'ri taqdim etish
+  const distDir = path.join(__dirname, '..', 'dist');
+  if (fs.existsSync(distDir) && req.method === 'GET') {
+    let cleanPath = pathname;
+    if (cleanPath === '/') cleanPath = '/index.html';
+    let filePath = path.join(distDir, cleanPath);
+    if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+      filePath = path.join(distDir, 'index.html'); // SPA fallback
+    }
+
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      const ext = path.extname(filePath).toLowerCase();
+      const mimeTypes = {
+        '.html': 'text/html; charset=utf-8',
+        '.js': 'application/javascript; charset=utf-8',
+        '.css': 'text/css; charset=utf-8',
+        '.json': 'application/json; charset=utf-8',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.svg': 'image/svg+xml',
+        '.ico': 'image/x-icon',
+        '.woff': 'font/woff',
+        '.woff2': 'font/woff2',
+        '.ttf': 'font/ttf'
+      };
+      const contentType = mimeTypes[ext] || 'application/octet-stream';
+      try {
+        const fileContent = fs.readFileSync(filePath);
+        res.writeHead(200, {
+          'Content-Type': contentType,
+          'Content-Length': fileContent.length,
+          'Cache-Control': ext === '.html' ? 'no-cache, no-store, must-revalidate' : 'public, max-age=86400'
+        });
+        res.end(fileContent);
+        return;
+      } catch (err) {}
+    }
   }
 
   res.writeHead(404, { 'Content-Type': 'application/json' });
