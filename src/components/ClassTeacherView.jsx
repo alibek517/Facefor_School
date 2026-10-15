@@ -151,8 +151,7 @@ export const ClassTeacherView = () => {
       parentName: newParentName.trim(),
       parentPhone: newParentPhone.trim(),
       phone: newParentPhone.trim(),
-      address: newAddress.trim() || 'Noma\'lum',
-      studentId: `s-${Date.now().toString().slice(-6)}`
+      address: newAddress.trim() || 'Noma\'lum'
     });
 
     setNewStudentFullName('');

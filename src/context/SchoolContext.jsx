@@ -1266,11 +1266,18 @@ export const SchoolProvider = ({ children }) => {
       }
     });
     const nextEmpNo = String(maxEmp + 1).padStart(8, '0');
+    const cleanEmp = (studentData.employeeNo || studentData.studentId || '')
+      ? String(studentData.employeeNo || studentData.studentId).replace(/^s-/, '').replace(/\D/g, '')
+      : '';
+    const assignedEmpNo = (cleanEmp && cleanEmp.length <= 8 && parseInt(cleanEmp, 10) > 0)
+      ? cleanEmp.padStart(8, '0')
+      : nextEmpNo;
+
     const newStudent = {
       ...studentData,
-      id: studentData.id || `s-${nextEmpNo}`,
-      studentId: studentData.studentId || nextEmpNo,
-      employeeNo: studentData.employeeNo || nextEmpNo,
+      id: `s-${assignedEmpNo}`,
+      studentId: assignedEmpNo,
+      employeeNo: assignedEmpNo,
       isFaceEnrolled: false
     };
 

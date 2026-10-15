@@ -1967,11 +1967,31 @@ const server = http.createServer(async (req, res) => {
     req.on('data', c => body += c);
     req.on('end', async () => {
       try {
-        const { student } = JSON.parse(body);
+        let { student } = JSON.parse(body);
         if (student) {
           if (!Array.isArray(schoolDB.students)) schoolDB.students = [];
-          const exists = schoolDB.students.some(s => s.id === student.id || s.studentId === student.studentId);
-          if (!exists) {
+          
+          let rawNum = parseInt(String(student.employeeNo || student.studentId || student.id || '').replace(/^s-/, '').replace(/\D/g, ''), 10);
+          if (isNaN(rawNum) || rawNum <= 0 || rawNum > 90000000) {
+            let maxEmp = 0;
+            schoolDB.students.forEach(s => {
+              const n = parseInt(String(s.studentId || s.employeeNo || s.id || '').replace(/^s-/, '').replace(/\D/g, ''), 10);
+              if (!isNaN(n) && n > maxEmp && n < 90000000) maxEmp = n;
+            });
+            rawNum = maxEmp + 1;
+          }
+          const empPadded = String(rawNum).padStart(8, '0');
+          student = {
+            ...student,
+            id: `s-${empPadded}`,
+            studentId: empPadded,
+            employeeNo: empPadded
+          };
+
+          const existsIdx = schoolDB.students.findIndex(s => s.id === student.id || s.studentId === student.studentId);
+          if (existsIdx >= 0) {
+            schoolDB.students[existsIdx] = student;
+          } else {
             schoolDB.students.unshift(student);
           }
           saveSchoolDB(schoolDB);
