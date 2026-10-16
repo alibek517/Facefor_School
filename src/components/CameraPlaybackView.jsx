@@ -252,7 +252,7 @@ export const CameraPlaybackView = ({
     const tStr = secondsToTimeStr(seconds);
     if (!activeBaseUrl) {
       const freshCloud = cameraLatestFrames?.[ip];
-      return (freshCloud && typeof freshCloud === 'string') ? freshCloud : `/photos/camera_${ip}.jpg`;
+      return (freshCloud && typeof freshCloud === 'string') ? freshCloud : '';
     }
     return `${activeBaseUrl}/api/camera/playback/frame?ip=${ip}&date=${selectedDate}&time=${tStr}&_=${Math.floor(seconds / 2)}`;
   };
@@ -458,7 +458,7 @@ export const CameraPlaybackView = ({
                       e.target.src = freshCloud;
                     } else {
                       e.target.onerror = null;
-                      e.target.src = `/photos/camera_${selectedCameraIp}.jpg`;
+                      e.target.src = '';
                     }
                     setFrameNotFound(true);
                   }}

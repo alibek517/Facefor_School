@@ -12,6 +12,7 @@ import {
   Search,
   Check,
   Video,
+  VideoOff,
   Play,
   Pause,
   Maximize2,
@@ -92,10 +93,10 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
     return src.startsWith('data:image/') || src.startsWith('http://') || src.startsWith('https://') || src.startsWith('/');
   };
 
-  // Bulutdagi oxirgi kadr (Supabase yoki statik baseline)
+  // Bulutdagi oxirgi kadr (faqat Supabase da haqiqiy mavjud bo'lsa, hech qanday eski soxta rasmlarsiz)
   const rawCloudFrame = cameraLatestFrames?.[cam.ip];
   const hasRealCloudFrame = Boolean(rawCloudFrame && isValidFrameSrc(rawCloudFrame));
-  const cloudFrame = hasRealCloudFrame ? rawCloudFrame : `/photos/camera_${cam.ip}.jpg`;
+  const cloudFrame = hasRealCloudFrame ? rawCloudFrame : null;
 
   // Tarmoq ulanish turiga qarab rasm manzilini aniqlash:
   // 1. Lokal maktab tarmog'ida bo'lsa: bridgeUrl (http://localhost:5001 yoki lokal IP)
@@ -151,10 +152,13 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
             // Lokal rejimda har 750ms, tunnel orqali har 1750ms yangilanadi
             timer = setTimeout(loadNext, isDirectLocal ? 750 : 1750);
           } else {
-            // Kamera vaqtincha javob bermayapti (1x1 dummy rasm)
+            // Kamera vaqtincha javob bermayapti (1x1 dummy rasm yoki oflayn)
             failCountRef.current += 1;
             setIsStreamingLive(false);
-            if (cloudFrame) setFrameSrc(cloudFrame);
+            if (failCountRef.current >= 2) {
+              setFrameSrc(null);
+              setHasError(true);
+            }
             timer = setTimeout(loadNext, 4000);
           }
         };
@@ -164,10 +168,11 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
           if (!isMounted) return;
           failCountRef.current += 1;
           setIsStreamingLive(false);
-          if (cloudFrame) {
-            setFrameSrc(cloudFrame);
+          if (failCountRef.current >= 2) {
+            setFrameSrc(null);
+            setHasError(true);
           }
-          timer = setTimeout(loadNext, 1500);
+          timer = setTimeout(loadNext, 3000);
         };
         img.src = nextUrl;
       };
@@ -269,36 +274,35 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
             alt={cam.name}
             className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
             onError={() => {
-              if (frameSrc !== cloudFrame && cloudFrame) {
-                setFrameSrc(cloudFrame);
-              } else {
-                setHasError(true);
-              }
+              setHasError(true);
+              setFrameSrc(null);
             }}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center p-3 text-center select-none">
-            <div className="w-10 h-10 rounded-xl bg-slate-800/80 border border-slate-700/80 flex items-center justify-center text-slate-400 mb-1.5 shadow-inner">
-              <Video className="w-5 h-5 text-slate-400" />
+          <div className="flex flex-col items-center justify-center p-3 text-center select-none space-y-2">
+            <div className="w-11 h-11 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 shadow-inner">
+              <VideoOff className="w-5 h-5 text-rose-500" />
             </div>
-            <span className="text-xs font-bold text-slate-200">{cam.name}</span>
-            <span className="text-[10px] text-slate-400 mt-0.5 max-w-[200px] leading-tight">
-              Kamera kutish rejimida • Oxirgi kadr kutilmoqda
-            </span>
+            <div>
+              <span className="text-xs font-bold text-slate-200 block">{cam.name}</span>
+              <span className="text-[10px] text-rose-400 font-mono mt-0.5 block">
+                IP: {cam.ip} • Aloqa yo'q (Ulanmagan)
+              </span>
+            </div>
           </div>
         )}
 
         {/* Jonli Efir Belgisi (Live Badge) */}
-        <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-xs text-[10px] font-bold text-white border border-white/10">
+        <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[10px] font-bold text-white border border-white/10 shadow-sm">
           <span className={`w-1.5 h-1.5 rounded-full ${
             isStreamingLive 
-              ? 'bg-emerald-500 animate-pulse' 
-              : (isSchoolLocalOnline ? 'bg-amber-400 animate-pulse' : 'bg-slate-400')
+              ? 'bg-emerald-400 animate-pulse' 
+              : 'bg-rose-500'
           }`}></span>
           <span>
             {isStreamingLive 
               ? (isDirectLocal ? 'LIVE (LOKAL)' : 'JONLI (TUNNEL)') 
-              : (isSchoolLocalOnline ? 'ULANYAPTI...' : 'OXIRGI KADR (OFFLAYN)')}
+              : 'ULANMAGAN'}
           </span>
         </div>
 
@@ -1268,7 +1272,7 @@ export const DirectorDashboard = () => {
               {(() => {
                 const rawModalFrame = cameraLatestFrames?.[activeModalCam.ip];
                 const isValidSrc = (s) => typeof s === 'string' && (s.startsWith('data:image/') || s.startsWith('http://') || s.startsWith('https://') || s.startsWith('/'));
-                const modalCloudFrame = (rawModalFrame && isValidSrc(rawModalFrame)) ? rawModalFrame : `/photos/camera_${activeModalCam.ip}.jpg`;
+                const modalCloudFrame = (rawModalFrame && isValidSrc(rawModalFrame)) ? rawModalFrame : null;
                 const cleanStreamBase = isLocalConnected
                   ? (bridgeUrl && bridgeUrl.startsWith('http') ? bridgeUrl : 'http://localhost:5001')
                   : (globalStreamUrl && globalStreamUrl.startsWith('http') && !isDeadTunnel(globalStreamUrl) ? globalStreamUrl : null);
@@ -1276,24 +1280,34 @@ export const DirectorDashboard = () => {
                   ? `${cleanStreamBase.replace(/\/+$/, '')}/api/camera/stream/${activeModalCam.ip}` 
                   : null;
                 const isModalLive = Boolean(modalLiveUrl && (isLocalConnected || isSchoolLocalOnline));
+                const activeSrc = modalLiveUrl || modalCloudFrame;
 
                 return (
                   <>
-                    <img
-                      src={modalLiveUrl || modalCloudFrame}
-                      alt={activeModalCam.name}
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        if (e.target.src !== modalCloudFrame) {
-                          e.target.src = modalCloudFrame;
-                        }
-                      }}
-                    />
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded bg-black/70 text-xs font-bold text-white border border-white/20">
-                      <span className={`w-2 h-2 rounded-full ${isModalLive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                    {activeSrc ? (
+                      <img
+                        src={activeSrc}
+                        alt={activeModalCam.name}
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-6 text-center select-none space-y-3">
+                        <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 shadow-inner">
+                          <VideoOff className="w-8 h-8 text-rose-500" />
+                        </div>
+                        <div>
+                          <span className="text-base font-bold text-slate-200 block">{activeModalCam.name}</span>
+                          <span className="text-xs text-rose-400 font-mono mt-1 block">
+                            IP: {activeModalCam.ip} • Kamera ulanmagan (Oflayn)
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-black/80 backdrop-blur-md text-xs font-bold text-white border border-white/20 shadow-md">
+                      <span className={`w-2 h-2 rounded-full ${isModalLive ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}`}></span>
                       {isModalLive
                         ? (isLocalConnected ? 'LIVE VIDEO OQIMI (LOKAL)' : 'JONLI EFIR (TUNNEL)')
-                        : 'OXIRGI KADR (MAKTAB OFFLAYN)'}
+                        : 'KAMERA ULANMAGAN'}
                     </div>
                   </>
                 );

@@ -1143,8 +1143,10 @@ async function updateCameraFrame(cam) {
 
     // Ikkala kanal ham javob bermasa kamera oflayn
     cam.online = false;
+    cameraFrames.delete(cam.ip);
   } catch (err) {
     cam.online = false;
+    cameraFrames.delete(cam.ip);
   }
 }
 
@@ -1158,14 +1160,13 @@ async function syncLatestFramesToSupabase() {
   try {
     const frames = {};
     for (const cam of CAMERAS) {
+      if (!cam.online) continue;
       const frameObj = cameraFrames.get(cam.ip);
-      if (frameObj && frameObj.buffer && isValidJpeg(frameObj.buffer)) {
+      if (frameObj && frameObj.buffer && isValidJpeg(frameObj.buffer) && (Date.now() - (frameObj.timestamp || 0) < 15000)) {
         frames[cam.ip] = `data:image/jpeg;base64,${frameObj.buffer.toString('base64')}`;
       }
     }
-    if (Object.keys(frames).length > 0) {
-      await syncModuleToSupabase('camera_latest_frames', frames);
-    }
+    await syncModuleToSupabase('camera_latest_frames', frames);
   } catch (err) {}
 }
 
@@ -1581,8 +1582,9 @@ const server = http.createServer(async (req, res) => {
   if (pathname.startsWith('/api/camera/snapshot/')) {
     const targetIp = pathname.replace('/api/camera/snapshot/', '').trim();
     const cached = cameraFrames.get(targetIp);
+    const isFresh = cached && (Date.now() - (cached.timestamp || 0) < 15000);
 
-    if (cached && isValidJpeg(cached.buffer)) {
+    if (isFresh && isValidJpeg(cached.buffer)) {
       res.writeHead(200, {
         'Content-Type': 'image/jpeg',
         'Content-Length': cached.buffer.length,
@@ -1593,45 +1595,9 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // Agar RAM keshda hali bo'lmasa, kameradan to'g'ridan-to'g'ri olib beramiz
-    try {
-      const cam = CAMERAS.find(c => c.ip === targetIp);
-      if (cam) {
-        await updateCameraFrame(cam);
-        const freshlyCached = cameraFrames.get(targetIp);
-        if (freshlyCached && isValidJpeg(freshlyCached.buffer)) {
-          res.writeHead(200, {
-            'Content-Type': 'image/jpeg',
-            'Content-Length': freshlyCached.buffer.length,
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Connection': 'keep-alive'
-          });
-          res.end(freshlyCached.buffer);
-          return;
-        }
-      }
-    } catch (err) {}
-
-    // Agar kamera hali ulanmagan bo'lsa, brauzerda singan rasm chiqmasligi uchun valid qora JPEG qaytaramiz
-    const emptyJpg = Buffer.from([
-      0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x01, 0x00, 0x48,
-      0x00, 0x48, 0x00, 0x00, 0xff, 0xdb, 0x00, 0x43, 0x00, 0x08, 0x06, 0x06, 0x07, 0x06, 0x05, 0x08,
-      0x07, 0x07, 0x07, 0x09, 0x09, 0x08, 0x0a, 0x0c, 0x14, 0x0d, 0x0c, 0x0b, 0x0b, 0x0c, 0x19, 0x12,
-      0x13, 0x0f, 0x14, 0x1d, 0x1a, 0x1f, 0x1e, 0x1d, 0x1a, 0x1c, 0x1c, 0x20, 0x24, 0x2e, 0x27, 0x20,
-      0x22, 0x2c, 0x23, 0x1c, 0x1c, 0x28, 0x37, 0x29, 0x2c, 0x30, 0x31, 0x34, 0x34, 0x34, 0x1f, 0x27,
-      0x39, 0x3d, 0x38, 0x32, 0x3c, 0x2e, 0x33, 0x34, 0x32, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01,
-      0x00, 0x01, 0x01, 0x01, 0x11, 0x00, 0xff, 0xc4, 0x00, 0x1f, 0x00, 0x00, 0x01, 0x05, 0x01, 0x01,
-      0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04,
-      0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3f,
-      0x00, 0xbf, 0x80, 0xff, 0xd9
-    ]);
-    res.writeHead(200, {
-      'Content-Type': 'image/jpeg',
-      'Content-Length': emptyJpg.length,
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Connection': 'keep-alive'
-    });
-    res.end(emptyJpg);
+    // Kamera oflayn yoki javob bermasa: to'g'ridan-to'g'ri 404 beramiz
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Kamera oflayn yoki ulanmagan');
     return;
   }
 
