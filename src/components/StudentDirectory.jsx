@@ -20,12 +20,16 @@ import {
   ArrowRight,
   Sparkles,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  FolderUp,
+  CheckCircle2
 } from 'lucide-react';
 import { 
   downloadStudentTemplate, 
   exportStudentsToExcel, 
-  parseStudentsExcelFile 
+  parseStudentsExcelFile,
+  matchPhotosToStudents,
+  compressImageBase64
 } from '../utils/excelAndPromotion';
 import { formatPhoneNumber, handlePhoneInputChange } from '../utils/phoneFormatter';
 import { StudentAvatar } from './StudentAvatar';
@@ -95,6 +99,8 @@ export const StudentDirectory = () => {
     ? 'Barcha_oquvchilar' 
     : (classes.find(c => c.id === selectedClass)?.name || 'Sinf');
 
+  const [photoBatchMessage, setPhotoBatchMessage] = useState('');
+
   // Excel fayl yuklanganda tahlil qilish
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
@@ -103,8 +109,72 @@ export const StudentDirectory = () => {
     try {
       const parsed = await parseStudentsExcelFile(file);
       setImportParsedData(parsed);
+      const withPhotos = parsed.filter(st => Boolean(st.photo)).length;
+      if (withPhotos > 0) {
+        setPhotoBatchMessage(`✅ Excel ichidan ${withPhotos} ta o'quvchining fotosurati avtomatik ajratib olindi!`);
+        setTimeout(() => setPhotoBatchMessage(''), 5000);
+      }
     } catch (err) {
       alert('Excel faylni o\'qishda xatolik yuz berdi: ' + err.message);
+    }
+  };
+
+  // Alohida bitta o'quvchiga rasm yuklash
+  const handleSinglePhotoChange = async (index, file) => {
+    if (!file) return;
+    try {
+      const base64 = await compressImageBase64(file, 480, 0.85);
+      setImportParsedData(prev => {
+        const next = [...prev];
+        next[index] = {
+          ...next[index],
+          photo: base64,
+          photoUrl: base64,
+          hasExtractedPhoto: true
+        };
+        return next;
+      });
+    } catch (err) {
+      console.error('Rasm yuklashda xatolik:', err);
+    }
+  };
+
+  // Ommaviy rasmlarni biriktirish (papkadan bir nechta rasm tanlanganda)
+  const handleBatchPhotosSelect = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    try {
+      const { updatedList, matchedCount } = await matchPhotosToStudents(importParsedData, files);
+      setImportParsedData(updatedList);
+      setPhotoBatchMessage(`✅ ${matchedCount} ta o'quvchiga fotosuratlar muvaffaqiyatli biriktirildi!`);
+      setTimeout(() => setPhotoBatchMessage(''), 5000);
+    } catch (err) {
+      alert('Rasmlarni biriktirishda xatolik: ' + err.message);
+    }
+    e.target.value = '';
+  };
+
+  // O'quvchi rasmini olib tashlash
+  const handleRemovePhoto = (index) => {
+    setImportParsedData(prev => {
+      const next = [...prev];
+      next[index] = {
+        ...next[index],
+        photo: null,
+        photoUrl: null,
+        hasExtractedPhoto: false
+      };
+      return next;
+    });
+  };
+
+  // Drag & drop orqali rasmni tashlash
+  const handleDropPhoto = (e, index) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer?.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      handleSinglePhotoChange(index, file);
     }
   };
 
@@ -479,112 +549,260 @@ export const StudentDirectory = () => {
       </div>
 
       {/* ============================================================== */}
-      {/* 📥 1. EXCEL IMPORT MODALI */}
+      {/* 📥 1. EXCEL IMPORT VA FOTOSURATLARNI BIRIKTIRISH MODALI */}
       {/* ============================================================== */}
       {importModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-emerald-50 dark:bg-emerald-950/60 rounded-lg text-emerald-600">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-xl text-emerald-600">
                   <FileSpreadsheet className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Excel Orqali O'quvchilarni Yuklash</h3>
-                  <p className="text-[11px] text-slate-500">1-sinflar yoki istalgan boshqa sinfga ommaviy yuklash</p>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    Excel va Fotosuratlarni Yuklash
+                    {importParsedData.length > 0 && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
+                        {importParsedData.length} ta o'quvchi
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Excel ichidagi rasmlar avtomatik o'qiladi yoki shu yerda to'g'ridan-to'g'ri biriktiriladi
+                  </p>
                 </div>
               </div>
-              <button onClick={() => setImportModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <button 
+                onClick={() => {
+                  setImportModalOpen(false);
+                  setImportFile(null);
+                  setImportParsedData([]);
+                }} 
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Fayl yuklash maydoni */}
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  1. Excel Faylni Tanlang (.xlsx, .xls, .csv):
-                </label>
-                <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-4 text-center hover:border-emerald-500 transition-colors bg-slate-50 dark:bg-slate-800/40">
-                  <Upload className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                  <input
-                    type="file"
-                    accept=".xlsx, .xls, .csv"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="excel-file-upload"
-                  />
-                  <label
-                    htmlFor="excel-file-upload"
-                    className="cursor-pointer px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg inline-block shadow-xs"
-                  >
-                    Faylni Tanlash
+            {/* Asosiy qism - scrollable */}
+            <div className="space-y-4 overflow-y-auto pr-1 flex-1">
+              {/* 1. Excel Faylni Tanlash va Sinf */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    1. Excel Faylni Tanlang (.xlsx, .xls, .csv):
                   </label>
-                  {importFile ? (
-                    <div className="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                      Tanlandi: {importFile.name} ({importParsedData.length} ta o'quvchi aniqlandi)
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-slate-400 mt-2">
-                      yoki tayyor shablonni to'ldirib yuklang
+                  <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-3 text-center hover:border-emerald-500 transition-colors bg-slate-50 dark:bg-slate-800/40">
+                    <input
+                      type="file"
+                      accept=".xlsx, .xls, .csv"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="excel-file-upload"
+                    />
+                    <label
+                      htmlFor="excel-file-upload"
+                      className="cursor-pointer px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg inline-flex items-center gap-1.5 shadow-xs"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      {importFile ? 'Boshqa Fayl Tanlash' : 'Excel Faylni Tanlash'}
+                    </label>
+                    {importFile ? (
+                      <div className="mt-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 truncate">
+                        Tanlandi: {importFile.name}
+                      </div>
+                    ) : (
+                      <p className="text-[10.5px] text-slate-400 mt-1">
+                        Excel ichidagi fotosuratlar avtomatik ajratib olinadi
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Biriktiriladigan sinf */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    2. Asosiy Sinf:
+                  </label>
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700 min-h-[76px] flex flex-col justify-center">
+                    <select
+                      value={importTargetClass}
+                      onChange={(e) => setImportTargetClass(e.target.value)}
+                      className="w-full text-xs p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold outline-none"
+                    >
+                      {classes.map(c => (
+                        <option key={c.id} value={c.id}>{c.name} sinfi</option>
+                      ))}
+                    </select>
+                    <p className="text-[9.5px] text-slate-400 mt-1 leading-tight">
+                      Excelda sinf ko'rsatilmagan bo'lsa ishlatiladi
                     </p>
-                  )}
+                  </div>
                 </div>
               </div>
 
-              {/* Biriktiriladigan sinf */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  2. Asosiy Sinfni Tanlang (Excelda sinf ko'rsatilmagan bo'lsa):
-                </label>
-                <select
-                  value={importTargetClass}
-                  onChange={(e) => setImportTargetClass(e.target.value)}
-                  className="w-full text-xs p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold outline-none"
-                >
-                  {classes.map(c => (
-                    <option key={c.id} value={c.id}>{c.name} sinfi</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Dastlabki ko'rinish (Preview) */}
+              {/* 2. O'quvchilar va fotosuratlarni boshqarish paneli */}
               {importParsedData.length > 0 && (
-                <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-lg border border-slate-200 dark:border-slate-700 max-h-36 overflow-y-auto space-y-1.5">
-                  <div className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                    Yuklanadigan o'quvchilardan namunalar:
-                  </div>
-                  {importParsedData.slice(0, 4).map((row, idx) => (
-                    <div key={idx} className="text-[11px] text-slate-700 dark:text-slate-300 flex items-center justify-between border-b border-slate-200 dark:border-slate-700/60 pb-1">
-                      <span className="font-semibold">{idx + 1}. {row.fullName}</span>
-                      <span className="text-[10px] text-slate-400">{formatPhoneNumber(row.parentPhone || row.phone) || 'Tel yo\'q'}</span>
+                <div className="space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-slate-100 dark:bg-slate-800/70 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        O'quvchilar va fotosuratlar:
+                      </span>
+                      <span className={`text-[10.5px] font-black px-2 py-0.5 rounded-full border ${
+                        importParsedData.filter(st => Boolean(st.photo)).length === importParsedData.length
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300'
+                          : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300'
+                      }`}>
+                        📷 {importParsedData.filter(st => Boolean(st.photo)).length} / {importParsedData.length} tasida surat bor
+                      </span>
                     </div>
-                  ))}
-                  {importParsedData.length > 4 && (
-                    <div className="text-[10px] text-slate-400 italic text-center">
-                      ...va yana {importParsedData.length - 4} ta o'quvchi
+
+                    {/* Ommaviy rasmlar tugmasi */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleBatchPhotosSelect}
+                        className="hidden"
+                        id="batch-photo-upload"
+                      />
+                      <label
+                        htmlFor="batch-photo-upload"
+                        className="cursor-pointer px-2.5 py-1 text-[11px] font-bold bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors shrink-0"
+                        title="Kompyuteringizdan bir nechta o'quvchi rasmlarini birdaniga tanlang"
+                      >
+                        <FolderUp className="w-3.5 h-3.5" />
+                        <span>Rasmlarni Ommaviy Biriktirish</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {photoBatchMessage && (
+                    <div className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/70 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 animate-fade-in flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+                      <span>{photoBatchMessage}</span>
                     </div>
                   )}
+
+                  {/* O'quvchilar ro'yxati jadvali */}
+                  <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 max-h-72 overflow-y-auto bg-white dark:bg-slate-900 shadow-inner">
+                    {importParsedData.map((row, idx) => (
+                      <div 
+                        key={idx}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => handleDropPhoto(e, idx)}
+                        className="p-2 sm:p-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                      >
+                        {/* Chap qism: Raqam + Rasm + Ism */}
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="w-5 text-[11px] font-mono text-slate-400 font-bold shrink-0 text-right">
+                            {idx + 1}.
+                          </span>
+
+                          {/* Rasm oynasi */}
+                          <div className="relative group shrink-0">
+                            {row.photo ? (
+                              <div className="relative w-10 h-10 rounded-lg overflow-hidden border-2 border-emerald-500 shadow-2xs bg-slate-100 dark:bg-slate-800">
+                                <img
+                                  src={row.photo}
+                                  alt={row.fullName}
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemovePhoto(idx)}
+                                  title="Rasmni o'chirish"
+                                  className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                                </button>
+                              </div>
+                            ) : (
+                              <label
+                                htmlFor={`photo-upload-${idx}`}
+                                className="w-10 h-10 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-purple-500 bg-slate-50 dark:bg-slate-800 flex flex-col items-center justify-center cursor-pointer transition-colors text-slate-400 hover:text-purple-600"
+                                title="Rasm yuklash uchun bosing yoki rasmni shu yerga tashlang"
+                              >
+                                <Camera className="w-4 h-4" />
+                                <span className="text-[7.5px] font-bold mt-0.5">+ Rasm</span>
+                              </label>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              id={`photo-upload-${idx}`}
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) handleSinglePhotoChange(idx, f);
+                                e.target.value = '';
+                              }}
+                            />
+                          </div>
+
+                          {/* O'quvchi ma'lumoti */}
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate flex items-center gap-1.5">
+                              <span>{row.fullName}</span>
+                              {row.photo ? (
+                                <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-1.5 py-0.2 rounded border border-emerald-200 dark:border-emerald-800 shrink-0">
+                                  ✓ Surat bor
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-medium text-amber-600 bg-amber-50 dark:bg-amber-950 px-1.5 py-0.2 rounded border border-amber-200 dark:border-amber-800 shrink-0">
+                                  Surat yuklanmagan
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
+                              <span className="font-mono">{formatPhoneNumber(row.parentPhone || row.phone) || 'Tel yo\'q'}</span>
+                              <span>•</span>
+                              <span>{row.className || 'Asosiy sinf'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* O'ng qism: O'chirish */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setImportParsedData(prev => prev.filter((_, i) => i !== idx));
+                          }}
+                          className="p-1 text-slate-400 hover:text-rose-500 rounded transition-colors shrink-0"
+                          title="Ro'yxatdan chiqarish"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Pastki tugmalar */}
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 shrink-0">
               <button
                 type="button"
                 onClick={downloadStudentTemplate}
                 className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-semibold"
               >
                 <FileText className="w-3.5 h-3.5" />
-                Namuna Shablonini Ko'chirib Olish
+                Namuna Shablonini Ko'chirib Olish (.xlsx)
               </button>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 justify-end">
                 <button
                   type="button"
-                  onClick={() => setImportModalOpen(false)}
-                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                  onClick={() => {
+                    setImportModalOpen(false);
+                    setImportFile(null);
+                    setImportParsedData([]);
+                  }}
+                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg font-medium"
                 >
                   Bekor qilish
                 </button>
@@ -599,6 +817,7 @@ export const StudentDirectory = () => {
                 </button>
               </div>
             </div>
+
           </div>
         </div>
       )}

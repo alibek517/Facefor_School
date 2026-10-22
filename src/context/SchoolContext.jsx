@@ -1460,14 +1460,26 @@ export const SchoolProvider = ({ children }) => {
   const importStudentsFromExcel = async (newStudents, defaultClassId) => {
     if (!newStudents || newStudents.length === 0) return 0;
     
+    // Eng katta mavjud ID raqamini aniqlash (Face-ID kamerasi uchun to'g'ri 8 xonali raqam)
+    let maxEmp = 0;
+    (students || []).forEach(s => {
+      const num = parseInt(String(s.studentId || s.employeeNo || s.id || '').replace(/^s-/, ''), 10);
+      if (!isNaN(num) && num > maxEmp && num < 90000000) {
+        maxEmp = num;
+      }
+    });
+
     const formatted = newStudents.map((st, idx) => {
       const targetClass = classes.find(c => c.name.toLowerCase() === (st.className || '').toLowerCase().trim()) 
                           || classes.find(c => c.id === defaultClassId) 
                           || classes[0];
-      const newId = `s-${Date.now()}-${idx}`;
+      const nextEmpNo = String(maxEmp + idx + 1).padStart(8, '0');
+      const photoData = st.photo || st.photoUrl || st.faceURL || null;
+
       return {
-        id: newId,
-        studentId: String(Date.now() + idx).slice(-6),
+        id: `s-${nextEmpNo}`,
+        studentId: nextEmpNo,
+        employeeNo: nextEmpNo,
         name: st.name || st.fullName,
         fullName: st.fullName || st.name,
         classId: targetClass?.id || defaultClassId || 'c-1a',
@@ -1477,15 +1489,33 @@ export const SchoolProvider = ({ children }) => {
         parentName: st.parentName || 'Ota-ona',
         parentPhone: st.parentPhone || st.phone || '',
         phone: st.phone || st.parentPhone || '',
-        faceURL: st.faceURL || null,
-        gender: 'O\'g\'il'
+        faceURL: photoData && typeof photoData === 'string' && photoData.startsWith('http') ? photoData : null,
+        photo: photoData,
+        photoUrl: photoData,
+        isFaceEnrolled: false,
+        gender: st.gender || 'O\'g\'il'
       };
     });
 
     const nextStudents = [...formatted, ...students];
     setStudents(nextStudents);
     saveToServer('students', nextStudents);
-    showToast('Excel yuklandi', `${formatted.length} ta o'quvchi muvaffaqiyatli qo'shildi va Supabase ga saqlandi!`, 'success');
+
+    // Barcha yangi o'quvchilarni (ayniqsa fotosuratlilarni) Face-ID apparatlari va ko'prik serverga uzatish!
+    const targetUrl = getActiveBridgeUrl();
+    if (targetUrl) {
+      formatted.forEach(st => {
+        try {
+          fetch(`${targetUrl}/api/school/add-student`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student: st })
+          }).catch(() => {});
+        } catch (e) {}
+      });
+    }
+
+    showToast('Excel yuklandi', `${formatted.length} ta o'quvchi muvaffaqiyatli qo'shildi va tizimga saqlandi!`, 'success');
     return formatted.length;
   };
 
