@@ -1020,8 +1020,13 @@ export const SchoolMonitor = () => {
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          {/* Face-ID Surati */}
-                          <StudentAvatar student={st} effectiveBaseUrl={effectiveBaseUrl} size="w-10 h-10" rounded="rounded-xl" />
+                          {/* Maxfiylik: Foye monitorida o'quvchilar yuz suratlari ko'rsatilmaydi (Bosh harfli avatar) */}
+                          <StudentAvatar 
+                            student={st} 
+                            hidePhoto={true} 
+                            size="w-10 h-10" 
+                            rounded="rounded-xl" 
+                          />
 
                           <div className="min-w-0">
                             <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">

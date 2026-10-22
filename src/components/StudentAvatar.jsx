@@ -6,14 +6,18 @@ export const StudentAvatar = ({
   effectiveBaseUrl, 
   size = "w-10 h-10",
   className = "",
-  rounded = "rounded-xl"
+  rounded = "rounded-xl",
+  hidePhoto = false
 }) => {
   const [hasError, setHasError] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
 
-  const { primaryUrl, fallbackUrl } = getStudentPhotoUrls(student, effectiveBaseUrl);
+  const { primaryUrl, fallbackUrl } = hidePhoto 
+    ? { primaryUrl: null, fallbackUrl: null }
+    : getStudentPhotoUrls(student, effectiveBaseUrl);
 
   useEffect(() => {
+    if (hidePhoto) return;
     setHasError(false);
     setUseFallback(false);
   }, [
@@ -22,7 +26,8 @@ export const StudentAvatar = ({
     student?.faceId, 
     student?.rawEmployeeNo, 
     student?.employeeNo,
-    effectiveBaseUrl
+    effectiveBaseUrl,
+    hidePhoto
   ]);
 
   const currentSrc = useFallback ? fallbackUrl : primaryUrl;
@@ -40,7 +45,7 @@ export const StudentAvatar = ({
 
   return (
     <div className={`relative ${size} shrink-0 ${rounded} overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-2xs ${className}`}>
-      {currentSrc && !hasError ? (
+      {!hidePhoto && currentSrc && !hasError ? (
         <img
           src={currentSrc}
           alt={name}
