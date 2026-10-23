@@ -199,6 +199,32 @@ export const SchoolProvider = ({ children }) => {
     updateGlobalStreamUrl(url, true);
   };
 
+  // Relay (ntfy.sh) orqali maktabning eng so'nggi jonli tunnel manzilini avtomatik aniqlash (Vercel va mobil qurilmalar uchun)
+  useEffect(() => {
+    if (isLocalHostEnv) return;
+    const fetchLatestBridge = async () => {
+      try {
+        const res = await fetch('https://ntfy.sh/maktab_bridge_alibek517/json?poll=1');
+        if (res.ok) {
+          const text = await res.text();
+          const lines = text.trim().split('\n');
+          for (let i = lines.length - 1; i >= 0; i--) {
+            try {
+              const parsed = JSON.parse(lines[i]);
+              if (parsed.message && parsed.message.startsWith('http') && parsed.message.includes('trycloudflare.com')) {
+                updateGlobalStreamUrl(parsed.message.trim());
+                break;
+              }
+            } catch (e) {}
+          }
+        }
+      } catch (e) {}
+    };
+    fetchLatestBridge();
+    const interval = setInterval(fetchLatestBridge, 15000);
+    return () => clearInterval(interval);
+  }, [isLocalHostEnv]);
+
   // URL Routing tizimi: path va mos rol/tab tahlili
   const parsePath = (rawPath) => {
     let p = (rawPath || '/director').toLowerCase().trim();

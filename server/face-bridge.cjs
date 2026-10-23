@@ -15,6 +15,18 @@ process.on('unhandledRejection', (reason) => {
 let cloudflareProcess = null;
 let currentTunnelUrl = null;
 
+async function publishTunnelToRelay(url) {
+  if (!url) return;
+  try {
+    await fetch('https://ntfy.sh/maktab_bridge_alibek517', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: url
+    });
+    console.log(`[DISCOVERY RELAY] Faol tunnel manzili ntfy.sh ga e'lon qilindi: ${url}`);
+  } catch (e) {}
+}
+
 function startCloudflareTunnel() {
   const exePath = path.join(__dirname, 'cloudflared.exe');
   if (!fs.existsSync(exePath)) {
@@ -43,6 +55,7 @@ function startCloudflareTunnel() {
 
         // Supabase ga saqlash (Vercel va telefonlar avtomatik ulanadi)
         syncModuleToSupabase('global_stream_url', currentTunnelUrl);
+        publishTunnelToRelay(currentTunnelUrl);
 
         // SSE mijozlariga uzatish
         broadcastSSE('global_stream_url', currentTunnelUrl);
@@ -2252,4 +2265,11 @@ server.listen(CONFIG.BRIDGE_PORT, '0.0.0.0', () => {
 
   // Bepul global Cloudflare tunnelni avtomatik yoqish
   setTimeout(startCloudflareTunnel, 1500);
+
+  // Har 30 soniyada faol tunnel manzilini global relayga e'lon qilib turish
+  setInterval(() => {
+    if (currentTunnelUrl) {
+      publishTunnelToRelay(currentTunnelUrl);
+    }
+  }, 30000);
 });
