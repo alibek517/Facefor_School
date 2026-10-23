@@ -27940,6 +27940,14 @@
           "outTime": "10:57:50",
           "lastDirection": "out",
           "lastSeenTime": "10:57:50"
+        },
+        {
+          "studentId": "s-00000667",
+          "status": "present",
+          "inTime": "11:42:37",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:42:37"
         }
       ]
     },
@@ -28188,6 +28196,14 @@
           "outTime": "10:51:23",
           "lastDirection": "out",
           "lastSeenTime": "10:51:23"
+        },
+        {
+          "studentId": "s-00000662",
+          "status": "present",
+          "inTime": "11:42:33",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:42:33"
         }
       ]
     },
@@ -28221,6 +28237,14 @@
           "outTime": "10:51:24",
           "lastDirection": "out",
           "lastSeenTime": "10:51:24"
+        },
+        {
+          "studentId": "s-00000691",
+          "status": "exited",
+          "inTime": "11:43:29",
+          "outTime": "11:44:32",
+          "lastDirection": "out",
+          "lastSeenTime": "11:44:32"
         }
       ]
     },
@@ -28272,6 +28296,14 @@
           "outTime": "10:57:25",
           "lastDirection": "out",
           "lastSeenTime": "10:57:25"
+        },
+        {
+          "studentId": "s-00000654",
+          "status": "present",
+          "inTime": "11:42:07",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:42:07"
         }
       ]
     },
@@ -28357,7 +28389,7 @@
       "updated_at": "2026-10-14T04:42:17.882+00:00"
     }
   ],
-  "lastUpdated": 1792737541433,
+  "lastUpdated": 1792737875194,
   "test_key": "test_val",
   "global_stream_url": "https://neo-proudly-chelsea-grew.trycloudflare.com",
   "camera_latest_frames": {

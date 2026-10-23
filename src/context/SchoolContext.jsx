@@ -177,9 +177,38 @@ export const SchoolProvider = ({ children }) => {
         if (saved) return saved;
       } catch (e) {}
     }
-    return 'https://surgeon-ellis-rec-rico.trycloudflare.com';
+    return 'https://district-tel-rabbit-passport.trycloudflare.com';
   });
   const globalStreamUrlRef = useRef(globalStreamUrl);
+
+  const syncFromBridge = async (targetUrl) => {
+    if (!targetUrl || !targetUrl.startsWith('http')) return;
+    try {
+      const cleanUrl = targetUrl.replace(/\/+$/, '');
+      const sRes = await fetch(`${cleanUrl}/api/school/data`).catch(() => null);
+      if (sRes && sRes.ok) {
+        const sJson = await sRes.json().catch(() => null);
+        if (sJson && sJson.data) {
+          if (sJson.data.students && sJson.data.students.length > 0) setStudents(sJson.data.students);
+          if (sJson.data.classes && sJson.data.classes.length > 0) setClasses(sJson.data.classes);
+          if (sJson.data.teachers && sJson.data.teachers.length > 0) setTeachers(sJson.data.teachers);
+          if (sJson.data.leadership && sJson.data.leadership.length > 0) setLeadership(sJson.data.leadership);
+          if (sJson.data.schedules && sJson.data.schedules.length > 0) setSchedules(sJson.data.schedules);
+          if (sJson.data.attendanceList) setAttendanceList(sJson.data.attendanceList);
+          if (sJson.data.teacherAttendance) setTeacherAttendance(sJson.data.teacherAttendance);
+          if (sJson.data.hourlyAttendance) setHourlyAttendance(sJson.data.hourlyAttendance);
+        }
+      }
+      const evRes = await fetch(`${cleanUrl}/api/device/events`).catch(() => null);
+      if (evRes && evRes.ok) {
+        const evJson = await evRes.json().catch(() => null);
+        if (evJson && Array.isArray(evJson.data) && evJson.data.length > 0) {
+          setRecentFaceScans(evJson.data);
+        }
+      }
+      setIsSchoolLocalOnline(true);
+    } catch (e) {}
+  };
 
   const updateGlobalStreamUrl = (url, syncToCloud = false) => {
     const clean = (url || '').trim();
@@ -189,6 +218,7 @@ export const SchoolProvider = ({ children }) => {
     if (typeof window !== 'undefined' && clean) {
       try { localStorage.setItem('saved_bridge_url', clean); } catch (e) {}
     }
+    syncFromBridge(clean);
     // Faqat foydalanuvchi interfeysdan qo'lda o'zgartirganda Supabase ga saqlash (cheksiz Realtime siklidan himoya)
     if (syncToCloud) {
       saveModuleToSupabase('global_stream_url', clean).catch(() => {});
@@ -921,7 +951,7 @@ export const SchoolProvider = ({ children }) => {
       if (shouldProbeLocal) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 1500);
+          const timeoutId = setTimeout(() => controller.abort(), 6000);
           const res = await fetch(`${BRIDGE_API}/api/device/status`, { signal: controller.signal }).catch(() => null);
           clearTimeout(timeoutId);
           if (res && res.ok) {
