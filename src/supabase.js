@@ -3,15 +3,23 @@ import { createClient } from '@supabase/supabase-js';
 export const SUPABASE_URL = 'https://ffwbxpqfzlkevxhijvtd.supabase.co';
 export const SUPABASE_KEY = 'sb_publishable_IN4OpUU6gNpnZINpifQSAg_DZuksmMD';
 
-let isSupabaseQuotaExceeded = false;
+let isSupabaseQuotaExceeded = typeof window !== 'undefined' && localStorage.getItem('supabase_quota_exceeded') === 'true';
+
+export function isQuotaExceeded() {
+  return isSupabaseQuotaExceeded;
+}
 
 export function checkQuota(error) {
   if (!error) return false;
   const msg = String(error.message || '');
   const status = error.status || error.code;
-  if (status === 402 || msg.includes('exceed_egress_quota') || msg.includes('restricted')) {
+  if (status === 402 || msg.includes('exceed_egress_quota') || msg.includes('restricted') || msg.includes('402')) {
     if (!isSupabaseQuotaExceeded) {
       isSupabaseQuotaExceeded = true;
+      if (typeof window !== 'undefined') {
+        try { localStorage.setItem('supabase_quota_exceeded', 'true'); } catch (e) {}
+      }
+      try { supabase.removeAllChannels(); } catch (e) {}
       console.warn('[SUPABASE] Egress kvotasi tugagan (402). Tizim lokal ko\'prik va tunnel orqali uzluksiz ishlamoqda.');
     }
     return true;

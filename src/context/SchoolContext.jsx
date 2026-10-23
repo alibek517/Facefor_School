@@ -25,7 +25,9 @@ import {
   getLocalStatusFromSupabase,
   getLatestCameraFramesFromSupabase,
   sendLocalHeartbeatToSupabase,
-  saveLatestCameraFramesToSupabase
+  saveLatestCameraFramesToSupabase,
+  isQuotaExceeded,
+  checkQuota
 } from '../supabase';
 import { promoteAllClasses } from '../utils/excelAndPromotion';
 import { formatPhoneNumber } from '../utils/phoneFormatter';
@@ -632,8 +634,10 @@ export const SchoolProvider = ({ children }) => {
 
   // Serverga va Supabase bulut bazasiga markaziy saqlash (Barcha qurilmalar va brauzerlar uchun global)
   const saveToServer = async (key, data) => {
-    // 1. Supabase bulut bazasiga zudlik bilan saqlash
-    saveModuleToSupabase(key, data).catch(() => {});
+    // 1. Supabase bulut bazasiga saqlash (agar kvota tugamagan bo'lsa)
+    if (!isQuotaExceeded()) {
+      saveModuleToSupabase(key, data).catch(() => {});
+    }
 
     // 2. Faol ko'prik serveriga (lokal yoki Cloudflare tunnel orqali) xabar berish
     const targetUrl = getActiveBridgeUrl();
@@ -809,99 +813,100 @@ export const SchoolProvider = ({ children }) => {
     loadGlobalData();
 
     // 2. Supabase Realtime: Barcha kompyuterlar va qurilmalar uchun jonli sinxronizatsiya
-    try {
-      supabaseChannel = supabase
-        .channel('school_global_realtime');
-      supabaseChannelRef.current = supabaseChannel;
+    if (!isQuotaExceeded()) {
+      try {
+        supabaseChannel = supabase
+          .channel('school_global_realtime');
+        supabaseChannelRef.current = supabaseChannel;
 
-      supabaseChannel
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'school_data' }, (payload) => {
-          if (payload.new && payload.new.key) {
-            const { key, data } = payload.new;
-            if (key === 'local_status' && data) {
-              const isFresh = data.online && (Date.now() - (data.timestamp || 0) < 45000);
-              setIsSchoolLocalOnline(isFresh);
-            }
-            else if (key === 'students' && Array.isArray(data)) setStudents(data);
-            else if (key === 'classes' && Array.isArray(data)) setClasses(data);
-            else if (key === 'teachers' && Array.isArray(data)) setTeachers(data);
-            else if (key === 'schedules' && Array.isArray(data)) setSchedules(data);
-            else if (key === 'attendanceList' && Array.isArray(data)) setAttendanceList(data);
-            else if (key === 'teacherAttendance' && Array.isArray(data)) setTeacherAttendance(data);
-            else if (key === 'hourlyAttendance') setHourlyAttendance(data);
-            else if (key === 'notifications' && Array.isArray(data)) setNotifications(data);
-            else if (key === 'global_stream_url') {
-              const gUrl = typeof data === 'string' ? data : data?.url;
-              if (gUrl && !isLocalHostEnv) updateGlobalStreamUrl(gUrl);
-            }
-            else if (key === 'camera_latest_frames' && data && typeof data === 'object') {
-              setCameraLatestFrames(data);
-            }
-            else if (key === 'cameras' && Array.isArray(data) && data.length >= 6) {
-              setCameras(data);
-            }
-          }
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'camera_settings' }, () => {
-          loadCamerasFromSupabase().then(cams => {
-            if (cams && cams.length > 0) {
-              setCameras(prev => prev.map(c => {
-                const fresh = cams.find(x => x.id === c.id || x.ip === c.ip);
-                return fresh ? { ...c, ...fresh } : c;
-              }));
-            }
-          });
-        })
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'face_scans' }, (payload) => {
-          if (payload.new) {
-            const scan = {
-              id: `scan-${payload.new.id}`,
-              employeeNo: payload.new.employee_no,
-              name: payload.new.name,
-              cameraName: payload.new.camera_name,
-              cameraIp: payload.new.camera_ip,
-              direction: payload.new.direction,
-              timeFormatted: payload.new.time_formatted,
-              timestamp: payload.new.created_at
-            };
-            handleIncomingFaceScan(scan);
-          }
-        })
-        .on('broadcast', { event: 'camera_frame' }, ({ payload }) => {
-          if (payload && payload.ip && payload.frame) {
-            setCameraLatestFrames(prev => ({
-              ...prev,
-              [payload.ip]: payload.frame
-            }));
-            setIsSchoolLocalOnline(true);
-          }
-        })
-        .on('broadcast', { event: 'local_heartbeat' }, ({ payload }) => {
-          if (payload) {
-            setIsSchoolLocalOnline(true);
-            setLocalBridgeInfo(payload);
-          }
-        })
-        .on('broadcast', { event: 'live_face_scan' }, ({ payload }) => {
-          if (payload) {
-            handleIncomingFaceScan(payload);
-          }
-        })
-        .subscribe((status, err) => {
-          if (status === 'SUBSCRIBED') {
-            isChannelSubscribedRef.current = true;
-            console.log('[SUPABASE REALTIME] Jonli kanal ulandi.');
-          } else {
-            isChannelSubscribedRef.current = false;
-            if (status === 'CHANNEL_ERROR') {
-              if (err && (String(err).includes('402') || String(err.message || '').includes('402'))) {
-                try { supabase.removeChannel(channel); } catch (e) {}
+        supabaseChannel
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'school_data' }, (payload) => {
+            if (payload.new && payload.new.key) {
+              const { key, data } = payload.new;
+              if (key === 'local_status' && data) {
+                const isFresh = data.online && (Date.now() - (data.timestamp || 0) < 45000);
+                setIsSchoolLocalOnline(isFresh);
+              }
+              else if (key === 'students' && Array.isArray(data)) setStudents(data);
+              else if (key === 'classes' && Array.isArray(data)) setClasses(data);
+              else if (key === 'teachers' && Array.isArray(data)) setTeachers(data);
+              else if (key === 'schedules' && Array.isArray(data)) setSchedules(data);
+              else if (key === 'attendanceList' && Array.isArray(data)) setAttendanceList(data);
+              else if (key === 'teacherAttendance' && Array.isArray(data)) setTeacherAttendance(data);
+              else if (key === 'hourlyAttendance') setHourlyAttendance(data);
+              else if (key === 'notifications' && Array.isArray(data)) setNotifications(data);
+              else if (key === 'global_stream_url') {
+                const gUrl = typeof data === 'string' ? data : data?.url;
+                if (gUrl && !isLocalHostEnv) updateGlobalStreamUrl(gUrl);
+              }
+              else if (key === 'camera_latest_frames' && data && typeof data === 'object') {
+                setCameraLatestFrames(data);
+              }
+              else if (key === 'cameras' && Array.isArray(data) && data.length >= 6) {
+                setCameras(data);
               }
             }
-          }
-        });
-    } catch (e) {
-      console.warn('Supabase Realtime ulanishida ogohlantirish:', e);
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'camera_settings' }, () => {
+            loadCamerasFromSupabase().then(cams => {
+              if (cams && cams.length > 0) {
+                setCameras(prev => prev.map(c => {
+                  const fresh = cams.find(x => x.id === c.id || x.ip === c.ip);
+                  return fresh ? { ...c, ...fresh } : c;
+                }));
+              }
+            });
+          })
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'face_scans' }, (payload) => {
+            if (payload.new) {
+              const scan = {
+                id: `scan-${payload.new.id}`,
+                employeeNo: payload.new.employee_no,
+                name: payload.new.name,
+                cameraName: payload.new.camera_name,
+                cameraIp: payload.new.camera_ip,
+                direction: payload.new.direction,
+                timeFormatted: payload.new.time_formatted,
+                timestamp: payload.new.created_at
+              };
+              handleIncomingFaceScan(scan);
+            }
+          })
+          .on('broadcast', { event: 'camera_frame' }, ({ payload }) => {
+            if (payload && payload.ip && payload.frame) {
+              setCameraLatestFrames(prev => ({
+                ...prev,
+                [payload.ip]: payload.frame
+              }));
+              setIsSchoolLocalOnline(true);
+            }
+          })
+          .on('broadcast', { event: 'local_heartbeat' }, ({ payload }) => {
+            if (payload) {
+              setIsSchoolLocalOnline(true);
+              setLocalBridgeInfo(payload);
+            }
+          })
+          .on('broadcast', { event: 'live_face_scan' }, ({ payload }) => {
+            if (payload) {
+              handleIncomingFaceScan(payload);
+            }
+          })
+          .subscribe((status, err) => {
+            if (status === 'SUBSCRIBED') {
+              isChannelSubscribedRef.current = true;
+              console.log('[SUPABASE REALTIME] Jonli kanal ulandi.');
+            } else {
+              isChannelSubscribedRef.current = false;
+              if (status === 'CHANNEL_ERROR') {
+                if (err && (String(err).includes('402') || String(err.message || '').includes('402'))) {
+                  checkQuota({ status: 402 });
+                  try { supabase.removeAllChannels(); } catch (e) {}
+                }
+              }
+            }
+          });
+      } catch (e) {}
     }
 
     // 3. Kameralar holati va lokal/global tarmoqni tekshirib borish
