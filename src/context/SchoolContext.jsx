@@ -164,14 +164,31 @@ export const SchoolProvider = ({ children }) => {
   const lastSavedFramesTime = useRef(0);
   const localFailuresCount = useRef(0);
   const manualRetryLocal = useRef(false);
-  const [globalStreamUrl, setGlobalStreamUrl] = useState('');
-  const globalStreamUrlRef = useRef('');
+  const [globalStreamUrl, setGlobalStreamUrl] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryBridge = urlParams.get('bridge') || urlParams.get('tunnel');
+      if (queryBridge) {
+        try { localStorage.setItem('saved_bridge_url', queryBridge.trim()); } catch (e) {}
+        return queryBridge.trim();
+      }
+      try {
+        const saved = localStorage.getItem('saved_bridge_url');
+        if (saved) return saved;
+      } catch (e) {}
+    }
+    return 'https://surgeon-ellis-rec-rico.trycloudflare.com';
+  });
+  const globalStreamUrlRef = useRef(globalStreamUrl);
 
   const updateGlobalStreamUrl = (url, syncToCloud = false) => {
     const clean = (url || '').trim();
     if (globalStreamUrlRef.current === clean && !syncToCloud) return;
     globalStreamUrlRef.current = clean;
     setGlobalStreamUrl(clean);
+    if (typeof window !== 'undefined' && clean) {
+      try { localStorage.setItem('saved_bridge_url', clean); } catch (e) {}
+    }
     // Faqat foydalanuvchi interfeysdan qo'lda o'zgartirganda Supabase ga saqlash (cheksiz Realtime siklidan himoya)
     if (syncToCloud) {
       saveModuleToSupabase('global_stream_url', clean).catch(() => {});
@@ -531,7 +548,7 @@ export const SchoolProvider = ({ children }) => {
   const isCloudflareTunnel = typeof window !== 'undefined' && window.location.hostname.includes('trycloudflare.com');
   const BRIDGE_API = (isLocalHostEnv && !isHttps) 
     ? `http://${bridgeHost}:5001` 
-    : (isCloudflareTunnel ? (typeof window !== 'undefined' ? window.location.origin : '') : '');
+    : (isCloudflareTunnel ? (typeof window !== 'undefined' ? window.location.origin : '') : (globalStreamUrl && globalStreamUrl.startsWith('http') ? globalStreamUrl : ''));
 
   const getActiveBridgeUrl = () => {
     if (BRIDGE_API) return BRIDGE_API;

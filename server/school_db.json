@@ -27441,11 +27441,11 @@
         },
         {
           "studentId": "s-00000186",
-          "status": "present",
+          "status": "exited",
           "inTime": "09:20:37",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "09:20:37"
+          "outTime": "10:57:59",
+          "lastDirection": "out",
+          "lastSeenTime": "10:57:59"
         },
         {
           "studentId": "s-00000197",
@@ -27495,6 +27495,14 @@
           "outTime": null,
           "lastDirection": "in",
           "lastSeenTime": "09:23:08"
+        },
+        {
+          "studentId": "s-00000718",
+          "status": "exited",
+          "inTime": "11:00:12",
+          "outTime": "11:00:29",
+          "lastDirection": "out",
+          "lastSeenTime": "11:00:29"
         }
       ]
     },
@@ -27512,6 +27520,14 @@
           "outTime": null,
           "lastDirection": "in",
           "lastSeenTime": "09:20:32"
+        },
+        {
+          "studentId": "s-00000217",
+          "status": "exited",
+          "inTime": "10:59:28",
+          "outTime": "10:59:28",
+          "lastDirection": "out",
+          "lastSeenTime": "10:59:28"
         }
       ]
     },
@@ -27671,6 +27687,14 @@
           "outTime": "09:25:41",
           "lastDirection": "out",
           "lastSeenTime": "09:25:41"
+        },
+        {
+          "studentId": "s-00000412",
+          "status": "exited",
+          "inTime": "10:58:19",
+          "outTime": "10:58:19",
+          "lastDirection": "out",
+          "lastSeenTime": "10:58:19"
         }
       ]
     },
@@ -27688,6 +27712,73 @@
           "outTime": null,
           "lastDirection": "in",
           "lastSeenTime": "09:27:39"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792734673791",
+      "date": "2026-10-23",
+      "classId": "c-6b",
+      "inspectorName": "Turniket: Turniket 1 (Chiqish)",
+      "timestamp": "10:51:10",
+      "records": [
+        {
+          "studentId": "s-00000742",
+          "status": "exited",
+          "inTime": "10:51:14",
+          "outTime": "10:51:32",
+          "lastDirection": "out",
+          "lastSeenTime": "10:51:32"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792734907836",
+      "date": "2026-10-23",
+      "classId": "c-11b",
+      "inspectorName": "Turniket: Turniket 1 (Chiqish)",
+      "timestamp": "10:55:06",
+      "records": [
+        {
+          "studentId": "s-00000136",
+          "status": "exited",
+          "inTime": "10:55:06",
+          "outTime": "10:55:06",
+          "lastDirection": "out",
+          "lastSeenTime": "10:55:06"
+        },
+        {
+          "studentId": "s-00000115",
+          "status": "exited",
+          "inTime": "10:57:21",
+          "outTime": "10:57:21",
+          "lastDirection": "out",
+          "lastSeenTime": "10:57:21"
+        },
+        {
+          "studentId": "s-00000139",
+          "status": "exited",
+          "inTime": "10:57:28",
+          "outTime": "10:57:28",
+          "lastDirection": "out",
+          "lastSeenTime": "10:57:28"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792735064241",
+      "date": "2026-10-23",
+      "classId": "c-9a",
+      "inspectorName": "Turniket: Turniket 1 (Chiqish)",
+      "timestamp": "10:57:40",
+      "records": [
+        {
+          "studentId": "s-00000022",
+          "status": "exited",
+          "inTime": "10:57:40",
+          "outTime": "10:57:40",
+          "lastDirection": "out",
+          "lastSeenTime": "10:57:40"
         }
       ]
     }
@@ -27756,7 +27847,7 @@
       "updated_at": "2026-10-14T04:42:17.882+00:00"
     }
   ],
-  "lastUpdated": 1792730692920,
+  "lastUpdated": 1792735231259,
   "test_key": "test_val",
   "global_stream_url": "https://neo-proudly-chelsea-grew.trycloudflare.com",
   "camera_latest_frames": {
