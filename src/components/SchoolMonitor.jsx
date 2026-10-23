@@ -18,9 +18,77 @@ import {
   ArrowRight,
   X,
   ChevronRight,
-  Search
+  Search,
+  AlertTriangle,
+  Filter,
+  TrendingDown
 } from 'lucide-react';
 import { StudentAvatar } from './StudentAvatar';
+
+// Davomat foiziga qarab dinamik rang va animatsiya beruvchi konfigurator
+const getClassStatusConfig = (percent, totalCount = 1) => {
+  if (totalCount === 0) {
+    return {
+      cardBg: 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800',
+      badgeBg: 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300',
+      progressBg: 'bg-slate-400',
+      textColor: 'text-slate-600 dark:text-slate-400',
+      isCritical: false,
+      isWarning: false,
+      statusLabel: 'Mavjud emas'
+    };
+  }
+
+  // A'lo daraja: 90% - 100%
+  if (percent >= 90) {
+    return {
+      cardBg: 'bg-emerald-500/10 dark:bg-emerald-950/30 border-2 border-emerald-400 dark:border-emerald-500/70 hover:border-emerald-500 shadow-sm shadow-emerald-500/15',
+      badgeBg: 'bg-emerald-600 text-white font-black shadow-sm shadow-emerald-600/40',
+      progressBg: 'bg-emerald-500',
+      textColor: 'text-emerald-700 dark:text-emerald-300',
+      isCritical: false,
+      isWarning: false,
+      statusLabel: "A'lo"
+    };
+  } 
+  // Yaxshi daraja: 70% - 89%
+  else if (percent >= 70) {
+    return {
+      cardBg: 'bg-blue-500/5 dark:bg-blue-950/25 border-2 border-blue-300 dark:border-blue-600/60 hover:border-blue-500 shadow-sm',
+      badgeBg: 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-600/30',
+      progressBg: 'bg-blue-500',
+      textColor: 'text-blue-700 dark:text-blue-300',
+      isCritical: false,
+      isWarning: false,
+      statusLabel: 'Yaxshi'
+    };
+  } 
+  // O'rtacha ogohlantiruvchi daraja: 50% - 69%
+  else if (percent >= 50) {
+    return {
+      cardBg: 'bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-400 dark:border-amber-500/70 hover:border-amber-500 shadow-sm shadow-amber-500/20',
+      badgeBg: 'bg-amber-500 text-white font-black shadow-sm shadow-amber-500/40',
+      progressBg: 'bg-amber-500',
+      textColor: 'text-amber-700 dark:text-amber-300',
+      isCritical: false,
+      isWarning: true,
+      statusLabel: "O'rtacha"
+    };
+  } 
+  // Juda past (Xavfli / Qizil holat): 0% - 49%
+  // "% pastlar juda yomon bo'lib qizarsin va animatsiya bo'lib tursin"
+  else {
+    return {
+      cardBg: 'bg-red-100/90 dark:bg-red-950/70 border-2 border-red-500 dark:border-red-500 ring-2 ring-red-400/60 dark:ring-red-500/50 shadow-xl shadow-red-500/30 animate-intense-red animate-pulse',
+      badgeBg: 'bg-red-600 text-white font-black shadow-md shadow-red-600/60 ring-2 ring-red-300 dark:ring-red-800 animate-pulse',
+      progressBg: 'bg-red-600',
+      textColor: 'text-red-700 dark:text-red-300',
+      isCritical: true,
+      isWarning: true,
+      statusLabel: 'Juda past!'
+    };
+  }
+};
 
 const formatScanTime = (scan) => {
   if (!scan) return '--:--:--';
@@ -65,6 +133,7 @@ export const SchoolMonitor = () => {
   const [activeTab, setActiveTab] = useState('inside');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState('c-10a');
+  const [classFilter, setClassFilter] = useState('all'); // 'all' | 'low' | 'medium' | 'high'
 
   // Hafta kunini aniqlash va tanlangan kun state-i
   const getTodayDayName = () => {
@@ -203,6 +272,20 @@ export const SchoolMonitor = () => {
       hasAtt: todayAttendanceList.some(a => a.classId === c.id)
     };
   });
+
+  // Sinflarni foiziga qarab saralash va filtr holatlari
+  const lowCount = useMemo(() => classStats.filter(c => c.percent < 50).length, [classStats]);
+  const mediumCount = useMemo(() => classStats.filter(c => c.percent >= 50 && c.percent < 90).length, [classStats]);
+  const highCount = useMemo(() => classStats.filter(c => c.percent >= 90).length, [classStats]);
+
+  const filteredClassStats = useMemo(() => {
+    return classStats.filter(c => {
+      if (classFilter === 'low') return c.percent < 50;
+      if (classFilter === 'medium') return c.percent >= 50 && c.percent < 90;
+      if (classFilter === 'high') return c.percent >= 90;
+      return true;
+    });
+  }, [classStats, classFilter]);
 
   // Jami maktab bo'yicha o'quvchilar statistikasi
   const totalStudents = classStats.reduce((sum, c) => sum + c.totalCount, 0) || students.length || 1;
@@ -359,7 +442,15 @@ export const SchoolMonitor = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               
               {/* 1. Hozir maktab ichidagi o'quvchilar */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50/60 dark:from-blue-900/60 dark:to-slate-800/90 border border-blue-200 dark:border-blue-500/30 p-4 rounded-2xl relative overflow-hidden shadow-sm">
+              <div 
+                onClick={() => setClassFilter('all')}
+                className={`p-4 rounded-2xl relative overflow-hidden shadow-sm cursor-pointer transition-all border ${
+                  classFilter === 'all' 
+                    ? 'border-blue-500 ring-2 ring-blue-500/40 bg-blue-50/80 dark:bg-blue-950/40 shadow-md' 
+                    : 'bg-gradient-to-br from-blue-50 to-indigo-50/60 dark:from-blue-900/60 dark:to-slate-800/90 border-blue-200 dark:border-blue-500/30 hover:border-blue-400'
+                }`}
+                title="Barcha sinflarni ko'rish"
+              >
                 <div className="flex items-center justify-between text-blue-700 dark:text-blue-300">
                   <span className="text-xs font-bold uppercase tracking-wider">Hozir Maktab Ichida</span>
                   <Building className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -370,15 +461,28 @@ export const SchoolMonitor = () => {
                     nafar o'quvchi
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
-                  Jami maktab o'quvchilari: <strong className="text-slate-900 dark:text-white">{totalStudents} nafar</strong>
+                <div className="text-[11px] text-slate-600 dark:text-slate-400 mt-1 flex items-center justify-between">
+                  <span>Jami maktab: <strong className="text-slate-900 dark:text-white">{totalStudents} nafar</strong></span>
+                  {classFilter === 'all' && (
+                    <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/60 px-1.5 py-0.5 rounded">
+                      Barchasi
+                    </span>
+                  )}
                 </div>
               </div>
 
               {/* 2. Darsdagi o'quvchilar */}
-              <div className="bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm">
+              <div 
+                onClick={() => setClassFilter(classFilter === 'high' ? 'all' : 'high')}
+                className={`p-4 rounded-2xl shadow-sm cursor-pointer transition-all border ${
+                  classFilter === 'high' 
+                    ? 'border-emerald-500 ring-2 ring-emerald-500/40 bg-emerald-50/80 dark:bg-emerald-950/40 shadow-md' 
+                    : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-emerald-400'
+                }`}
+                title="A'lo (≥90%) sinflarni saralash"
+              >
                 <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                  <span className="text-xs font-bold uppercase tracking-wider">Darsdagi O'quvchilar</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Darsdagi O'quvchilar (A'lo)</span>
                   <UserCheck className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
                 </div>
                 <div className="mt-2 text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400">
@@ -396,10 +500,24 @@ export const SchoolMonitor = () => {
                 </div>
               </div>
 
-              {/* 3. Bugun kelmaganlar */}
-              <div className="bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm">
+              {/* 3. Bugun kelmaganlar (Past davomatli sinflarni filtr qiladi) */}
+              <div 
+                onClick={() => setClassFilter(classFilter === 'low' ? 'all' : 'low')}
+                className={`p-4 rounded-2xl shadow-sm cursor-pointer transition-all border ${
+                  classFilter === 'low' 
+                    ? 'border-red-500 ring-2 ring-red-500/60 bg-red-100/90 dark:bg-red-950/70 shadow-lg shadow-red-500/30 animate-pulse' 
+                    : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-rose-400'
+                }`}
+                title="Davomati past (<50%) bo'lgan sinflarni saralash"
+              >
                 <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                  <span className="text-xs font-bold uppercase tracking-wider">Bugun Kelmaganlar</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
+                    </span>
+                    Bugun Kelmaganlar (Past)
+                  </span>
                   <UserX className="w-5 h-5 text-rose-500 dark:text-rose-400" />
                 </div>
                 <div className="mt-2 text-3xl sm:text-4xl font-black text-rose-600 dark:text-rose-400">
@@ -408,7 +526,9 @@ export const SchoolMonitor = () => {
                 </div>
                 <div className="flex items-center justify-between mt-2 text-xs text-slate-500 dark:text-slate-400">
                   <span>Davomat: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{totalStudentsPercent}%</strong></span>
-                  <span className="font-semibold text-rose-600 dark:text-rose-400">Kelmadi: {totalStudentsAbsent}</span>
+                  <span className="font-bold text-rose-600 dark:text-rose-400">
+                    Past sinflar: {lowCount} ta {classFilter === 'low' ? '(Filtrlangan)' : ''}
+                  </span>
                 </div>
               </div>
 
@@ -416,14 +536,17 @@ export const SchoolMonitor = () => {
 
             {/* BARCHA SINFLAR VA XODIMLAR DAVOMAT KARTALARI (FOYE TABLOSI) */}
             <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 p-4 rounded-2xl shadow-sm space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-200 dark:border-slate-700">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 rounded-lg">
                     <Layers className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                      Sinflar Bo'yicha O'quvchilar Davomati
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                      <span>Sinflar Bo'yicha O'quvchilar Davomati</span>
+                      <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+                        ({filteredClassStats.length} ta ko'rsatilmoqda)
+                      </span>
                     </h3>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
                       O'quvchilarning to'liq ro'yxati va holatini ko'rish uchun sinf ustiga bosing
@@ -431,32 +554,87 @@ export const SchoolMonitor = () => {
                   </div>
                 </div>
 
-                <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                  Jami: <span className="text-slate-900 dark:text-white font-black">{classes.length} ta sinf</span>
+                {/* Foiz bo'yicha tezkor filter tugmalari */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    onClick={() => setClassFilter('all')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                      classFilter === 'all'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    Barchasi ({classStats.length})
+                  </button>
+
+                  <button
+                    onClick={() => setClassFilter('low')}
+                    className={`px-2.5 py-1 text-xs font-black rounded-lg transition-all flex items-center gap-1.5 ${
+                      classFilter === 'low'
+                        ? 'bg-red-600 text-white shadow-md ring-2 ring-red-400 animate-pulse'
+                        : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/60 hover:bg-red-100'
+                    }`}
+                    title="Davomati juda past bo'lgan sinflar"
+                  >
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                    </span>
+                    Past (&lt;50%) ({lowCount})
+                  </button>
+
+                  <button
+                    onClick={() => setClassFilter('medium')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                      classFilter === 'medium'
+                        ? 'bg-amber-500 text-white shadow-xs'
+                        : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 hover:bg-amber-100'
+                    }`}
+                  >
+                    O'rtacha (50-89%) ({mediumCount})
+                  </button>
+
+                  <button
+                    onClick={() => setClassFilter('high')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                      classFilter === 'high'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60 hover:bg-emerald-100'
+                    }`}
+                  >
+                    A'lo (≥90%) ({highCount})
+                  </button>
                 </div>
               </div>
 
               {/* Sinflar Gridi */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-                {classStats.map(cs => {
+                {filteredClassStats.map(cs => {
+                  const status = getClassStatusConfig(cs.percent, cs.totalCount);
                   return (
                     <div
                       key={cs.id}
                       onClick={() => { setDrawerTarget(cs); setDrawerSearch(''); }}
-                      className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-md cursor-pointer transition-all flex flex-col justify-between group"
+                      className={`p-3 rounded-xl cursor-pointer transition-all flex flex-col justify-between group ${status.cardBg}`}
                     >
                       <div>
                         <div className="flex items-center justify-between gap-1 mb-1.5">
-                          <span className="text-sm font-black text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                            {cs.name}
-                          </span>
-                          <span className={`text-[10px] font-black px-1.5 py-0.2 rounded-full ${
-                            cs.percent >= 90 
-                              ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300' 
-                              : cs.percent >= 70
-                              ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300'
-                              : 'bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300'
-                          }`}>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {status.isCritical && (
+                              <span className="relative flex h-2 w-2 shrink-0">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                              </span>
+                            )}
+                            <span className={`text-sm font-black truncate ${
+                              status.isCritical ? 'text-red-950 dark:text-red-100' : 'text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                            }`}>
+                              {cs.name}
+                            </span>
+                          </div>
+
+                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${status.badgeBg}`}>
+                            {status.isCritical && <AlertTriangle className="w-2.5 h-2.5" />}
                             {cs.percent}%
                           </span>
                         </div>
@@ -467,19 +645,33 @@ export const SchoolMonitor = () => {
                             <span>Jami:</span>
                             <span className="font-bold text-slate-700 dark:text-slate-300">{cs.totalCount} ta</span>
                           </div>
-                          <div className="text-emerald-600 dark:text-emerald-400 flex items-center justify-between font-semibold">
+                          <div className="text-emerald-600 dark:text-emerald-400 flex items-center justify-between font-bold">
                             <span>✓ Kelgan:</span>
                             <span>{cs.arrivedCount || cs.presentCount} ta</span>
                           </div>
-                          <div className="text-rose-600 dark:text-rose-400 flex items-center justify-between font-semibold">
+                          <div className={`flex items-center justify-between font-bold ${
+                            status.isCritical ? 'text-red-700 dark:text-red-300 font-black' : 'text-rose-600 dark:text-rose-400'
+                          }`}>
                             <span>✗ Kelmagan:</span>
                             <span>{cs.absentCount} ta</span>
                           </div>
                         </div>
+
+                        {/* Progress bar */}
+                        <div className="w-full bg-slate-200/80 dark:bg-slate-700/80 h-1.5 rounded-full overflow-hidden mt-2">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${status.progressBg}`}
+                            style={{ width: `${cs.percent}%` }}
+                          ></div>
+                        </div>
                       </div>
 
-                      <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] text-blue-600 dark:text-blue-400 font-bold group-hover:translate-x-0.5 transition-transform">
-                        <span>Ko'rish</span>
+                      <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-bold group-hover:translate-x-0.5 transition-transform ${
+                        status.isCritical 
+                          ? 'border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 font-black' 
+                          : 'border-slate-100 dark:border-slate-800 text-blue-600 dark:text-blue-400'
+                      }`}>
+                        <span>{status.isCritical ? "Diqqat: Ko'rish" : "Ko'rish"}</span>
                         <ChevronRight className="w-3.5 h-3.5" />
                       </div>
                     </div>
@@ -502,40 +694,64 @@ export const SchoolMonitor = () => {
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">Sinflar Kesimida Kunlik Davomat</h3>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">Har bir sinfning jami o'quvchilari, kelganlar soni va foiz ko'rsatkichi</p>
               </div>
-              <div className="flex items-center gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                {/* Filter tugmalari */}
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <button
+                    onClick={() => setClassFilter('all')}
+                    className={`px-2 py-0.5 text-[11px] font-bold rounded ${classFilter === 'all' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400'}`}
+                  >
+                    Barchasi
+                  </button>
+                  <button
+                    onClick={() => setClassFilter('low')}
+                    className={`px-2 py-0.5 text-[11px] font-black rounded ${classFilter === 'low' ? 'bg-red-600 text-white' : 'text-red-600 dark:text-red-400'}`}
+                  >
+                    Past ({lowCount})
+                  </button>
+                  <button
+                    onClick={() => setClassFilter('high')}
+                    className={`px-2 py-0.5 text-[11px] font-bold rounded ${classFilter === 'high' ? 'bg-emerald-600 text-white' : 'text-emerald-600 dark:text-emerald-400'}`}
+                  >
+                    A'lo ({highCount})
+                  </button>
+                </div>
+
+                <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block" />
+
                 <span className="text-emerald-600 dark:text-emerald-400 font-bold">Kelgan: {totalStudentsPresent}</span>
                 <span className="text-rose-600 dark:text-rose-400 font-bold">Kelmadi: {totalStudentsAbsent}</span>
                 <span className="text-blue-600 dark:text-blue-400 font-black text-sm">Umumiy: {totalStudentsPercent}%</span>
               </div>
             </div>
 
-            {/* Barcha 20+ ta Sinf Kartalari Grid ko'rinishida */}
+            {/* Barcha Sinf Kartalari Grid ko'rinishida */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-              {classStats.map(c => {
-                const isFull = c.percent === 100;
-                const isLow = c.percent < 90;
+              {filteredClassStats.map(c => {
+                const status = getClassStatusConfig(c.percent, c.totalCount);
 
                 return (
                   <div
                     key={c.id}
-                    className={`p-3 rounded-xl border flex flex-col justify-between transition-all shadow-sm ${
-                      isFull
-                        ? 'bg-white dark:bg-slate-800/90 border-emerald-300 dark:border-emerald-500/40'
-                        : isLow
-                        ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-500/40'
-                        : 'bg-white dark:bg-slate-800/90 border-slate-200 dark:border-slate-700'
-                    }`}
+                    onClick={() => { setDrawerTarget(c); setDrawerSearch(''); }}
+                    className={`p-3 rounded-xl border flex flex-col justify-between transition-all shadow-sm cursor-pointer ${status.cardBg}`}
                   >
                     <div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-black text-slate-900 dark:text-white">{c.name}</span>
-                        <span className={`text-xs font-black px-1.5 py-0.5 rounded ${
-                          isFull 
-                            ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400' 
-                            : isLow 
-                            ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400' 
-                            : 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400'
-                        }`}>
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {status.isCritical && (
+                            <span className="relative flex h-2 w-2 shrink-0">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                            </span>
+                          )}
+                          <span className={`text-sm font-black truncate ${status.isCritical ? 'text-red-950 dark:text-red-100' : 'text-slate-900 dark:text-white'}`}>
+                            {c.name}
+                          </span>
+                        </div>
+
+                        <span className={`text-xs font-black px-1.5 py-0.5 rounded-full flex items-center gap-1 ${status.badgeBg}`}>
+                          {status.isCritical && <AlertTriangle className="w-2.5 h-2.5" />}
                           {c.percent}%
                         </span>
                       </div>
@@ -546,20 +762,22 @@ export const SchoolMonitor = () => {
                       </div>
 
                       {/* Progress bar */}
-                      <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mt-1.5">
+                      <div className="w-full bg-slate-200/80 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mt-1.5">
                         <div
-                          className={`h-full rounded-full ${
-                            isFull ? 'bg-emerald-500' : isLow ? 'bg-rose-500' : 'bg-blue-500'
-                          }`}
+                          className={`h-full rounded-full transition-all duration-500 ${status.progressBg}`}
                           style={{ width: `${c.percent}%` }}
                         ></div>
                       </div>
                     </div>
 
-                    <div className="mt-2.5 pt-1.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
-                      <span>{c.room}</span>
+                    <div className={`mt-2.5 pt-1.5 border-t flex items-center justify-between text-[10px] ${
+                      status.isCritical 
+                        ? 'border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 font-bold' 
+                        : 'border-slate-100 dark:border-slate-700/60 text-slate-500 dark:text-slate-400'
+                    }`}>
+                      <span>{c.room || 'Xona'}</span>
                       <span className={c.absentCount > 0 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-emerald-600 dark:text-emerald-400'}>
-                        {c.absentCount > 0 ? `${c.absentCount} yo'q` : 'To\'liq'}
+                        {c.absentCount > 0 ? `${c.absentCount} yo'q` : "To'liq"}
                       </span>
                     </div>
                   </div>
@@ -674,7 +892,13 @@ export const SchoolMonitor = () => {
                           <span className="text-xs font-black px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-600/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
                             {lesson.lessonOrder}-dars ({lesson.time})
                           </span>
-                          <span className={`text-xs font-black ${lessonPercent >= 95 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                          <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
+                            lessonPercent >= 90 
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300' 
+                              : lessonPercent >= 60
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300'
+                              : 'bg-red-100 text-red-700 dark:bg-red-950/70 dark:text-red-300 animate-pulse font-black'
+                          }`}>
                             {lessonPercent}%
                           </span>
                         </div>
