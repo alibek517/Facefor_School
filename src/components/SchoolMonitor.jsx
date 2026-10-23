@@ -126,12 +126,12 @@ export const SchoolMonitor = () => {
     return (attendanceList || []).filter(a => a.date === todayStr);
   }, [attendanceList, todayStr]);
 
-  // O'quvchining ayni vaqtda maktab ichida ekanligini aniqlash
+  // 1. O'quvchining ayni vaqtda maktab ichida ekanligini aniqlash (oxirgi yo'nalishi 'in' bo'lganlar)
   const isStudentInsideToday = (st) => {
     const normId = String(st.studentId || st.faceId || st.id || '').replace(/^s-/, '').replace(/^0+/, '');
     const stName = (st.fullName || st.name || '').toLowerCase().trim();
 
-    // 1. Bugungi Face-ID skanlarini tekshiramiz
+    // Bugungi Face-ID skanlarini tekshiramiz
     const scans = todayScans.filter(s => {
       const sEmp = String(s.employeeNo || '').replace(/^0+/, '');
       const sName = (s.name || '').toLowerCase().trim();
@@ -143,7 +143,7 @@ export const SchoolMonitor = () => {
       return lastScan.direction === 'in';
     }
 
-    // 2. Bugungi rasmiy sinf davomatini tekshiramiz
+    // Bugungi rasmiy sinf davomatini tekshiramiz
     const classAtt = todayAttendanceList.find(a => a.classId === st.classId);
     if (classAtt && classAtt.records) {
       const rec = classAtt.records.find(r => r.studentId === st.id || r.studentId === st.studentId);
@@ -156,30 +156,49 @@ export const SchoolMonitor = () => {
       }
     }
 
-    // Hech qanday qayd bo'lmasa -> Maktab ichida emas (hali kelmagan)
+    return false;
+  };
+
+  // 2. O'quvchining bugun umuman yuzi tushganmi (kamida 1 marta kelganmi)
+  const hasStudentAttendedToday = (st) => {
+    const normId = String(st.studentId || st.faceId || st.id || '').replace(/^s-/, '').replace(/^0+/, '');
+    const stName = (st.fullName || st.name || '').toLowerCase().trim();
+
+    const hasScan = todayScans.some(s => {
+      const sEmp = String(s.employeeNo || '').replace(/^0+/, '');
+      const sName = (s.name || '').toLowerCase().trim();
+      return (normId && sEmp && sEmp === normId) || (sName && stName && (sName === stName || sName.includes(stName) || stName.includes(sName)));
+    });
+    if (hasScan) return true;
+
+    const classAtt = todayAttendanceList.find(a => a.classId === st.classId);
+    if (classAtt && classAtt.records) {
+      const rec = classAtt.records.find(r => r.studentId === st.id || r.studentId === st.studentId);
+      if (rec && (rec.status === 'present' || rec.lastDirection || rec.inTime)) return true;
+    }
     return false;
   };
 
   // 1. O'quvchilar hisob-kitoblari (Sinflar kesimida)
   const classStats = classes.map(c => {
     const classStudents = students.filter(s => s.classId === c.id);
-    const classAtt = todayAttendanceList.find(a => a.classId === c.id);
-    
-    // Sinfdagi mavjud o'quvchilar soni
     const totalCount = classStudents.length;
 
-    // Real vaqtda kelgan o'quvchilar soni (Face-ID + Davomat birlashtirilgan yagona hisob)
-    const presentCount = Math.min(totalCount, classStudents.filter(s => isStudentInsideToday(s)).length);
-    // Kelmaganlar har doim (Jami o'quvchilar - Kelganlar) ga teng
-    const absentCount = Math.max(0, totalCount - presentCount);
+    // Ayni paytda bino ichida bo'lganlar
+    const insideCount = classStudents.filter(s => isStudentInsideToday(s)).length;
+    // Bugun kun davomida kamida 1 marta yuzi tushgan (kelgan) o'quvchilar
+    const arrivedCount = classStudents.filter(s => hasStudentAttendedToday(s)).length;
+    // Bugun umuman yuzi tushmagan (umuman kelmagan) o'quvchilar
+    const absentCount = Math.max(0, totalCount - arrivedCount);
 
-    const percent = totalCount > 0 ? Math.min(100, Math.round((presentCount / totalCount) * 100)) : 0;
+    const percent = totalCount > 0 ? Math.min(100, Math.round((arrivedCount / totalCount) * 100)) : 0;
 
     return {
       ...c,
       totalCount,
-      presentCount,
-      absentCount,
+      presentCount: insideCount, // Hozir ichida
+      arrivedCount,              // Bugun kelganlar
+      absentCount,               // Bugun umuman kelmaganlar
       percent,
       hasAtt: todayAttendanceList.some(a => a.classId === c.id)
     };
@@ -187,14 +206,16 @@ export const SchoolMonitor = () => {
 
   // Jami maktab bo'yicha o'quvchilar statistikasi
   const totalStudents = classStats.reduce((sum, c) => sum + c.totalCount, 0) || students.length || 1;
-  const totalStudentsPresent = classStats.reduce((sum, c) => sum + c.presentCount, 0);
-  const totalStudentsAbsent = Math.max(0, totalStudents - totalStudentsPresent);
+  const totalStudentsInside = classStats.reduce((sum, c) => sum + (c.presentCount || 0), 0);
+  const totalStudentsArrived = classStats.reduce((sum, c) => sum + (c.arrivedCount || 0), 0);
+  // Bugun umuman yuzi tushmaganlar
+  const totalStudentsAbsent = Math.max(0, totalStudents - totalStudentsArrived);
   const totalStudentsPercent = totalStudents > 0 
-    ? Math.min(100, Math.round((totalStudentsPresent / totalStudents) * 100)) 
+    ? Math.min(100, Math.round((totalStudentsArrived / totalStudents) * 100)) 
     : 0;
 
   // 3. Maktab ichidagilar umumiy soni (Faqat o'quvchilar)
-  const totalPeopleInside = totalStudentsPresent;
+  const totalPeopleInside = totalStudentsInside;
 
   // 4. Soatlar bo'yicha darslar tahlili (Tanlangan sinf uchun)
   const currentClassObj = classes.find(c => c.id === selectedClassId);
@@ -343,7 +364,7 @@ export const SchoolMonitor = () => {
                   <Building className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="mt-2 text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
-                  {totalStudentsPresent}
+                  {totalStudentsInside}
                   <span className="text-sm font-semibold text-blue-600 dark:text-blue-300 ml-2">
                     nafar o'quvchi
                   </span>
@@ -447,7 +468,7 @@ export const SchoolMonitor = () => {
                           </div>
                           <div className="text-emerald-600 dark:text-emerald-400 flex items-center justify-between font-semibold">
                             <span>✓ Kelgan:</span>
-                            <span>{cs.presentCount} ta</span>
+                            <span>{cs.arrivedCount || cs.presentCount} ta</span>
                           </div>
                           <div className="text-rose-600 dark:text-rose-400 flex items-center justify-between font-semibold">
                             <span>✗ Kelmagan:</span>
@@ -520,7 +541,7 @@ export const SchoolMonitor = () => {
 
                       {/* Kelgan / Jami soni */}
                       <div className="mt-2 text-xs text-slate-600 dark:text-slate-300">
-                        Kelgan: <strong className="text-slate-900 dark:text-white text-sm">{c.presentCount}</strong> / {c.totalCount}
+                        Kelgan: <strong className="text-slate-900 dark:text-white text-sm">{c.arrivedCount || c.presentCount}</strong> / {c.totalCount}
                       </div>
 
                       {/* Progress bar */}
