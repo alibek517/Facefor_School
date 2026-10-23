@@ -84,7 +84,7 @@ const isDeadTunnel = (url) => {
 // Alohida, har bir kamerani silliq va navbat bilan (staggered) yangilovchi komponent
 const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, updateCameraType, recentFaceScans, index, onMoveLeft, onMoveRight, effectiveBaseUrl: passedEffectiveBaseUrl }) => {
   const isEntry = cam.type === 'in';
-  const { isLocalConnected, isSchoolLocalOnline, cameraLatestFrames } = useSchool();
+  const { isLocalConnected, isSchoolLocalOnline, cameraLatestFrames, students, teachers } = useSchool();
   const isDirectLocal = Boolean(isLocalConnected);
 
   // Kadr formati tekshiruvi (xom IP yoki noto'g'ri string brauzerda ERR_NAME_NOT_RESOLVED chaqirmasligi uchun)
@@ -113,6 +113,34 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
   const [hasError, setHasError] = useState(false);
   const failCountRef = useRef(0);
   const lastScan = cam.lastEvent || (recentFaceScans || []).find(s => s.cameraIp === cam.ip || s.cameraId === cam.id);
+
+  // Oxirgi skanerlangan shaxsning rasmiy to'liq ismini bazadan aniqlash
+  const matchedPerson = useMemo(() => {
+    if (!lastScan) return null;
+    const emp = String(lastScan.employeeNo || '').replace(/^s-/, '').replace(/^0+/, '');
+    const scanName = (lastScan.name || '').toLowerCase().trim();
+    if (emp) {
+      const st = (students || []).find(s => {
+        const sEmp = String(s.studentId || s.employeeNo || s.id || '').replace(/^s-/, '').replace(/^0+/, '');
+        return sEmp && sEmp === emp;
+      });
+      if (st) return st;
+      const tc = (teachers || []).find(t => {
+        const tEmp = String(t.faceId || t.id || '').replace(/^t-/, '').replace(/^0+/, '');
+        return tEmp && tEmp === emp;
+      });
+      if (tc) return tc;
+    }
+    if (scanName) {
+      const st = (students || []).find(s => (s.fullName || s.name || '').toLowerCase().trim() === scanName);
+      if (st) return st;
+      const tc = (teachers || []).find(t => (t.name || '').toLowerCase().trim() === scanName);
+      if (tc) return tc;
+    }
+    return null;
+  }, [lastScan, students, teachers]);
+
+  const displayName = matchedPerson ? (matchedPerson.fullName || matchedPerson.name) : (lastScan?.name || '');
 
   // Bulutdagi oxirgi kadr kelganda yangilab turish (oflayn yoki zaxira rejimida)
   useEffect(() => {
@@ -329,7 +357,7 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
             </div>
             <div className="min-w-0">
               <div className="text-[11px] font-bold text-slate-900 dark:text-white truncate">
-                {lastScan.name}
+                {displayName}
               </div>
               <div className="text-[9px] text-slate-500 dark:text-slate-400 flex items-center gap-1 font-mono">
                 <span className={isEntry ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'}>

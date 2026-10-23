@@ -23466,6 +23466,118 @@
           "outTime": "12:28:17",
           "lastDirection": "out",
           "lastSeenTime": "12:28:17"
+        },
+        {
+          "studentId": "s-00000566",
+          "status": "present",
+          "inTime": "14:06:12",
+          "outTime": "14:06:20",
+          "lastDirection": "in",
+          "lastSeenTime": "14:06:12"
+        },
+        {
+          "studentId": "s-00000285",
+          "status": "present",
+          "inTime": "14:11:10",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "14:11:10"
+        },
+        {
+          "studentId": "s-00000242",
+          "status": "present",
+          "inTime": "14:15:27",
+          "outTime": "14:12:07",
+          "lastDirection": "in",
+          "lastSeenTime": "14:15:27"
+        },
+        {
+          "studentId": "s-00000223",
+          "status": "present",
+          "inTime": "14:15:15",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "14:15:15"
+        },
+        {
+          "studentId": "s-00000442",
+          "status": "present",
+          "inTime": "14:03:27",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "14:03:27"
+        },
+        {
+          "studentId": "s-00000450",
+          "status": "present",
+          "inTime": "14:03:30",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "14:03:30"
+        },
+        {
+          "studentId": "s-00000451",
+          "status": "present",
+          "inTime": "14:13:03",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "14:13:03"
+        },
+        {
+          "studentId": "s-00000214",
+          "status": "present",
+          "inTime": "14:23:41",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "14:23:41"
+        },
+        {
+          "studentId": "s-00000241",
+          "status": "exited",
+          "inTime": "12:38:04",
+          "outTime": "12:38:04",
+          "lastDirection": "out",
+          "lastSeenTime": "12:38:04"
+        },
+        {
+          "studentId": "s-00000479",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:25:18",
+          "lastDirection": "out",
+          "lastSeenTime": "14:25:18"
+        },
+        {
+          "studentId": "s-00000221",
+          "status": "exited",
+          "inTime": "14:26:19",
+          "outTime": "14:26:19",
+          "lastDirection": "out",
+          "lastSeenTime": "14:26:19"
+        },
+        {
+          "studentId": "s-00000477",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:25:40",
+          "lastDirection": "out",
+          "lastSeenTime": "14:25:40"
+        },
+        {
+          "studentId": "s-00000222",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:26:13",
+          "lastDirection": "out",
+          "lastSeenTime": "14:26:13"
+        },
+        {
+          "studentId": "s-00000531",
+          "status": "present",
+          "inTime": "14:26:29",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "14:26:29"
         }
       ]
     },
@@ -23529,9 +23641,9 @@
           "studentId": "s-00000742",
           "status": "exited",
           "inTime": "11:47:08",
-          "outTime": "11:47:06",
+          "outTime": "14:26:36",
           "lastDirection": "out",
-          "lastSeenTime": "11:47:06"
+          "lastSeenTime": "14:26:36"
         },
         {
           "studentId": "s-00000725",
@@ -23540,6 +23652,14 @@
           "outTime": "13:53:39",
           "lastDirection": "out",
           "lastSeenTime": "13:53:39"
+        },
+        {
+          "studentId": "s-00000741",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:26:27",
+          "lastDirection": "out",
+          "lastSeenTime": "14:26:27"
         }
       ]
     },
@@ -23726,6 +23846,14 @@
           "outTime": "11:47:08",
           "lastDirection": "out",
           "lastSeenTime": "11:47:08"
+        },
+        {
+          "studentId": "s-00000327",
+          "status": "present",
+          "inTime": "14:09:09",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "14:09:09"
         }
       ]
     },
@@ -23825,6 +23953,22 @@
           "outTime": null,
           "lastDirection": "in",
           "lastSeenTime": "11:49:10"
+        },
+        {
+          "studentId": "s-00000227",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "12:38:10",
+          "lastDirection": "out",
+          "lastSeenTime": "12:38:10"
+        },
+        {
+          "studentId": "s-00000228",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:26:06",
+          "lastDirection": "out",
+          "lastSeenTime": "14:26:06"
         }
       ]
     },
@@ -23900,6 +24044,14 @@
           "outTime": "13:54:18",
           "lastDirection": "out",
           "lastSeenTime": "13:54:18"
+        },
+        {
+          "studentId": "s-00000466",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:25:36",
+          "lastDirection": "out",
+          "lastSeenTime": "14:25:36"
         }
       ]
     },
@@ -23913,10 +24065,200 @@
         {
           "studentId": "s-00000179",
           "status": "exited",
-          "inTime": "14:01:12",
-          "outTime": "14:02:12",
+          "inTime": "14:05:24",
+          "outTime": "14:23:50",
           "lastDirection": "out",
-          "lastSeenTime": "14:02:12"
+          "lastSeenTime": "14:23:50"
+        },
+        {
+          "studentId": "s-00000216",
+          "status": "exited",
+          "inTime": "14:25:17",
+          "outTime": "14:25:17",
+          "lastDirection": "out",
+          "lastSeenTime": "14:25:17"
+        },
+        {
+          "studentId": "s-00000219",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:25:30",
+          "lastDirection": "out",
+          "lastSeenTime": "14:25:30"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792746890700",
+      "date": "2026-10-23",
+      "classId": "c-5a",
+      "inspectorName": "Turniket: Turniket 1 (Chiqish)",
+      "timestamp": "14:14:47",
+      "records": [
+        {
+          "studentId": "s-00000621",
+          "status": "present",
+          "inTime": "14:17:36",
+          "outTime": "14:14:47",
+          "lastDirection": "in",
+          "lastSeenTime": "14:17:36"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792747032009",
+      "date": "2026-10-23",
+      "classId": "c-6a",
+      "inspectorName": "Turniket: Turniket 4 (Kirish)",
+      "timestamp": "14:04:25",
+      "records": [
+        {
+          "studentId": "s-00000502",
+          "status": "present",
+          "inTime": "14:04:25",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "14:04:25"
+        },
+        {
+          "studentId": "s-00000508",
+          "status": "exited",
+          "inTime": "14:24:32",
+          "outTime": "14:24:32",
+          "lastDirection": "out",
+          "lastSeenTime": "14:24:32"
+        },
+        {
+          "studentId": "s-00000499",
+          "status": "exited",
+          "inTime": "14:24:37",
+          "outTime": "14:24:37",
+          "lastDirection": "out",
+          "lastSeenTime": "14:24:37"
+        },
+        {
+          "studentId": "s-00000504",
+          "status": "exited",
+          "inTime": "14:24:42",
+          "outTime": "14:24:42",
+          "lastDirection": "out",
+          "lastSeenTime": "14:24:42"
+        },
+        {
+          "studentId": "s-00000501",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:24:49",
+          "lastDirection": "out",
+          "lastSeenTime": "14:24:49"
+        },
+        {
+          "studentId": "s-00000495",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:25:11",
+          "lastDirection": "out",
+          "lastSeenTime": "14:25:11"
+        },
+        {
+          "studentId": "s-00000506",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:25:24",
+          "lastDirection": "out",
+          "lastSeenTime": "14:25:24"
+        },
+        {
+          "studentId": "s-00000493",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:25:29",
+          "lastDirection": "out",
+          "lastSeenTime": "14:25:29"
+        },
+        {
+          "studentId": "s-00000498",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:26:01",
+          "lastDirection": "out",
+          "lastSeenTime": "14:26:01"
+        },
+        {
+          "studentId": "s-00000496",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:26:04",
+          "lastDirection": "out",
+          "lastSeenTime": "14:26:04"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792747122456",
+      "date": "2026-10-23",
+      "classId": "c-2b",
+      "inspectorName": "Turniket: Turniket 5 (Kirish)",
+      "timestamp": "12:38:08",
+      "records": [
+        {
+          "studentId": "s-00000230",
+          "status": "present",
+          "inTime": "12:38:08",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "12:38:08"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792747122458",
+      "date": "2026-10-23",
+      "classId": "c-2a",
+      "inspectorName": "Turniket: Turniket 2 (Chiqish)",
+      "timestamp": "12:37:56",
+      "records": [
+        {
+          "studentId": "s-00000229",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "12:37:56",
+          "lastDirection": "out",
+          "lastSeenTime": "12:37:56"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792747955788",
+      "date": "2026-10-23",
+      "classId": "c-2d",
+      "inspectorName": "Turniket: Turniket 6 (Chiqish)",
+      "timestamp": "14:25:06",
+      "records": [
+        {
+          "studentId": "s-00000489",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:25:06",
+          "lastDirection": "out",
+          "lastSeenTime": "14:25:06"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792747955813",
+      "date": "2026-10-23",
+      "classId": "c-3d",
+      "inspectorName": "Turniket: Turniket 1 (Chiqish)",
+      "timestamp": "14:25:36",
+      "records": [
+        {
+          "studentId": "s-00000234",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "14:25:36",
+          "lastDirection": "out",
+          "lastSeenTime": "14:25:36"
         }
       ]
     }
@@ -23985,7 +24327,7 @@
       "updated_at": "2026-10-14T04:42:17.882+00:00"
     }
   ],
-  "lastUpdated": 1792746137747,
+  "lastUpdated": 1792748155728,
   "test_key": "test_val",
   "global_stream_url": "https://neo-proudly-chelsea-grew.trycloudflare.com",
   "camera_latest_frames": {

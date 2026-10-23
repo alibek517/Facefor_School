@@ -140,10 +140,91 @@ function loadSchoolDB() {
   return null;
 }
 
+let recentScans = [];
+
+function syncUsersMapWithDB() {
+  if (!schoolDB) return;
+  if (Array.isArray(schoolDB.students)) {
+    schoolDB.students.forEach(s => {
+      const rawEmp = String(s.employeeNo || s.studentId || s.id || '').replace(/^s-/, '').trim();
+      if (!rawEmp) return;
+      const empPadded = rawEmp.padStart(8, '0');
+      const empClean = rawEmp.replace(/^0+/, '');
+      const studentName = (s.fullName || s.name || '').replace(/''/g, "'").trim();
+      const userObj = {
+        employeeNo: empPadded,
+        name: studentName,
+        role: 'student',
+        gender: (s.gender === 'Qiz' || s.gender === 'female') ? 'female' : 'male',
+        faceURL: s.photo || s.photoUrl || null
+      };
+      usersMap.set(empPadded, userObj);
+      usersMap.set(rawEmp, userObj);
+      usersMap.set(empClean, userObj);
+
+      const existingCached = cachedUsers.find(u => u.employeeNo === empPadded || u.employeeNo === rawEmp || u.employeeNo === empClean);
+      if (existingCached) {
+        existingCached.name = studentName;
+        existingCached.gender = userObj.gender;
+      } else {
+        cachedUsers.push(userObj);
+      }
+    });
+  }
+  if (Array.isArray(schoolDB.teachers)) {
+    schoolDB.teachers.forEach(t => {
+      const rawEmp = String(t.faceId || t.id || '').replace(/^t-/, '').trim();
+      if (!rawEmp) return;
+      const empPadded = rawEmp.padStart(8, '0');
+      const empClean = rawEmp.replace(/^0+/, '');
+      const teacherName = (t.name || '').replace(/''/g, "'").trim();
+      const userObj = {
+        employeeNo: empPadded,
+        name: teacherName,
+        role: 'teacher',
+        faceURL: t.photo || t.photoUrl || null
+      };
+      usersMap.set(empPadded, userObj);
+      usersMap.set(rawEmp, userObj);
+      usersMap.set(empClean, userObj);
+
+      const existingCached = cachedUsers.find(u => u.employeeNo === empPadded || u.employeeNo === rawEmp || u.employeeNo === empClean);
+      if (existingCached) {
+        existingCached.name = teacherName;
+      } else {
+        cachedUsers.push(userObj);
+      }
+    });
+  }
+
+  // Mavjud skanerlashlardagi ismlarni ham yangilash
+  if (typeof recentScans !== 'undefined' && Array.isArray(recentScans)) {
+    recentScans.forEach(sc => {
+      const scEmp = String(sc.employeeNo || '').replace(/^0+/, '');
+      const user = usersMap.get(scEmp) || usersMap.get(sc.employeeNo);
+      if (user && user.name) {
+        sc.name = user.name;
+      }
+    });
+  }
+  if (typeof CAMERAS !== 'undefined' && Array.isArray(CAMERAS)) {
+    CAMERAS.forEach(cam => {
+      if (cam.lastEvent) {
+        const scEmp = String(cam.lastEvent.employeeNo || '').replace(/^0+/, '');
+        const user = usersMap.get(scEmp) || usersMap.get(cam.lastEvent.employeeNo);
+        if (user && user.name) {
+          cam.lastEvent.name = user.name;
+        }
+      }
+    });
+  }
+}
+
 function saveSchoolDB(data) {
   try {
     data.lastUpdated = Date.now();
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+    syncUsersMapWithDB();
     return true;
   } catch (e) {
     console.error('[DB] Saqlashda xatolik:', e.message);
@@ -162,6 +243,9 @@ let schoolDB = loadSchoolDB() || {
   cameras: null,
   lastUpdated: Date.now()
 };
+
+// Server ishga tushganda bazadagi barcha foydalanuvchilarni usersMap keshiga yuklash
+syncUsersMapWithDB();
 
 // ==================== SUPABASE BULUTLI INTEGRATSIYA ====================
 const SUPABASE_CONFIG = {
@@ -356,7 +440,7 @@ async function syncStudentToHardware(action, studentData) {
     const setUpPayload = JSON.stringify({
       UserInfo: {
         employeeNo: empPadded,
-        name: name,
+        name: (name || '').slice(0, 31),
         userType: 'normal',
         closeDelayEnabled: false,
         Valid: {
@@ -840,7 +924,7 @@ let deviceStatus = {
   activeCameras: 6
 };
 
-let recentScans = [];
+// recentScans yuqorida e'lon qilingan
 let lastKnownTotals = new Map();
 let sseClients = [];
 let isPolling = false;
@@ -1344,12 +1428,45 @@ function addScanEvent(rawEvent, camera, isNew = true) {
 
   const empNo = (rawEvent.employeeNoString || rawEvent.cardNo || '').trim();
   const cleanEmpNo = empNo ? empNo.replace(/^0+/, '') : '';
-  const cachedUser = usersMap.get(empNo) || usersMap.get(cleanEmpNo) || usersMap.get(empNo.padStart(8, '0'));
+  const paddedEmpNo = empNo ? empNo.padStart(8, '0') : '';
 
-  let name = rawEvent.name ? rawEvent.name.replace(/''/g, "'").trim() : '';
-  if (!name && cachedUser) {
-    name = cachedUser.name;
+  // 1. Ismni birinchi navbatda Maktab Bazasidan (schoolDB) tekshirib, eng so'nggi to'liq ismni olamiz:
+  let resolvedName = '';
+  let resolvedRole = 'normal';
+
+  // schoolDB.students dan qidirish
+  if (schoolDB && Array.isArray(schoolDB.students) && (cleanEmpNo || empNo)) {
+    const sFound = schoolDB.students.find(s => {
+      const sEmp = String(s.employeeNo || s.studentId || s.id || '').replace(/^s-/, '').replace(/^0+/, '');
+      return sEmp && (sEmp === cleanEmpNo || sEmp === empNo);
+    });
+    if (sFound) {
+      resolvedName = (sFound.fullName || sFound.name || '').replace(/''/g, "'").trim();
+      resolvedRole = 'student';
+    }
   }
+
+  // schoolDB.teachers dan qidirish
+  if (!resolvedName && schoolDB && Array.isArray(schoolDB.teachers) && (cleanEmpNo || empNo)) {
+    const tFound = schoolDB.teachers.find(t => {
+      const tEmp = String(t.faceId || t.id || '').replace(/^t-/, '').replace(/^0+/, '');
+      return tEmp && (tEmp === cleanEmpNo || tEmp === empNo);
+    });
+    if (tFound) {
+      resolvedName = (tFound.name || '').replace(/''/g, "'").trim();
+      resolvedRole = 'teacher';
+    }
+  }
+
+  // usersMap keshidan qidirish
+  const cachedUser = usersMap.get(empNo) || usersMap.get(cleanEmpNo) || usersMap.get(paddedEmpNo);
+  if (!resolvedName && cachedUser && cachedUser.name) {
+    resolvedName = cachedUser.name.replace(/''/g, "'").trim();
+    resolvedRole = cachedUser.role || 'normal';
+  }
+
+  // Agar bazada va keshda topilmasa, kamera xotirasidagi nom (rawEvent.name)
+  let name = resolvedName || (rawEvent.name ? rawEvent.name.replace(/''/g, "'").trim() : '');
   if (!name && empNo) {
     name = `Foydalanuvchi #${empNo}`;
   }
@@ -1380,7 +1497,7 @@ function addScanEvent(rawEvent, camera, isNew = true) {
     serialNo: rawEvent.serialNo,
     employeeNo: empNo,
     name: name,
-    userType: rawEvent.userType || (cachedUser ? (cachedUser.role === 'teacher' ? 'teacher' : 'student') : 'normal'),
+    userType: resolvedRole !== 'normal' ? resolvedRole : (rawEvent.userType || (cachedUser ? (cachedUser.role === 'teacher' ? 'teacher' : 'student') : 'normal')),
     timestamp: eventIsoTime,
     timeFormatted: timeFormatted,
     cameraId: camera.id,

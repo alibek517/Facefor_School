@@ -436,10 +436,7 @@ export const SchoolProvider = ({ children }) => {
 
   // Face-ID orqali kelgan shaxsni avtomatik davomatga yozish
   const handleIncomingFaceScan = (scan) => {
-    setRecentFaceScans(prev => {
-      const filtered = prev.filter(s => s.serialNo !== scan.serialNo);
-      return [scan, ...filtered].slice(0, 3000);
-    });
+    if (!scan) return;
 
     const getTodayDateStr = () => {
       const d = new Date();
@@ -448,16 +445,46 @@ export const SchoolProvider = ({ children }) => {
 
     const scanName = (scan.name || '').toLowerCase().trim();
     const scanEmpNo = (scan.employeeNo || '').trim();
+    const cleanScanEmp = scanEmpNo.replace(/^s-/, '').replace(/^0+/, '');
     const isExit = scan.direction === 'out';
 
     // 1. O'qituvchilar orasidan qidirish (O'qituvchilar birinchi navbatda tekshiriladi)
     const matchedTeacher = teachers.find(t => {
       const tName = (t.name || '').toLowerCase().trim();
+      const tEmp = String(t.faceId || t.id || '').replace(/^t-/, '').replace(/^0+/, '');
       return (
+        (cleanScanEmp && tEmp && cleanScanEmp === tEmp) ||
         tName === scanName ||
         (scanEmpNo && (t.id === scanEmpNo || t.id === `t-${scanEmpNo}` || t.faceId === scanEmpNo)) ||
         (tName.length > 5 && (scanName.includes(tName) || tName.includes(scanName)))
       );
+    });
+
+    // 2. O'quvchilar orasidan qidirish
+    const matchedStudent = !matchedTeacher ? students.find(s => {
+      const sName = (s.fullName || s.name || '').toLowerCase().trim();
+      const sEmp = String(s.studentId || s.employeeNo || s.id || '').replace(/^s-/, '').replace(/^0+/, '');
+      return (
+        (cleanScanEmp && sEmp && cleanScanEmp === sEmp) ||
+        sName === scanName ||
+        (scanEmpNo && (s.studentId === scanEmpNo || s.id === scanEmpNo || s.faceId === scanEmpNo)) ||
+        (sName.length > 5 && (scanName.includes(sName) || sName.includes(scanName)))
+      );
+    }) : null;
+
+    // Scan obyektidagi ismni rasmiy bazadagi to'liq ism bilan aniqlash
+    const officialName = matchedStudent 
+      ? (matchedStudent.fullName || matchedStudent.name) 
+      : (matchedTeacher ? matchedTeacher.name : scan.name);
+
+    const resolvedScan = {
+      ...scan,
+      name: officialName || scan.name
+    };
+
+    setRecentFaceScans(prev => {
+      const filtered = prev.filter(s => s.serialNo !== resolvedScan.serialNo);
+      return [resolvedScan, ...filtered].slice(0, 3000);
     });
 
     if (matchedTeacher) {
@@ -507,16 +534,6 @@ export const SchoolProvider = ({ children }) => {
       }
       return;
     }
-
-    // 2. O'quvchilar orasidan qidirish
-    const matchedStudent = students.find(s => {
-      const sName = (s.name || '').toLowerCase().trim();
-      return (
-        sName === scanName ||
-        (scanEmpNo && (s.studentId === scanEmpNo || s.id === scanEmpNo || s.faceId === scanEmpNo)) ||
-        (sName.length > 5 && (scanName.includes(sName) || sName.includes(scanName)))
-      );
-    });
 
     if (matchedStudent) {
       setAttendanceList(prev => {
@@ -574,16 +591,17 @@ export const SchoolProvider = ({ children }) => {
         return updated;
       });
 
+      const studentDisplayName = matchedStudent.fullName || matchedStudent.name;
       if (isExit) {
         showToast(
           '🚶 Chiqish Turniketi',
-          `🔴 ${matchedStudent.name} (${classes.find(c => c.id === matchedStudent.classId)?.name || 'O\'quvchi'}) maktabdan chiqdi (${scan.timeFormatted})`,
+          `🔴 ${studentDisplayName} (${classes.find(c => c.id === matchedStudent.classId)?.name || 'O\'quvchi'}) maktabdan chiqdi (${scan.timeFormatted})`,
           'info'
         );
       } else {
         showToast(
           '🟢 Kirish Turniketi',
-          `🟢 ${matchedStudent.name} (${classes.find(c => c.id === matchedStudent.classId)?.name || 'O\'quvchi'}) maktabga kirdi (${scan.timeFormatted})`,
+          `🟢 ${studentDisplayName} (${classes.find(c => c.id === matchedStudent.classId)?.name || 'O\'quvchi'}) maktabga kirdi (${scan.timeFormatted})`,
           'success'
         );
       }
@@ -1384,6 +1402,11 @@ export const SchoolProvider = ({ children }) => {
 
   const updateStudent = (studentId, updatedData) => {
     let resolvedData = { ...updatedData };
+    if (resolvedData.name && !resolvedData.fullName) {
+      resolvedData.fullName = resolvedData.name;
+    } else if (resolvedData.fullName && !resolvedData.name) {
+      resolvedData.name = resolvedData.fullName;
+    }
     if (updatedData.classId) {
       const cls = classes.find(c => c.id === updatedData.classId);
       if (cls) resolvedData.className = cls.name;
@@ -1400,6 +1423,21 @@ export const SchoolProvider = ({ children }) => {
       saveToServer('students', next);
       return next;
     });
+
+    // Jonli skanerlar (recentFaceScans) dagi eski ismlarni ham darhol yangilaymiz
+    if (updatedStudentObj) {
+      const emp = String(updatedStudentObj.studentId || updatedStudentObj.employeeNo || updatedStudentObj.id || '').replace(/^s-/, '').replace(/^0+/, '');
+      const newName = updatedStudentObj.fullName || updatedStudentObj.name;
+      if (emp && newName) {
+        setRecentFaceScans(prev => (prev || []).map(sc => {
+          const scEmp = String(sc.employeeNo || '').replace(/^0+/, '');
+          if (scEmp && scEmp === emp) {
+            return { ...sc, name: newName };
+          }
+          return sc;
+        }));
+      }
+    }
 
     const targetUrl = getActiveBridgeUrl();
     if (targetUrl && updatedStudentObj) {
