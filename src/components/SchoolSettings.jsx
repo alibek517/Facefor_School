@@ -297,7 +297,6 @@ export const SchoolSettings = () => {
   const [classModal, setClassModal] = useState(false);
   const [editClassId, setEditClassId] = useState(null);
   const [classNameInput, setClassNameInput] = useState('');
-  const [classRoomInput, setClassRoomInput] = useState('');
   const [classTeacherIdInput, setClassTeacherIdInput] = useState('');
   const [classGradeInput, setClassGradeInput] = useState(1);
 
@@ -407,7 +406,6 @@ export const SchoolSettings = () => {
   const openAddClass = () => {
     setEditClassId(null);
     setClassNameInput('');
-    setClassRoomInput('');
     setClassTeacherIdInput('');
     setClassGradeInput(1);
     setClassModal(true);
@@ -416,7 +414,6 @@ export const SchoolSettings = () => {
   const openEditClass = (c) => {
     setEditClassId(c.id);
     setClassNameInput(c.name || '');
-    setClassRoomInput(c.room || '');
     const currentTeacher = teachers.find(t => t.id === c.teacherId || t.classId === c.id);
     setClassTeacherIdInput(currentTeacher?.id || c.teacherId || '');
     setClassGradeInput(c.grade || parseInt(c.name, 10) || 1);
@@ -429,7 +426,7 @@ export const SchoolSettings = () => {
 
     const data = {
       name: classNameInput.trim(),
-      room: classRoomInput.trim() || '101-xona',
+      room: '',
       grade: Number(classGradeInput) || parseInt(classNameInput, 10) || 1,
       teacherId: classTeacherIdInput || null
     };
@@ -1054,7 +1051,6 @@ export const SchoolSettings = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-slate-900 dark:text-white">{c.name} sinfi</span>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500">({c.room})</span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium shrink-0">Sinf rahbari:</span>
@@ -1528,17 +1524,6 @@ export const SchoolSettings = () => {
                   value={classNameInput}
                   onChange={(e) => setClassNameInput(e.target.value)}
                   placeholder="Masalan: 10-A"
-                  className="w-full text-xs p-1.5 border border-slate-300 dark:border-slate-700 rounded outline-none bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-0.5">Xona raqami:</label>
-                <input
-                  type="text"
-                  value={classRoomInput}
-                  onChange={(e) => setClassRoomInput(e.target.value)}
-                  placeholder="Masalan: 404-xona"
                   className="w-full text-xs p-1.5 border border-slate-300 dark:border-slate-700 rounded outline-none bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
                 />
               </div>
