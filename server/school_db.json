@@ -23178,5149 +23178,703 @@
       "id": "att-2026-10-07-10a",
       "date": "2026-10-07",
       "classId": "c-10a",
+      "inspectorName": "Navbatchi xodim",
+      "timestamp": "08:45",
       "records": [
         {
-          "inTime": "08:14",
-          "reason": "",
-          "status": "present",
-          "outTime": null,
           "studentId": "s-10a-1",
+          "status": "present",
+          "inTime": "08:14",
+          "outTime": null,
+          "reason": "",
           "customAddress": ""
         },
         {
-          "inTime": "08:20",
-          "reason": "",
-          "status": "present",
-          "outTime": null,
           "studentId": "s-10a-2",
+          "status": "present",
+          "inTime": "08:20",
+          "outTime": null,
+          "reason": "",
           "customAddress": ""
         },
         {
           "id": "s-10a-3",
-          "reason": "Sababli (Kasal)",
-          "status": "absent",
           "studentId": "s-10a-3",
+          "status": "absent",
+          "reason": "Sababli (Kasal)",
           "customAddress": "Istiqlol MFY, Farg'ona 22-uy"
         },
         {
-          "inTime": "08:05",
-          "reason": "",
-          "status": "present",
-          "outTime": null,
           "studentId": "s-10a-4",
+          "status": "present",
+          "inTime": "08:05",
+          "outTime": null,
+          "reason": "",
           "customAddress": ""
         },
         {
-          "reason": "Sababsiz",
-          "status": "absent",
           "studentId": "s-10a-5",
+          "status": "absent",
+          "reason": "Sababsiz",
           "customAddress": "Yangiobod MFY, Yangi hayot 19-uy"
         },
         {
-          "inTime": "08:12",
-          "reason": "",
-          "status": "present",
-          "outTime": null,
           "studentId": "s-10a-6",
-          "customAddress": ""
-        },
-        {
-          "inTime": "08:10",
-          "reason": "",
           "status": "present",
+          "inTime": "08:12",
           "outTime": null,
-          "studentId": "s-10a-7",
+          "reason": "",
           "customAddress": ""
         },
         {
-          "inTime": "08:40",
-          "reason": "Kechikkan",
-          "status": "late",
+          "studentId": "s-10a-7",
+          "status": "present",
+          "inTime": "08:10",
           "outTime": null,
+          "reason": "",
+          "customAddress": ""
+        },
+        {
           "studentId": "s-10a-8",
+          "status": "late",
+          "inTime": "08:40",
+          "outTime": null,
+          "reason": "Kechikkan",
           "customAddress": "Yuksalish MFY, Amir Temur 51-uy"
         },
         {
-          "inTime": "08:15",
-          "reason": "",
-          "status": "present",
-          "outTime": null,
           "studentId": "s-10a-9",
+          "status": "present",
+          "inTime": "08:15",
+          "outTime": null,
+          "reason": "",
           "customAddress": ""
         },
         {
-          "inTime": "08:18",
-          "reason": "",
-          "status": "present",
-          "outTime": null,
           "studentId": "s-10a-10",
+          "status": "present",
+          "inTime": "08:18",
+          "outTime": null,
+          "reason": "",
           "customAddress": ""
         }
-      ],
-      "timestamp": "08:45",
-      "inspectorName": "Navbatchi xodim"
+      ]
     },
     {
       "id": "att-2026-10-07-9a",
       "date": "2026-10-07",
       "classId": "c-9a",
+      "inspectorName": "Turniket 1 (Kirish)",
+      "timestamp": "08:30",
       "records": [
         {
+          "studentId": "s-9a-1",
+          "status": "present",
           "inTime": "08:08",
-          "reason": "",
-          "status": "present",
-          "studentId": "s-9a-1"
+          "reason": ""
         },
         {
+          "studentId": "s-9a-2",
+          "status": "present",
           "inTime": "08:11",
-          "reason": "",
-          "status": "present",
-          "studentId": "s-9a-2"
+          "reason": ""
         },
         {
-          "reason": "Sababsiz",
-          "status": "absent",
           "studentId": "s-9a-3",
+          "status": "absent",
+          "reason": "Sababsiz",
           "customAddress": "Bog'ot tumani, Guliston MFY 44"
         }
-      ],
-      "timestamp": "08:30",
-      "inspectorName": "Turniket 1 (Kirish)"
+      ]
     },
     {
       "id": "att-2026-10-06-10a",
       "date": "2026-10-06",
       "classId": "c-10a",
+      "inspectorName": "Navbatchi xodim",
+      "timestamp": "08:40",
       "records": [
         {
+          "studentId": "s-10a-1",
+          "status": "present",
           "inTime": "08:10",
-          "reason": "",
-          "status": "present",
           "outTime": "13:10",
-          "studentId": "s-10a-1"
+          "reason": ""
         },
         {
+          "studentId": "s-10a-2",
+          "status": "present",
           "inTime": "08:15",
-          "reason": "",
-          "status": "present",
           "outTime": "13:10",
-          "studentId": "s-10a-2"
+          "reason": ""
         },
         {
+          "studentId": "s-10a-3",
+          "status": "present",
           "inTime": "08:22",
-          "reason": "",
-          "status": "present",
           "outTime": "13:10",
-          "studentId": "s-10a-3"
+          "reason": ""
         },
         {
+          "studentId": "s-10a-4",
+          "status": "present",
           "inTime": "08:04",
-          "reason": "",
-          "status": "present",
           "outTime": "13:10",
-          "studentId": "s-10a-4"
+          "reason": ""
         },
         {
-          "reason": "Sababsiz kelmadi",
-          "status": "absent",
           "studentId": "s-10a-5",
+          "status": "absent",
+          "reason": "Sababsiz kelmadi",
           "customAddress": "Yangiobod MFY 19-uy"
         },
         {
-          "inTime": "08:18",
-          "reason": "",
+          "studentId": "s-10a-6",
           "status": "present",
+          "inTime": "08:18",
           "outTime": "13:10",
-          "studentId": "s-10a-6"
+          "reason": ""
         }
-      ],
-      "timestamp": "08:40",
-      "inspectorName": "Navbatchi xodim"
+      ]
     },
     {
       "id": "att-2026-10-05-10a",
       "date": "2026-10-05",
       "classId": "c-10a",
+      "inspectorName": "Navbatchi xodim",
+      "timestamp": "08:35",
       "records": [
         {
+          "studentId": "s-10a-1",
+          "status": "present",
           "inTime": "08:12",
-          "reason": "",
-          "status": "present",
           "outTime": "13:05",
-          "studentId": "s-10a-1"
+          "reason": ""
         },
         {
+          "studentId": "s-10a-2",
+          "status": "present",
           "inTime": "08:14",
-          "reason": "",
-          "status": "present",
           "outTime": "13:05",
-          "studentId": "s-10a-2"
+          "reason": ""
         },
         {
-          "reason": "Olimpiadada",
-          "status": "absent",
           "studentId": "s-10a-3",
+          "status": "absent",
+          "reason": "Olimpiadada",
           "customAddress": "Istiqlol MFY 22-uy"
         },
         {
+          "studentId": "s-10a-4",
+          "status": "present",
           "inTime": "08:08",
-          "reason": "",
-          "status": "present",
           "outTime": "13:05",
-          "studentId": "s-10a-4"
+          "reason": ""
         },
         {
+          "studentId": "s-10a-5",
+          "status": "present",
           "inTime": "08:25",
-          "reason": "",
-          "status": "present",
           "outTime": "13:05",
-          "studentId": "s-10a-5"
+          "reason": ""
         },
         {
-          "inTime": "08:19",
-          "reason": "",
+          "studentId": "s-10a-6",
           "status": "present",
+          "inTime": "08:19",
           "outTime": "13:05",
-          "studentId": "s-10a-6"
+          "reason": ""
         }
-      ],
-      "timestamp": "08:35",
-      "inspectorName": "Navbatchi xodim"
+      ]
     },
     {
       "id": "att-2026-10-08-10a",
       "date": "2026-10-08",
       "classId": "c-10a",
-      "records": [
-        {
-          "inTime": "08:09",
-          "reason": "",
-          "status": "present",
-          "studentId": "s-10a-1"
-        },
-        {
-          "inTime": "08:13",
-          "reason": "",
-          "status": "present",
-          "studentId": "s-10a-2"
-        },
-        {
-          "inTime": "08:07",
-          "reason": "",
-          "status": "present",
-          "studentId": "s-10a-4"
-        },
-        {
-          "inTime": "08:11",
-          "reason": "",
-          "status": "present",
-          "studentId": "s-10a-6"
-        }
-      ],
+      "inspectorName": "Turniket 2 (Kirish)",
       "timestamp": "08:20",
-      "inspectorName": "Turniket 2 (Kirish)"
-    },
-    {
-      "id": "att-face-1791780370523",
-      "date": "2026-10-12",
-      "classId": "c-11a",
       "records": [
         {
-          "inTime": "12:45:27",
-          "status": "exited",
-          "outTime": "12:45:27",
-          "studentId": "s-00000044",
-          "lastSeenTime": "12:45:27",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "09:48:49",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000047",
-          "lastSeenTime": "09:48:49",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:45:05",
-          "studentId": "s-00000032",
-          "lastSeenTime": "12:45:05",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:45:08",
-          "studentId": "s-00000026",
-          "lastSeenTime": "12:45:08",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:45:23",
-          "studentId": "s-00000043",
-          "lastSeenTime": "12:45:23",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "15:16:25",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000219",
-          "lastSeenTime": "15:16:25",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:17:17",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000220",
-          "lastSeenTime": "15:17:17",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:20:39",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000216",
-          "lastSeenTime": "15:20:39",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "09:45:46",
-      "inspectorName": "Turniket: Turniket 6 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791780723809",
-      "date": "2026-10-12",
-      "classId": "c-2d",
-      "records": [
-        {
-          "inTime": "09:51:52",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000658",
-          "lastSeenTime": "09:51:52",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:19:46",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000231",
-          "lastSeenTime": "15:19:46",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "09:51:52",
-      "inspectorName": "Turniket: Turniket 4 (Kirish)"
-    },
-    {
-      "id": "att-face-1791780731441",
-      "date": "2026-10-12",
-      "classId": "c-1a",
-      "records": [
-        {
-          "inTime": "09:51:54",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000667",
-          "lastSeenTime": "09:51:54",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:38:58",
-          "studentId": "s-00000286",
-          "lastSeenTime": "12:38:58",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:40:11",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000614",
-          "lastSeenTime": "12:40:11",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:40:13",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000532",
-          "lastSeenTime": "12:40:13",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:43:34",
-          "status": "present",
-          "outTime": "12:41:09",
-          "studentId": "s-00000608",
-          "lastSeenTime": "12:43:34",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:18:27",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000226",
-          "lastSeenTime": "15:18:27",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:44:50",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000445",
-          "lastSeenTime": "12:44:50",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:44:56",
-          "status": "exited",
-          "outTime": "12:46:44",
-          "studentId": "s-00000447",
-          "lastSeenTime": "12:46:44",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:45:34",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000446",
-          "lastSeenTime": "12:45:34",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:45:52",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000450",
-          "lastSeenTime": "12:45:52",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:45:55",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000453",
-          "lastSeenTime": "12:45:55",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:46:29",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000454",
-          "lastSeenTime": "12:46:29",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:46:38",
-          "studentId": "s-00000452",
-          "lastSeenTime": "12:46:38",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:46:41",
-          "studentId": "s-00000442",
-          "lastSeenTime": "12:46:41",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:46:47",
-          "studentId": "s-00000444",
-          "lastSeenTime": "12:46:47",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:46:52",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000455",
-          "lastSeenTime": "12:46:52",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:48:34",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000443",
-          "lastSeenTime": "12:48:34",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:49:01",
-          "studentId": "s-00000475",
-          "lastSeenTime": "12:49:01",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:49:17",
-          "studentId": "s-00000471",
-          "lastSeenTime": "12:49:17",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:50:24",
-          "status": "exited",
-          "outTime": "12:50:24",
-          "studentId": "s-00000481",
-          "lastSeenTime": "12:50:24",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:52:13",
-          "studentId": "s-00000673",
-          "lastSeenTime": "12:52:13",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:55:01",
-          "studentId": "s-00000478",
-          "lastSeenTime": "12:55:01",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "15:16:02",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000638",
-          "lastSeenTime": "15:16:02",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:16:57",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000641",
-          "lastSeenTime": "15:16:57",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:20:29",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000224",
-          "lastSeenTime": "15:20:29",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:17:22",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000645",
-          "lastSeenTime": "15:17:22",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:19:49",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000214",
-          "lastSeenTime": "15:19:49",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:11:13",
-          "status": "present",
-          "outTime": "16:09:30",
-          "studentId": "s-00000240",
-          "lastSeenTime": "16:11:13",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:20:30",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000215",
-          "lastSeenTime": "15:20:30",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:01:13",
-          "status": "exited",
-          "outTime": "16:01:23",
-          "studentId": "s-00000646",
-          "lastSeenTime": "16:01:23",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:10:04",
-          "status": "present",
-          "outTime": "16:07:54",
-          "studentId": "s-00000222",
-          "lastSeenTime": "16:10:04",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:08:33",
-          "status": "present",
-          "outTime": "16:08:26",
-          "studentId": "s-00000241",
-          "lastSeenTime": "16:08:33",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:10:03",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000239",
-          "lastSeenTime": "16:10:03",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:52:00",
-          "studentId": "s-00000535",
-          "lastSeenTime": "16:52:00",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "09:51:54",
-      "inspectorName": "Turniket: Turniket 4 (Kirish)"
-    },
-    {
-      "id": "att-face-1791780762515",
-      "date": "2026-10-12",
-      "classId": "c-10a",
-      "records": [
-        {
-          "inTime": "12:44:27",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000429",
-          "lastSeenTime": "12:44:27",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:44:25",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000425",
-          "lastSeenTime": "12:44:25",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:41:42",
-          "status": "exited",
-          "outTime": "12:48:57",
-          "studentId": "s-00000083",
-          "lastSeenTime": "12:48:57",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:42:01",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000422",
-          "lastSeenTime": "12:42:01",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:45:21",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000413",
-          "lastSeenTime": "12:45:21",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:46:48",
-          "studentId": "s-00000410",
-          "lastSeenTime": "12:46:48",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:46:50",
-          "studentId": "s-00000417",
-          "lastSeenTime": "12:46:50",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:48:50",
-          "studentId": "s-00000432",
-          "lastSeenTime": "12:48:50",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:49:47",
-          "status": "exited",
-          "outTime": "12:49:47",
-          "studentId": "s-00000431",
-          "lastSeenTime": "12:49:47",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "09:52:31",
-      "inspectorName": "Turniket: Turniket 4 (Kirish)"
-    },
-    {
-      "id": "att-face-1791790702300",
-      "date": "2026-10-12",
-      "classId": "c-9b",
-      "records": [
-        {
-          "inTime": "12:38:13",
-          "status": "exited",
-          "outTime": "12:41:08",
-          "studentId": "s-00000204",
-          "lastSeenTime": "12:41:08",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:43:32",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000206",
-          "lastSeenTime": "12:43:32",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:50:41",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000193",
-          "lastSeenTime": "12:50:41",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:38:13",
-      "inspectorName": "Turniket: Turniket 4 (Kirish)"
-    },
-    {
-      "id": "att-face-1791790717065",
-      "date": "2026-10-12",
-      "classId": "c-5a",
-      "records": [
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:38:33",
-          "studentId": "s-00000598",
-          "lastSeenTime": "12:38:33",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:07:01",
-          "status": "exited",
-          "outTime": "16:07:01",
-          "studentId": "s-00000582",
-          "lastSeenTime": "16:07:01",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:38:47",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000588",
-          "lastSeenTime": "12:38:47",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:54:19",
-          "status": "present",
-          "outTime": "12:46:11",
-          "studentId": "s-00000600",
-          "lastSeenTime": "15:54:19",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:52:33",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000599",
-          "lastSeenTime": "12:52:33",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:54:28",
-          "status": "present",
-          "outTime": "12:51:04",
-          "studentId": "s-00000591",
-          "lastSeenTime": "12:54:28",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:52:29",
-          "studentId": "s-00000579",
-          "lastSeenTime": "12:52:29",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:08:37",
-          "status": "present",
-          "outTime": "16:08:31",
-          "studentId": "s-00000577",
-          "lastSeenTime": "16:08:37",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:10:43",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000621",
-          "lastSeenTime": "16:10:43",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:18:54",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000583",
-          "lastSeenTime": "15:18:54",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:54:10",
-          "status": "exited",
-          "outTime": "16:12:02",
-          "studentId": "s-00000584",
-          "lastSeenTime": "16:12:02",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "15:51:53",
-          "status": "exited",
-          "outTime": "16:08:36",
-          "studentId": "s-00000601",
-          "lastSeenTime": "16:08:36",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:11:24",
-          "status": "exited",
-          "outTime": "16:11:29",
-          "studentId": "s-00000596",
-          "lastSeenTime": "16:11:29",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:09:32",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000580",
-          "lastSeenTime": "16:09:32",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:12:26",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000571",
-          "lastSeenTime": "16:12:26",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:12:50",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000578",
-          "lastSeenTime": "16:12:50",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:38:33",
-      "inspectorName": "Turniket: Turniket 6 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791790752193",
-      "date": "2026-10-12",
-      "classId": "c-6b",
-      "records": [
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:39:07",
-          "studentId": "s-00000507",
-          "lastSeenTime": "12:39:07",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:41:49",
-          "status": "exited",
-          "outTime": "12:41:49",
-          "studentId": "s-00000736",
-          "lastSeenTime": "12:41:49",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "15:17:43",
-          "status": "exited",
-          "outTime": "16:08:45",
-          "studentId": "s-00000746",
-          "lastSeenTime": "16:08:45",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:44:01",
-          "status": "present",
-          "outTime": "12:40:52",
-          "studentId": "s-00000745",
-          "lastSeenTime": "12:44:01",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:43:43",
-          "status": "present",
-          "outTime": "12:40:55",
-          "studentId": "s-00000748",
-          "lastSeenTime": "12:43:43",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:43:47",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000726",
-          "lastSeenTime": "12:43:47",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:12:18",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000729",
-          "lastSeenTime": "16:12:18",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:19:12",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000722",
-          "lastSeenTime": "15:19:12",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:42:59",
-          "status": "exited",
-          "outTime": "16:07:05",
-          "studentId": "s-00000723",
-          "lastSeenTime": "16:07:05",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:08:50",
-          "status": "exited",
-          "outTime": "16:09:02",
-          "studentId": "s-00000724",
-          "lastSeenTime": "16:09:02",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:08:58",
-          "status": "present",
-          "outTime": "16:08:33",
-          "studentId": "s-00000725",
-          "lastSeenTime": "16:08:58",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:49:09",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000731",
-          "lastSeenTime": "12:49:09",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:49:47",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000732",
-          "lastSeenTime": "12:49:47",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "13:40:09",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000744",
-          "lastSeenTime": "13:40:09",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:12:10",
-          "status": "present",
-          "outTime": "16:06:44",
-          "studentId": "s-00000741",
-          "lastSeenTime": "16:12:10",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:17:13",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000734",
-          "lastSeenTime": "15:17:13",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:19:00",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000747",
-          "lastSeenTime": "15:19:00",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:21:40",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000742",
-          "lastSeenTime": "15:21:40",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:07:42",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000733",
-          "lastSeenTime": "16:07:42",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:09:01",
-          "status": "present",
-          "outTime": "16:08:35",
-          "studentId": "s-00000743",
-          "lastSeenTime": "16:09:01",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:39:07",
-      "inspectorName": "Turniket: Turniket 6 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791790797963",
-      "date": "2026-10-12",
-      "classId": "c-9a",
-      "records": [
-        {
-          "inTime": "12:39:54",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000010",
-          "lastSeenTime": "12:39:54",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:39:54",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791790816146",
-      "date": "2026-10-12",
-      "classId": "c-5b",
-      "records": [
-        {
-          "inTime": "15:21:48",
-          "status": "present",
-          "outTime": "12:41:59",
-          "studentId": "s-00000246",
-          "lastSeenTime": "15:21:48",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:45:58",
-          "status": "exited",
-          "outTime": "12:46:01",
-          "studentId": "s-00000258",
-          "lastSeenTime": "12:46:01",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "15:19:10",
-          "status": "present",
-          "outTime": "12:41:12",
-          "studentId": "s-00000255",
-          "lastSeenTime": "15:19:10",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:19:13",
-          "status": "present",
-          "outTime": "12:41:18",
-          "studentId": "s-00000250",
-          "lastSeenTime": "15:19:13",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:41:44",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000245",
-          "lastSeenTime": "12:41:44",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:18:22",
-          "status": "present",
-          "outTime": "12:55:24",
-          "studentId": "s-00000247",
-          "lastSeenTime": "15:18:22",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:16:42",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000243",
-          "lastSeenTime": "15:16:42",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:11:06",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000248",
-          "lastSeenTime": "16:11:06",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:21:47",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000257",
-          "lastSeenTime": "15:21:47",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:21:48",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000254",
-          "lastSeenTime": "15:21:48",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:11:03",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000251",
-          "lastSeenTime": "16:11:03",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:08:17",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000244",
-          "lastSeenTime": "16:08:17",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:09:03",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000589",
-          "lastSeenTime": "16:09:03",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:40:10",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791790818286",
-      "date": "2026-10-12",
-      "classId": "graduated",
-      "records": [
-        {
-          "inTime": "15:15:29",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000287",
-          "lastSeenTime": "15:15:29",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:44:52",
-          "status": "exited",
-          "outTime": "12:46:41",
-          "studentId": "s-00000457",
-          "lastSeenTime": "12:46:41",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:48:38",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000458",
-          "lastSeenTime": "12:48:38",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:40:06",
-      "inspectorName": "Turniket: Turniket 4 (Kirish)"
-    },
-    {
-      "id": "att-face-1791790823047",
-      "date": "2026-10-12",
-      "classId": "c-6a",
-      "records": [
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:40:12",
-          "studentId": "s-00000493",
-          "lastSeenTime": "12:40:12",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:43:19",
-          "studentId": "s-00000492",
-          "lastSeenTime": "12:43:19",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:10:54",
-          "status": "present",
-          "outTime": "16:10:55",
-          "studentId": "s-00000505",
-          "lastSeenTime": "16:10:54",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:12:41",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000509",
-          "lastSeenTime": "16:12:41",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:54:23",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000518",
-          "lastSeenTime": "12:54:23",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:54:23",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000504",
-          "lastSeenTime": "12:54:23",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:22:11",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000002",
-          "lastSeenTime": "15:22:11",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:19:38",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000490",
-          "lastSeenTime": "15:19:38",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:20:04",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000496",
-          "lastSeenTime": "15:20:04",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:20:25",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000494",
-          "lastSeenTime": "15:20:25",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:54:47",
-          "status": "exited",
-          "outTime": "16:10:50",
-          "studentId": "s-00000502",
-          "lastSeenTime": "16:10:50",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:12:36",
-          "status": "present",
-          "outTime": "16:10:40",
-          "studentId": "s-00000517",
-          "lastSeenTime": "16:12:36",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:10:42",
-          "studentId": "s-00000501",
-          "lastSeenTime": "16:10:42",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:11:12",
-          "status": "present",
-          "outTime": "16:10:46",
-          "studentId": "s-00000519",
-          "lastSeenTime": "16:11:12",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:12:43",
-          "status": "present",
-          "outTime": "16:12:37",
-          "studentId": "s-00000516",
-          "lastSeenTime": "16:12:43",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:12:45",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000514",
-          "lastSeenTime": "16:12:45",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:12:54",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000520",
-          "lastSeenTime": "16:12:54",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:40:12",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791790881723",
-      "date": "2026-10-12",
-      "classId": "c-4a",
-      "records": [
-        {
-          "inTime": "12:43:36",
-          "status": "exited",
-          "outTime": "12:44:10",
-          "studentId": "s-00000237",
-          "lastSeenTime": "12:44:10",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:45:47",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000437",
-          "lastSeenTime": "12:45:47",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:41:15",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791790898654",
-      "date": "2026-10-12",
-      "classId": "c-3d",
-      "records": [
-        {
-          "inTime": "15:20:39",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000234",
-          "lastSeenTime": "15:20:39",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:44:48",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000436",
-          "lastSeenTime": "12:44:48",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:51:44",
-          "status": "present",
-          "outTime": "12:49:04",
-          "studentId": "s-00000464",
-          "lastSeenTime": "16:51:44",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:41:35",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791790902200",
-      "date": "2026-10-12",
-      "classId": "c-8b",
-      "records": [
-        {
-          "inTime": "16:07:15",
-          "status": "exited",
-          "outTime": "16:07:21",
-          "studentId": "s-00000360",
-          "lastSeenTime": "16:07:21",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:44:07",
-          "status": "exited",
-          "outTime": "12:55:59",
-          "studentId": "s-00000361",
-          "lastSeenTime": "12:55:59",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:50:28",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000372",
-          "lastSeenTime": "12:50:28",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:55:55",
-          "studentId": "s-00000362",
-          "lastSeenTime": "12:55:55",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "15:36:01",
-          "studentId": "s-00000366",
-          "lastSeenTime": "15:36:01",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "12:41:35",
-      "inspectorName": "Turniket: Turniket 6 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791790982288",
-      "date": "2026-10-12",
-      "classId": "c-11b",
-      "records": [
-        {
-          "inTime": "12:42:52",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000135",
-          "lastSeenTime": "12:42:52",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:44:53",
-          "studentId": "s-00000126",
-          "lastSeenTime": "12:44:53",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:45:10",
-          "studentId": "s-00000134",
-          "lastSeenTime": "12:45:10",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:45:14",
-          "studentId": "s-00000139",
-          "lastSeenTime": "12:45:14",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:49:21",
-          "status": "exited",
-          "outTime": "12:56:19",
-          "studentId": "s-00000128",
-          "lastSeenTime": "12:56:19",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:46:22",
-          "studentId": "s-00000110",
-          "lastSeenTime": "12:46:22",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:46:57",
-          "studentId": "s-00000130",
-          "lastSeenTime": "12:46:57",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:49:33",
-          "studentId": "s-00000114",
-          "lastSeenTime": "12:49:33",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "12:42:52",
-      "inspectorName": "Turniket: Turniket 4 (Kirish)"
-    },
-    {
-      "id": "att-face-1791791157025",
-      "date": "2026-10-12",
-      "classId": "c-4b",
-      "records": [
-        {
-          "inTime": "12:45:30",
-          "status": "exited",
-          "outTime": "12:45:20",
-          "studentId": "s-00000438",
-          "lastSeenTime": "12:45:20",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:10:01",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000236",
-          "lastSeenTime": "16:10:01",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:45:30",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791791157137",
-      "date": "2026-10-12",
-      "classId": "c-2a",
-      "records": [
-        {
-          "inTime": "12:45:40",
-          "status": "exited",
-          "outTime": "12:46:23",
-          "studentId": "s-00000459",
-          "lastSeenTime": "12:46:23",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:47:32",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000628",
-          "lastSeenTime": "12:47:32",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:45:40",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791791184318",
-      "date": "2026-10-12",
-      "classId": "c-10b",
-      "records": [
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:46:17",
-          "studentId": "s-00000163",
-          "lastSeenTime": "12:46:17",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:46:25",
-          "studentId": "s-00000159",
-          "lastSeenTime": "12:46:25",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:47:02",
-          "studentId": "s-00000169",
-          "lastSeenTime": "12:47:02",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:47:31",
-          "status": "present",
-          "outTime": "12:47:12",
-          "studentId": "s-00000434",
-          "lastSeenTime": "12:47:31",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:46:17",
-      "inspectorName": "Turniket: Turniket 6 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791791200769",
-      "date": "2026-10-12",
-      "classId": "c-9d",
-      "records": [
-        {
-          "inTime": "12:46:32",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000405",
-          "lastSeenTime": "12:46:32",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:47:02",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000393",
-          "lastSeenTime": "12:47:02",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:47:08",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000101",
-          "lastSeenTime": "12:47:08",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:47:15",
-          "status": "present",
-          "outTime": "12:47:10",
-          "studentId": "s-00000103",
-          "lastSeenTime": "12:47:15",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:47:28",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000404",
-          "lastSeenTime": "12:47:28",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:46:32",
-      "inspectorName": "Turniket: Turniket 4 (Kirish)"
-    },
-    {
-      "id": "att-face-1791791332607",
-      "date": "2026-10-12",
-      "classId": "c-7a",
-      "records": [
-        {
-          "inTime": "12:48:58",
-          "status": "exited",
-          "outTime": "12:48:58",
-          "studentId": "s-00000702",
-          "lastSeenTime": "12:48:58",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:54:27",
-          "status": "exited",
-          "outTime": "12:54:27",
-          "studentId": "s-00000714",
-          "lastSeenTime": "12:54:27",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "12:48:45",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791791386755",
-      "date": "2026-10-12",
-      "classId": "c-7b",
-      "records": [
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:49:43",
-          "studentId": "s-00000147",
-          "lastSeenTime": "12:49:43",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "13:20:34",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000143",
-          "lastSeenTime": "13:20:34",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "15:35:57",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000141",
-          "lastSeenTime": "15:35:57",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:49:43",
-      "inspectorName": "Turniket: Turniket 6 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791800337926",
-      "date": "2026-10-12",
-      "classId": "c-3a",
-      "records": [
-        {
-          "inTime": "16:06:46",
-          "status": "present",
-          "outTime": "16:06:46",
-          "studentId": "s-00000631",
-          "lastSeenTime": "16:06:46",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "15:18:50",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791803226550",
-      "date": "2026-10-12",
-      "classId": "c-2b",
-      "records": [
-        {
-          "inTime": "16:09:36",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000230",
-          "lastSeenTime": "16:09:36",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "16:07:00",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791952028150",
-      "date": "2026-10-14",
-      "classId": "c-9b",
-      "records": [
-        {
-          "inTime": "09:26:55",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000204",
-          "lastSeenTime": "09:26:55",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "10:30:35",
-          "status": "present",
-          "outTime": "10:30:28",
-          "studentId": "s-00000211",
-          "lastSeenTime": "10:30:35",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "10:30:37",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000194",
-          "lastSeenTime": "10:30:37",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:50:54",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000192",
-          "lastSeenTime": "12:50:54",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "13:35:53",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000195",
-          "lastSeenTime": "13:35:53",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "13:35:41",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000188",
-          "lastSeenTime": "13:35:41",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "09:26:55",
-      "inspectorName": "Turniket: Turniket 5 (Kirish)"
-    },
-    {
-      "id": "att-face-1791954942618",
-      "date": "2026-10-14",
-      "classId": "c-5b",
-      "records": [
-        {
-          "inTime": "16:54:25",
-          "status": "present",
-          "outTime": "16:52:54",
-          "studentId": "s-00000262",
-          "lastSeenTime": "16:54:25",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:54:22",
-          "status": "present",
-          "outTime": "10:36:38",
-          "studentId": "s-00000252",
-          "lastSeenTime": "16:54:22",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "13:38:25",
-          "studentId": "s-00000247",
-          "lastSeenTime": "13:38:25",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "14:27:49",
-          "studentId": "s-00000251",
-          "lastSeenTime": "14:27:49",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "14:28:50",
-          "studentId": "s-00000248",
-          "lastSeenTime": "14:28:50",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:09:02",
-          "status": "present",
-          "outTime": "16:08:54",
-          "studentId": "s-00000243",
-          "lastSeenTime": "16:09:02",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:52:59",
-          "status": "present",
-          "outTime": "16:52:52",
-          "studentId": "s-00000255",
-          "lastSeenTime": "16:52:59",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:52:56",
-          "studentId": "s-00000259",
-          "lastSeenTime": "16:52:56",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:53:06",
-          "studentId": "s-00000253",
-          "lastSeenTime": "16:53:06",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "10:15:31",
-      "inspectorName": "Turniket: Turniket 2 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791955491145",
-      "date": "2026-10-14",
-      "classId": "c-8a",
-      "records": [
-        {
-          "inTime": "10:24:43",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000316",
-          "lastSeenTime": "10:24:43",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "13:01:02",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000341",
-          "lastSeenTime": "13:01:02",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "10:25:44",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000336",
-          "lastSeenTime": "10:25:44",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "13:14:05",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000329",
-          "lastSeenTime": "13:14:05",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "13:01:04",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000342",
-          "lastSeenTime": "13:01:04",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "13:11:02",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000331",
-          "lastSeenTime": "13:11:02",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "10:24:43",
-      "inspectorName": "Turniket: Turniket 6 (Kirish)"
-    },
-    {
-      "id": "att-face-1791955546012",
-      "date": "2026-10-14",
-      "classId": "c-10a",
-      "records": [
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:25:42",
-          "studentId": "s-00000415",
-          "lastSeenTime": "10:25:42",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:26:13",
-          "studentId": "s-00000408",
-          "lastSeenTime": "10:26:13",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "10:31:12",
-          "status": "exited",
-          "outTime": "10:31:12",
-          "studentId": "s-00000418",
-          "lastSeenTime": "10:31:12",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:42:28",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000417",
-          "lastSeenTime": "12:42:28",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "10:25:42",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791955563833",
-      "date": "2026-10-14",
-      "classId": "graduated",
-      "records": [
-        {
-          "inTime": "10:25:56",
-          "status": "exited",
-          "outTime": "10:25:59",
-          "studentId": "s-00000654",
-          "lastSeenTime": "10:25:59",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "11:22:12",
-          "status": "exited",
-          "outTime": "16:49:59",
-          "studentId": "s-00000228",
-          "lastSeenTime": "16:49:59",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:39:21",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000683",
-          "lastSeenTime": "12:39:21",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:54:47",
-          "status": "present",
-          "outTime": "16:53:00",
-          "studentId": "s-00000227",
-          "lastSeenTime": "16:54:47",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "10:25:56",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791955572994",
-      "date": "2026-10-14",
-      "classId": "c-1a",
-      "records": [
-        {
-          "inTime": "10:26:03",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000667",
-          "lastSeenTime": "10:26:03",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:42:58",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000214",
-          "lastSeenTime": "12:42:58",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "13:38:50",
-          "status": "exited",
-          "outTime": "14:02:44",
-          "studentId": "s-00000456",
-          "lastSeenTime": "14:02:44",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "14:09:13",
-          "status": "present",
-          "outTime": "13:59:18",
-          "studentId": "s-00000680",
-          "lastSeenTime": "14:09:13",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:40:16",
-          "status": "exited",
-          "outTime": "16:50:05",
-          "studentId": "s-00000215",
-          "lastSeenTime": "16:50:05",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "13:41:43",
-          "studentId": "s-00000303",
-          "lastSeenTime": "13:41:43",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "13:45:19",
-          "studentId": "s-00000533",
-          "lastSeenTime": "13:45:19",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "13:29:40",
-          "studentId": "s-00000450",
-          "lastSeenTime": "13:29:40",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:52:48",
-          "status": "exited",
-          "outTime": "16:52:48",
-          "studentId": "s-00000221",
-          "lastSeenTime": "16:52:48",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:38:53",
-          "status": "exited",
-          "outTime": "12:38:53",
-          "studentId": "s-00000226",
-          "lastSeenTime": "12:38:53",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:49:59",
-          "status": "exited",
-          "outTime": "16:49:59",
-          "studentId": "s-00000240",
-          "lastSeenTime": "16:49:59",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:39:23",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000677",
-          "lastSeenTime": "12:39:23",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:44:52",
-          "status": "exited",
-          "outTime": "16:49:30",
-          "studentId": "s-00000242",
-          "lastSeenTime": "16:49:30",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:39:11",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000672",
-          "lastSeenTime": "12:39:11",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:43:56",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000223",
-          "lastSeenTime": "12:43:56",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:51:37",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000241",
-          "lastSeenTime": "12:51:37",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:42:59",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000224",
-          "lastSeenTime": "12:42:59",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "14:21:51",
-          "status": "exited",
-          "outTime": "14:21:57",
-          "studentId": "s-00000447",
-          "lastSeenTime": "14:21:57",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "14:28:47",
-          "studentId": "s-00000306",
-          "lastSeenTime": "14:28:47",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:35:00",
-          "studentId": "s-00000616",
-          "lastSeenTime": "16:35:00",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:52:19",
-          "studentId": "s-00000213",
-          "lastSeenTime": "16:52:19",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "10:26:03",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791955716959",
-      "date": "2026-10-14",
-      "classId": "c-10b",
-      "records": [
-        {
-          "inTime": "10:28:28",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000172",
-          "lastSeenTime": "10:28:28",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "10:28:38",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000173",
-          "lastSeenTime": "10:28:38",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "10:28:36",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000092",
-          "lastSeenTime": "10:28:36",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "10:28:35",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000169",
-          "lastSeenTime": "10:28:35",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "10:28:50",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000167",
-          "lastSeenTime": "10:28:50",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "10:28:58",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000168",
-          "lastSeenTime": "10:28:58",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "10:28:59",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000085",
-          "lastSeenTime": "10:28:59",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "10:29:42",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000077",
-          "lastSeenTime": "10:29:42",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:20:32",
-          "studentId": "s-00000086",
-          "lastSeenTime": "11:20:32",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "11:49:22",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000080",
-          "lastSeenTime": "11:49:22",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "10:28:28",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791958853606",
-      "date": "2026-10-14",
-      "classId": "c-11a",
-      "records": [
-        {
-          "inTime": "11:20:45",
-          "status": "exited",
-          "outTime": "16:50:07",
-          "studentId": "s-00000216",
-          "lastSeenTime": "16:50:07",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:40:03",
-          "studentId": "s-00000218",
-          "lastSeenTime": "12:40:03",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:44:48",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000217",
-          "lastSeenTime": "12:44:48",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:51:59",
-          "studentId": "s-00000219",
-          "lastSeenTime": "16:51:59",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "11:20:45",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791959476379",
-      "date": "2026-10-14",
-      "classId": "c-7b",
-      "records": [
-        {
-          "inTime": "12:51:44",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000619",
-          "lastSeenTime": "12:51:44",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "13:39:38",
-          "studentId": "s-00000154",
-          "lastSeenTime": "13:39:38",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "13:40:11",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000145",
-          "lastSeenTime": "13:40:11",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "13:42:43",
-          "status": "exited",
-          "outTime": "16:09:35",
-          "studentId": "s-00000156",
-          "lastSeenTime": "16:09:35",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "11:31:07",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791959578461",
-      "date": "2026-10-14",
-      "classId": "c-11b",
-      "records": [
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:32:21",
-          "studentId": "s-00000139",
-          "lastSeenTime": "11:32:21",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:32:30",
-          "studentId": "s-00000118",
-          "lastSeenTime": "11:32:30",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:10:32",
-          "studentId": "s-00000111",
-          "lastSeenTime": "16:10:32",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "17:02:48",
-          "studentId": "s-00000114",
-          "lastSeenTime": "17:02:48",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "11:32:21",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791959741916",
-      "date": "2026-10-14",
-      "classId": "c-8b",
-      "records": [
-        {
-          "inTime": "11:37:52",
-          "status": "exited",
-          "outTime": "11:39:00",
-          "studentId": "s-00000347",
-          "lastSeenTime": "11:39:00",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:31:53",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000361",
-          "lastSeenTime": "12:31:53",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:49:30",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000366",
-          "lastSeenTime": "12:49:30",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:49:32",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000373",
-          "lastSeenTime": "12:49:32",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "14:59:48",
-          "studentId": "s-00000360",
-          "lastSeenTime": "14:59:48",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "14:59:49",
-          "studentId": "s-00000357",
-          "lastSeenTime": "14:59:49",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "11:35:34",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791959903670",
-      "date": "2026-10-14",
-      "classId": "c-6b",
-      "records": [
-        {
-          "inTime": "16:08:25",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000730",
-          "lastSeenTime": "16:08:25",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "13:50:03",
-          "studentId": "s-00000725",
-          "lastSeenTime": "13:50:03",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:57:53",
-          "status": "exited",
-          "outTime": "16:57:53",
-          "studentId": "s-00000742",
-          "lastSeenTime": "16:57:53",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:56:03",
-          "status": "present",
-          "outTime": "16:56:05",
-          "studentId": "s-00000743",
-          "lastSeenTime": "16:56:03",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:10:48",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000733",
-          "lastSeenTime": "16:10:48",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:54:53",
-          "status": "present",
-          "outTime": "16:54:46",
-          "studentId": "s-00000738",
-          "lastSeenTime": "16:54:53",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:09:02",
-          "status": "exited",
-          "outTime": "16:09:32",
-          "studentId": "s-00000728",
-          "lastSeenTime": "16:09:32",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:35:39",
-          "status": "exited",
-          "outTime": "16:10:48",
-          "studentId": "s-00000739",
-          "lastSeenTime": "16:10:48",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:10:38",
-          "status": "present",
-          "outTime": "14:27:38",
-          "studentId": "s-00000741",
-          "lastSeenTime": "16:10:38",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:54:52",
-          "status": "present",
-          "outTime": "16:08:20",
-          "studentId": "s-00000722",
-          "lastSeenTime": "16:54:52",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:10:12",
-          "studentId": "s-00000731",
-          "lastSeenTime": "16:10:12",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:10:45",
-          "status": "exited",
-          "outTime": "16:56:12",
-          "studentId": "s-00000740",
-          "lastSeenTime": "16:56:12",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:11:26",
-          "status": "exited",
-          "outTime": "17:01:05",
-          "studentId": "s-00000737",
-          "lastSeenTime": "17:01:05",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:11:11",
-          "studentId": "s-00000736",
-          "lastSeenTime": "16:11:11",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:55:57",
-          "studentId": "s-00000734",
-          "lastSeenTime": "16:55:57",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:56:14",
-          "studentId": "s-00000745",
-          "lastSeenTime": "16:56:14",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:56:17",
-          "studentId": "s-00000748",
-          "lastSeenTime": "16:56:17",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:56:42",
-          "studentId": "s-00000746",
-          "lastSeenTime": "16:56:42",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "11:38:15",
-      "inspectorName": "Turniket: Turniket 5 (Kirish)"
-    },
-    {
-      "id": "att-face-1791968940415",
-      "date": "2026-10-14",
-      "classId": "c-4a",
-      "records": [
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "13:39:09",
-          "studentId": "s-00000437",
-          "lastSeenTime": "13:39:09",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "13:43:50",
-          "status": "exited",
-          "outTime": "13:43:50",
-          "studentId": "s-00000523",
-          "lastSeenTime": "13:43:50",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:40:38",
-          "studentId": "s-00000235",
-          "lastSeenTime": "12:40:38",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:08:42",
-          "studentId": "s-00000467",
-          "lastSeenTime": "16:08:42",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "13:39:09",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791968940415",
-      "date": "2026-10-14",
-      "classId": "c-5a",
-      "records": [
-        {
-          "inTime": "16:07:58",
-          "status": "exited",
-          "outTime": "16:08:23",
-          "studentId": "s-00000577",
-          "lastSeenTime": "16:08:23",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:21:37",
-          "status": "present",
-          "outTime": "13:39:00",
-          "studentId": "s-00000592",
-          "lastSeenTime": "16:21:37",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "14:42:02",
-          "status": "exited",
-          "outTime": "16:08:25",
-          "studentId": "s-00000588",
-          "lastSeenTime": "16:08:25",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "13:40:16",
-          "studentId": "s-00000621",
-          "lastSeenTime": "13:40:16",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:57:47",
-          "status": "present",
-          "outTime": "16:57:44",
-          "studentId": "s-00000595",
-          "lastSeenTime": "16:57:47",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:43:04",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000579",
-          "lastSeenTime": "12:43:04",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:43:06",
-          "status": "exited",
-          "outTime": "16:49:13",
-          "studentId": "s-00000591",
-          "lastSeenTime": "16:49:13",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "14:42:01",
-          "status": "exited",
-          "outTime": "16:53:54",
-          "studentId": "s-00000601",
-          "lastSeenTime": "16:53:54",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "14:27:30",
-          "studentId": "s-00000583",
-          "lastSeenTime": "14:27:30",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:10:04",
-          "status": "present",
-          "outTime": "16:07:33",
-          "studentId": "s-00000584",
-          "lastSeenTime": "16:10:04",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:11:05",
-          "studentId": "s-00000587",
-          "lastSeenTime": "16:11:05",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:57:26",
-          "studentId": "s-00000574",
-          "lastSeenTime": "16:57:26",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:57:41",
-          "status": "present",
-          "outTime": "16:57:37",
-          "studentId": "s-00000594",
-          "lastSeenTime": "16:57:41",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:57:50",
-          "status": "present",
-          "outTime": "16:57:46",
-          "studentId": "s-00000575",
-          "lastSeenTime": "16:57:50",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:57:39",
-          "status": "exited",
-          "outTime": "16:57:49",
-          "studentId": "s-00000581",
-          "lastSeenTime": "16:57:49",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "17:00:58",
-          "status": "present",
-          "outTime": "17:00:38",
-          "studentId": "s-00000571",
-          "lastSeenTime": "17:00:58",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "17:00:54",
-          "status": "present",
-          "outTime": "17:00:41",
-          "studentId": "s-00000576",
-          "lastSeenTime": "17:00:54",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "13:39:04",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791968947736",
-      "date": "2026-10-14",
-      "classId": "c-3d",
-      "records": [
-        {
-          "inTime": "12:40:22",
-          "status": "exited",
-          "outTime": "12:40:27",
-          "studentId": "s-00000234",
-          "lastSeenTime": "12:40:27",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "12:36:43",
-      "inspectorName": "Turniket: Turniket 2 (Chiqish)"
-    },
-    {
-      "id": "att-face-1791968952147",
-      "date": "2026-10-14",
-      "classId": "c-6a",
-      "records": [
-        {
-          "inTime": "12:30:12",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000491",
-          "lastSeenTime": "12:30:12",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "13:21:57",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000504",
-          "lastSeenTime": "13:21:57",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "14:24:51",
-          "status": "exited",
-          "outTime": "14:24:57",
-          "studentId": "s-00000002",
-          "lastSeenTime": "14:24:57",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:08:12",
-          "studentId": "s-00000505",
-          "lastSeenTime": "16:08:12",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "16:08:23",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000514",
-          "lastSeenTime": "16:08:23",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:09:05",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000492",
-          "lastSeenTime": "16:09:05",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "16:09:07",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000510",
-          "lastSeenTime": "16:09:07",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:55:25",
-          "studentId": "s-00000497",
-          "lastSeenTime": "16:55:25",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:55:54",
-          "studentId": "s-00000499",
-          "lastSeenTime": "16:55:54",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "12:30:12",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791968952147",
-      "date": "2026-10-14",
-      "classId": "c-2d",
-      "records": [
-        {
-          "inTime": "12:41:46",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000686",
-          "lastSeenTime": "12:41:46",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "16:52:06",
-          "studentId": "s-00000231",
-          "lastSeenTime": "16:52:06",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "12:41:46",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791968952147",
-      "date": "2026-10-14",
-      "classId": "c-3a",
-      "records": [
-        {
-          "inTime": "12:39:06",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000687",
-          "lastSeenTime": "12:39:06",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:42:57",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000232",
-          "lastSeenTime": "12:42:57",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:39:06",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791968958718",
-      "date": "2026-10-14",
-      "classId": "c-4b",
-      "records": [
-        {
-          "inTime": "13:33:28",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000438",
-          "lastSeenTime": "13:33:28",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "13:33:28",
-      "inspectorName": "Turniket: Turniket 5 (Kirish)"
-    },
-    {
-      "id": "att-face-1791976099168",
-      "date": "2026-10-14",
-      "classId": "c-9a",
-      "records": [
-        {
-          "inTime": "16:08:12",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000019",
-          "lastSeenTime": "16:08:12",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "16:08:12",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791976147993",
-      "date": "2026-10-14",
-      "classId": "c-3b",
-      "records": [
-        {
-          "inTime": "16:08:59",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000233",
-          "lastSeenTime": "16:08:59",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "16:08:59",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1791978617372",
-      "date": "2026-10-14",
-      "classId": "c-2b",
-      "records": [
-        {
-          "inTime": "16:50:15",
-          "status": "exited",
-          "outTime": "16:52:02",
-          "studentId": "s-00000230",
-          "lastSeenTime": "16:52:02",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "16:50:11",
-      "inspectorName": "Turniket: Turniket 2 (Chiqish)"
-    },
-    {
-      "id": "att-face-1792035496462",
-      "date": "2026-10-15",
-      "classId": "c-8a",
-      "records": [
-        {
-          "inTime": "08:37:33",
-          "status": "exited",
-          "outTime": "10:57:55",
-          "studentId": "s-00000337",
-          "lastSeenTime": "10:57:55",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "10:58:56",
-          "status": "present",
-          "outTime": "10:57:44",
-          "studentId": "s-00000320",
-          "lastSeenTime": "10:58:56",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "10:59:30",
-          "status": "present",
-          "outTime": "10:59:43",
-          "studentId": "s-00000328",
-          "lastSeenTime": "10:59:30",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:59:44",
-          "studentId": "s-00000326",
-          "lastSeenTime": "10:59:44",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:59:47",
-          "studentId": "s-00000322",
-          "lastSeenTime": "10:59:47",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "10:50:16",
-          "status": "exited",
-          "outTime": "11:10:27",
-          "studentId": "s-00000342",
-          "lastSeenTime": "11:10:27",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:56:35",
-          "studentId": "s-00000317",
-          "lastSeenTime": "11:56:35",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "08:37:33",
-      "inspectorName": "Turniket: Turniket 5 (Kirish)"
-    },
-    {
-      "id": "att-face-1792035614851",
-      "date": "2026-10-15",
-      "classId": "c-11b",
-      "records": [
-        {
-          "inTime": "08:40:04",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000126",
-          "lastSeenTime": "08:40:04",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "08:52:34",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000122",
-          "lastSeenTime": "08:52:34",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "08:40:04",
-      "inspectorName": "Turniket: Turniket 5 (Kirish)"
-    },
-    {
-      "id": "att-face-1792035650102",
-      "date": "2026-10-15",
-      "classId": "c-10a",
-      "records": [
-        {
-          "inTime": "08:40:20",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000414",
-          "lastSeenTime": "08:40:20",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "09:17:12",
-          "status": "present",
-          "outTime": "09:17:04",
-          "studentId": "s-00000417",
-          "lastSeenTime": "09:17:12",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "09:17:19",
-          "status": "present",
-          "outTime": "09:17:07",
-          "studentId": "s-00000410",
-          "lastSeenTime": "09:17:19",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "11:49:10",
-          "status": "exited",
-          "outTime": "11:49:10",
-          "studentId": "s-00000431",
-          "lastSeenTime": "11:49:10",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:40:19",
-          "studentId": "s-00000429",
-          "lastSeenTime": "10:40:19",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:06:12",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000427",
-          "lastSeenTime": "12:06:12",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "08:40:20",
-      "inspectorName": "Turniket: Turniket 5 (Kirish)"
-    },
-    {
-      "id": "att-face-1792035672211",
-      "date": "2026-10-15",
-      "classId": "c-10b",
-      "records": [
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "08:41:01",
-          "studentId": "s-00000085",
-          "lastSeenTime": "08:41:01",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:56:13",
-          "studentId": "s-00000161",
-          "lastSeenTime": "10:56:13",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:57:31",
-          "studentId": "s-00000162",
-          "lastSeenTime": "10:57:31",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "11:34:56",
-          "status": "exited",
-          "outTime": "11:22:11",
-          "studentId": "s-00000169",
-          "lastSeenTime": "11:22:11",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "11:59:43",
-          "status": "present",
-          "outTime": "11:53:32",
-          "studentId": "s-00000434",
-          "lastSeenTime": "11:59:43",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:02:01",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000079",
-          "lastSeenTime": "12:02:01",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:28:22",
-          "status": "exited",
-          "outTime": "12:31:20",
-          "studentId": "s-00000167",
-          "lastSeenTime": "12:31:20",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "11:59:19",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000077",
-          "lastSeenTime": "11:59:19",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:26:36",
-          "status": "exited",
-          "outTime": "12:26:51",
-          "studentId": "s-00000174",
-          "lastSeenTime": "12:26:51",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:26:03",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000173",
-          "lastSeenTime": "12:26:03",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:26:18",
-          "studentId": "s-00000163",
-          "lastSeenTime": "12:26:18",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:33:12",
-          "status": "exited",
-          "outTime": "12:33:12",
-          "studentId": "s-00000172",
-          "lastSeenTime": "12:33:12",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "08:41:01",
-      "inspectorName": "Turniket: Turniket 2 (Chiqish)"
-    },
-    {
-      "id": "att-face-1792035948554",
-      "date": "2026-10-15",
-      "classId": "c-9a",
-      "records": [
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "08:45:39",
-          "studentId": "s-00000011",
-          "lastSeenTime": "08:45:39",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "09:17:29",
-          "studentId": "s-00000008",
-          "lastSeenTime": "09:17:29",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "09:17:31",
-          "studentId": "s-00000019",
-          "lastSeenTime": "09:17:31",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:58:23",
-          "studentId": "s-00000005",
-          "lastSeenTime": "10:58:23",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:50:46",
-          "studentId": "s-00000021",
-          "lastSeenTime": "11:50:46",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "11:58:47",
-          "status": "exited",
-          "outTime": "12:30:53",
-          "studentId": "s-00000024",
-          "lastSeenTime": "12:30:53",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:03:57",
-          "status": "present",
-          "outTime": "12:03:54",
-          "studentId": "s-00000003",
-          "lastSeenTime": "12:03:57",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "08:45:39",
-      "inspectorName": "Turniket: Turniket 6 (Chiqish)"
-    },
-    {
-      "id": "att-face-1792037694611",
-      "date": "2026-10-15",
-      "classId": "c-2a",
-      "records": [
-        {
-          "inTime": "09:14:44",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000628",
-          "lastSeenTime": "09:14:44",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:56:03",
-          "studentId": "s-00000229",
-          "lastSeenTime": "11:56:03",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "09:14:44",
-      "inspectorName": "Turniket: Turniket 5 (Kirish)"
-    },
-    {
-      "id": "att-face-1792037764670",
-      "date": "2026-10-15",
-      "classId": "c-9b",
-      "records": [
-        {
-          "inTime": "09:15:55",
-          "status": "exited",
-          "outTime": "11:45:53",
-          "studentId": "s-00000207",
-          "lastSeenTime": "11:45:53",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "09:16:05",
-          "studentId": "s-00000197",
-          "lastSeenTime": "09:16:05",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "09:16:37",
-          "studentId": "s-00000203",
-          "lastSeenTime": "09:16:37",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "09:16:41",
-          "status": "exited",
-          "outTime": "09:16:41",
-          "studentId": "s-00000202",
-          "lastSeenTime": "09:16:41",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:58:38",
-          "studentId": "s-00000205",
-          "lastSeenTime": "10:58:38",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:59:06",
-          "studentId": "s-00000195",
-          "lastSeenTime": "10:59:06",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "10:59:06",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000204",
-          "lastSeenTime": "10:59:06",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "11:38:35",
-          "status": "present",
-          "outTime": "11:21:04",
-          "studentId": "s-00000189",
-          "lastSeenTime": "11:38:35",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "11:20:27",
-          "status": "exited",
-          "outTime": "11:22:47",
-          "studentId": "s-00000186",
-          "lastSeenTime": "11:22:47",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:46:35",
-          "studentId": "s-00000201",
-          "lastSeenTime": "11:46:35",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:48:00",
-          "studentId": "s-00000194",
-          "lastSeenTime": "11:48:00",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:48:02",
-          "studentId": "s-00000193",
-          "lastSeenTime": "11:48:02",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "09:15:55",
-      "inspectorName": "Turniket: Turniket 5 (Kirish)"
-    },
-    {
-      "id": "att-face-1792037838731",
-      "date": "2026-10-15",
-      "classId": "c-8b",
-      "records": [
-        {
-          "inTime": "10:57:10",
-          "status": "exited",
-          "outTime": "10:57:10",
-          "studentId": "s-00000360",
-          "lastSeenTime": "10:57:10",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "09:17:27",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000358",
-          "lastSeenTime": "09:17:27",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:56:42",
-          "studentId": "s-00000351",
-          "lastSeenTime": "10:56:42",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:56:26",
-          "studentId": "s-00000372",
-          "lastSeenTime": "10:56:26",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:56:17",
-          "studentId": "s-00000178",
-          "lastSeenTime": "10:56:17",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "11:45:21",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000361",
-          "lastSeenTime": "11:45:21",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:01:45",
-          "status": "present",
-          "outTime": "12:01:41",
-          "studentId": "s-00000349",
-          "lastSeenTime": "12:01:45",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:27:57",
-          "status": "exited",
-          "outTime": "12:28:17",
-          "studentId": "s-00000375",
-          "lastSeenTime": "12:28:17",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "09:17:09",
-      "inspectorName": "Turniket: Turniket 2 (Chiqish)"
-    },
-    {
-      "id": "att-face-1792037873999",
-      "date": "2026-10-15",
-      "classId": "c-9d",
-      "records": [
-        {
-          "inTime": "11:46:40",
-          "status": "present",
-          "outTime": "11:46:38",
-          "studentId": "s-00000107",
-          "lastSeenTime": "11:46:40",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:01:59",
-          "status": "present",
-          "outTime": "11:59:46",
-          "studentId": "s-00000400",
-          "lastSeenTime": "12:01:59",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "09:17:49",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)"
-    },
-    {
-      "id": "att-face-1792037886884",
-      "date": "2026-10-15",
-      "classId": "c-1a",
-      "records": [
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "09:17:55",
-          "studentId": "s-00000616",
-          "lastSeenTime": "09:17:55",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "10:50:48",
-          "status": "present",
-          "outTime": "10:57:02",
-          "studentId": "s-00000224",
-          "lastSeenTime": "10:50:48",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "11:00:23",
-          "status": "present",
-          "outTime": "11:00:30",
-          "studentId": "s-00000446",
-          "lastSeenTime": "11:00:23",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:58:14",
-          "studentId": "s-00000451",
-          "lastSeenTime": "10:58:14",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:47:17",
-          "studentId": "s-00000222",
-          "lastSeenTime": "10:47:17",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "10:56:34",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000530",
-          "lastSeenTime": "10:56:34",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "11:10:49",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000185",
-          "lastSeenTime": "11:10:49",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:09:14",
-          "studentId": "s-00000444",
-          "lastSeenTime": "11:09:14",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:09:18",
-          "studentId": "s-00000443",
-          "lastSeenTime": "11:09:18",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:09:19",
-          "studentId": "s-00000453",
-          "lastSeenTime": "11:09:19",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:09:17",
-          "studentId": "s-00000455",
-          "lastSeenTime": "11:09:17",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "11:18:31",
-          "status": "present",
-          "outTime": "11:15:55",
-          "studentId": "s-00000681",
-          "lastSeenTime": "11:18:31",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:33:10",
-          "status": "present",
-          "outTime": "11:17:10",
-          "studentId": "s-00000241",
-          "lastSeenTime": "12:33:10",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:17:34",
-          "studentId": "s-00000557",
-          "lastSeenTime": "11:17:34",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "11:12:54",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000610",
-          "lastSeenTime": "11:12:54",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "11:20:05",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000242",
-          "lastSeenTime": "11:20:05",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:04:27",
-          "studentId": "s-00000312",
-          "lastSeenTime": "12:04:27",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:21:56",
-          "studentId": "s-00000041",
-          "lastSeenTime": "12:21:56",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:28:10",
-          "studentId": "s-00000221",
-          "lastSeenTime": "12:28:10",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:32:01",
-          "status": "exited",
-          "outTime": "12:32:09",
-          "studentId": "s-00000286",
-          "lastSeenTime": "12:32:09",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:33:37",
-          "status": "exited",
-          "outTime": "12:33:37",
-          "studentId": "s-00000528",
-          "lastSeenTime": "12:33:37",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "09:17:55",
-      "inspectorName": "Turniket: Turniket 2 (Chiqish)"
-    },
-    {
-      "id": "att-face-1792042833816",
-      "date": "2026-10-15",
-      "classId": "c-3b",
-      "records": [
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:40:25",
-          "studentId": "s-00000603",
-          "lastSeenTime": "10:40:25",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "10:57:24",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000233",
-          "lastSeenTime": "10:57:24",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "11:17:09",
-          "status": "exited",
-          "outTime": "11:15:49",
-          "studentId": "s-00000036",
-          "lastSeenTime": "11:15:49",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "10:40:25",
-      "inspectorName": "Turniket: Turniket 2 (Chiqish)"
-    },
-    {
-      "id": "att-face-1792043445979",
-      "date": "2026-10-15",
-      "classId": "c-6b",
-      "records": [
-        {
-          "inTime": "11:35:13",
-          "status": "exited",
-          "outTime": "12:33:58",
-          "studentId": "s-00000742",
-          "lastSeenTime": "12:33:58",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "11:48:17",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000731",
-          "lastSeenTime": "11:48:17",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:32:43",
-          "status": "present",
-          "outTime": "12:32:42",
-          "studentId": "s-00000722",
-          "lastSeenTime": "12:32:43",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:01:18",
-          "status": "exited",
-          "outTime": "12:31:17",
-          "studentId": "s-00000730",
-          "lastSeenTime": "12:31:17",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:32:32",
-          "status": "exited",
-          "outTime": "12:34:09",
-          "studentId": "s-00000507",
-          "lastSeenTime": "12:34:09",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:34:06",
-          "status": "exited",
-          "outTime": "12:34:06",
-          "studentId": "s-00000736",
-          "lastSeenTime": "12:34:06",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:25:02",
-          "status": "present",
-          "outTime": "12:23:32",
-          "studentId": "s-00000728",
-          "lastSeenTime": "12:25:02",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:32:29",
-          "status": "present",
-          "outTime": "12:27:43",
-          "studentId": "s-00000724",
-          "lastSeenTime": "12:32:29",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:24:53",
-          "studentId": "s-00000739",
-          "lastSeenTime": "12:24:53",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:27:45",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000740",
-          "lastSeenTime": "12:27:45",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:31:11",
-          "status": "present",
-          "outTime": "12:29:20",
-          "studentId": "s-00000747",
-          "lastSeenTime": "12:31:11",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:29:42",
-          "studentId": "s-00000725",
-          "lastSeenTime": "12:29:42",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:29:49",
-          "studentId": "s-00000745",
-          "lastSeenTime": "12:29:49",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:36:36",
-          "status": "exited",
-          "outTime": "12:36:36",
-          "studentId": "s-00000734",
-          "lastSeenTime": "12:36:36",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "10:50:40",
-      "inspectorName": "Turniket: Turniket 2 (Chiqish)"
-    },
-    {
-      "id": "att-face-1792043765385",
-      "date": "2026-10-15",
-      "classId": "c-7a",
-      "records": [
-        {
-          "inTime": "10:55:56",
-          "status": "exited",
-          "outTime": "10:57:27",
-          "studentId": "s-00000699",
-          "lastSeenTime": "10:57:27",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "10:40:18",
-          "studentId": "s-00000704",
-          "lastSeenTime": "10:40:18",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "10:55:56",
-      "inspectorName": "Turniket: Turniket 4 (Kirish)"
-    },
-    {
-      "id": "att-face-1792043935111",
-      "date": "2026-10-15",
-      "classId": "c-11a",
-      "records": [
-        {
-          "inTime": "11:16:35",
-          "status": "exited",
-          "outTime": "11:15:43",
-          "studentId": "s-00000035",
-          "lastSeenTime": "11:15:43",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:27:09",
-          "status": "present",
-          "outTime": "12:15:48",
-          "studentId": "s-00000216",
-          "lastSeenTime": "12:27:09",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "11:31:01",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000033",
-          "lastSeenTime": "11:31:01",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "11:32:03",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000026",
-          "lastSeenTime": "11:32:03",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:27:54",
-          "status": "exited",
-          "outTime": "12:28:27",
-          "studentId": "s-00000179",
-          "lastSeenTime": "12:28:27",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:31:43",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000220",
-          "lastSeenTime": "12:31:43",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "10:58:45",
-      "inspectorName": "Turniket: Turniket 4 (Kirish)"
-    },
-    {
-      "id": "att-face-1792044506328",
-      "date": "2026-10-15",
-      "classId": "c-5b",
-      "records": [
-        {
-          "inTime": "12:30:22",
-          "status": "exited",
-          "outTime": "12:30:22",
-          "studentId": "s-00000254",
-          "lastSeenTime": "12:30:22",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "10:40:51",
-          "status": "present",
-          "outTime": "10:57:19",
-          "studentId": "s-00000252",
-          "lastSeenTime": "10:40:51",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:21:45",
-          "studentId": "s-00000255",
-          "lastSeenTime": "12:21:45",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:32:16",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000256",
-          "lastSeenTime": "12:32:16",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "10:39:05",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)"
-    },
-    {
-      "id": "att-face-1792044553820",
-      "date": "2026-10-15",
-      "classId": "c-3a",
-      "records": [
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "11:09:04",
-          "studentId": "s-00000546",
-          "lastSeenTime": "11:09:04",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:23:34",
-          "studentId": "s-00000232",
-          "lastSeenTime": "12:23:34",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "11:09:04",
-      "inspectorName": "Turniket: Turniket 2 (Chiqish)"
-    },
-    {
-      "id": "att-face-1792046309787",
-      "date": "2026-10-15",
-      "classId": "c-6a",
-      "records": [
-        {
-          "inTime": "11:37:05",
-          "status": "present",
-          "outTime": "11:37:04",
-          "studentId": "s-00000502",
-          "lastSeenTime": "11:37:05",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:31:45",
-          "status": "present",
-          "outTime": "12:31:46",
-          "studentId": "s-00000512",
-          "lastSeenTime": "12:31:45",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:31:41",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000497",
-          "lastSeenTime": "12:31:41",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:31:39",
+          "studentId": "s-10a-1",
           "status": "present",
-          "outTime": null,
-          "studentId": "s-00000514",
-          "lastSeenTime": "12:31:39",
-          "lastDirection": "in"
-        },
-        {
-          "inTime": "12:33:36",
-          "status": "exited",
-          "outTime": "12:33:36",
-          "studentId": "s-00000510",
-          "lastSeenTime": "12:33:36",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:34:43",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000499",
-          "lastSeenTime": "12:34:43",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "11:37:04",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)"
-    },
-    {
-      "id": "att-face-1792046313023",
-      "date": "2026-10-15",
-      "classId": "c-4a",
-      "records": [
-        {
-          "inTime": "11:08:50",
-          "status": "exited",
-          "outTime": "11:57:05",
-          "studentId": "s-00000437",
-          "lastSeenTime": "11:57:05",
-          "lastDirection": "out"
-        },
-        {
-          "inTime": "12:18:34",
-          "status": "exited",
-          "outTime": "12:18:26",
-          "studentId": "s-00000235",
-          "lastSeenTime": "12:18:26",
-          "lastDirection": "out"
+          "inTime": "08:09",
+          "reason": ""
         },
-        {
-          "inTime": "12:29:33",
-          "status": "exited",
-          "outTime": "12:29:51",
-          "studentId": "s-00000237",
-          "lastSeenTime": "12:29:51",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "11:08:50",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1792048856903",
-      "date": "2026-10-15",
-      "classId": "c-3d",
-      "records": [
-        {
-          "inTime": "12:27:05",
-          "status": "exited",
-          "outTime": "12:28:31",
-          "studentId": "s-00000234",
-          "lastSeenTime": "12:28:31",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "12:16:56",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)"
-    },
-    {
-      "id": "att-face-1792048860205",
-      "date": "2026-10-15",
-      "classId": "c-4b",
-      "records": [
-        {
-          "inTime": "12:26:40",
-          "status": "present",
-          "outTime": "12:18:36",
-          "studentId": "s-00000236",
-          "lastSeenTime": "12:26:40",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:18:36",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)"
-    },
-    {
-      "id": "att-face-1792049464469",
-      "date": "2026-10-15",
-      "classId": "c-5a",
-      "records": [
         {
-          "inTime": "12:30:53",
+          "studentId": "s-10a-2",
           "status": "present",
-          "outTime": null,
-          "studentId": "s-00000588",
-          "lastSeenTime": "12:30:53",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "12:30:53",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)"
-    },
-    {
-      "id": "att-face-1792049495719",
-      "date": "2026-10-15",
-      "classId": "graduated",
-      "records": [
-        {
-          "inTime": null,
-          "status": "exited",
-          "outTime": "12:31:23",
-          "studentId": "s-00000228",
-          "lastSeenTime": "12:31:23",
-          "lastDirection": "out"
-        }
-      ],
-      "timestamp": "12:31:23",
-      "inspectorName": "Turniket: Turniket 2 (Chiqish)"
-    },
-    {
-      "id": "att-face-1792123287972",
-      "date": "2026-10-16",
-      "classId": "c-1a",
-      "records": [
-        {
-          "inTime": "09:01:07",
-          "status": "present",
-          "outTime": null,
-          "studentId": "s-00000617",
-          "lastSeenTime": "09:01:07",
-          "lastDirection": "in"
-        }
-      ],
-      "timestamp": "09:01:07",
-      "inspectorName": "Turniket: Turniket 4 (Kirish)"
-    },
-    {
-      "id": "att-face-1792729196691",
-      "date": "2026-10-23",
-      "classId": "c-9b",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)",
-      "timestamp": "09:19:52",
-      "records": [
-        {
-          "studentId": "s-00000192",
-          "status": "exited",
-          "inTime": "09:19:52",
-          "outTime": "09:20:02",
-          "lastDirection": "out",
-          "lastSeenTime": "09:20:02"
-        },
-        {
-          "studentId": "s-00000200",
-          "status": "exited",
-          "inTime": "09:19:59",
-          "outTime": "09:26:34",
-          "lastDirection": "out",
-          "lastSeenTime": "09:26:34"
-        },
-        {
-          "studentId": "s-00000186",
-          "status": "exited",
-          "inTime": "09:20:37",
-          "outTime": "10:57:59",
-          "lastDirection": "out",
-          "lastSeenTime": "10:57:59"
+          "inTime": "08:13",
+          "reason": ""
         },
         {
-          "studentId": "s-00000197",
+          "studentId": "s-10a-4",
           "status": "present",
-          "inTime": "09:26:51",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "09:26:51"
+          "inTime": "08:07",
+          "reason": ""
         },
         {
-          "studentId": "s-00000187",
+          "studentId": "s-10a-6",
           "status": "present",
-          "inTime": "11:00:48",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:00:48"
-        },
-        {
-          "studentId": "s-00000198",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "10:55:46",
-          "lastDirection": "out",
-          "lastSeenTime": "10:55:46"
-        },
-        {
-          "studentId": "s-00000208",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "10:55:52",
-          "lastDirection": "out",
-          "lastSeenTime": "10:55:52"
-        },
-        {
-          "studentId": "s-00000189",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "10:56:23",
-          "lastDirection": "out",
-          "lastSeenTime": "10:56:23"
-        },
-        {
-          "studentId": "s-00000205",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "10:57:27",
-          "lastDirection": "out",
-          "lastSeenTime": "10:57:27"
-        },
-        {
-          "studentId": "s-00000209",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "10:57:31",
-          "lastDirection": "out",
-          "lastSeenTime": "10:57:31"
-        },
-        {
-          "studentId": "s-00000210",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "10:57:49",
-          "lastDirection": "out",
-          "lastSeenTime": "10:57:49"
-        },
-        {
-          "studentId": "s-00000196",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "10:57:54",
-          "lastDirection": "out",
-          "lastSeenTime": "10:57:54"
+          "inTime": "08:11",
+          "reason": ""
         }
       ]
     },
     {
-      "id": "att-face-1792729204414",
+      "id": "att-face-1792745559265",
       "date": "2026-10-23",
-      "classId": "c-7a",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)",
-      "timestamp": "09:19:57",
+      "classId": "c-1a",
+      "inspectorName": "Turniket: Turniket 4 (Kirish)",
+      "timestamp": "11:46:40",
       "records": [
         {
-          "studentId": "s-00000705",
+          "studentId": "s-00000650",
           "status": "present",
-          "inTime": "10:59:32",
+          "inTime": "11:46:40",
           "outTime": null,
           "lastDirection": "in",
-          "lastSeenTime": "10:59:32"
+          "lastSeenTime": "11:46:40"
+        },
+        {
+          "studentId": "s-00000565",
+          "status": "present",
+          "inTime": "11:46:47",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:46:47"
+        },
+        {
+          "studentId": "s-00000455",
+          "status": "present",
+          "inTime": "11:50:39",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:50:39"
+        },
+        {
+          "studentId": "s-00000647",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "12:16:25",
+          "lastDirection": "out",
+          "lastSeenTime": "12:16:25"
+        },
+        {
+          "studentId": "s-00000240",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "12:28:17",
+          "lastDirection": "out",
+          "lastSeenTime": "12:28:17"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792745559267",
+      "date": "2026-10-23",
+      "classId": "c-9b",
+      "inspectorName": "Turniket: Turniket 4 (Kirish)",
+      "timestamp": "11:46:58",
+      "records": [
+        {
+          "studentId": "s-00000175",
+          "status": "present",
+          "inTime": "11:46:58",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:46:58"
+        },
+        {
+          "studentId": "s-00000194",
+          "status": "present",
+          "inTime": "11:47:13",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:47:13"
+        },
+        {
+          "studentId": "s-00000192",
+          "status": "present",
+          "inTime": "11:49:14",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:49:14"
+        },
+        {
+          "studentId": "s-00000198",
+          "status": "present",
+          "inTime": "11:49:20",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:49:20"
+        },
+        {
+          "studentId": "s-00000209",
+          "status": "present",
+          "inTime": "11:49:22",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:49:22"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792745559269",
+      "date": "2026-10-23",
+      "classId": "c-6b",
+      "inspectorName": "Turniket: Turniket 4 (Kirish)",
+      "timestamp": "11:47:08",
+      "records": [
+        {
+          "studentId": "s-00000742",
+          "status": "exited",
+          "inTime": "11:47:08",
+          "outTime": "11:47:06",
+          "lastDirection": "out",
+          "lastSeenTime": "11:47:06"
+        },
+        {
+          "studentId": "s-00000725",
+          "status": "present",
+          "inTime": "13:53:34",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "13:53:34"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792745559271",
+      "date": "2026-10-23",
+      "classId": "c-7a",
+      "inspectorName": "Turniket: Turniket 4 (Kirish)",
+      "timestamp": "11:47:26",
+      "records": [
+        {
+          "studentId": "s-00000715",
+          "status": "exited",
+          "inTime": "11:48:53",
+          "outTime": "11:47:50",
+          "lastDirection": "out",
+          "lastSeenTime": "11:47:50"
         },
         {
           "studentId": "s-00000695",
           "status": "exited",
-          "inTime": "09:20:42",
-          "outTime": "09:20:42",
+          "inTime": "11:47:29",
+          "outTime": "11:47:52",
           "lastDirection": "out",
-          "lastSeenTime": "09:20:42"
-        },
-        {
-          "studentId": "s-00000719",
-          "status": "present",
-          "inTime": "11:38:27",
-          "outTime": "09:20:44",
-          "lastDirection": "in",
-          "lastSeenTime": "11:38:27"
-        },
-        {
-          "studentId": "s-00000716",
-          "status": "present",
-          "inTime": "09:23:08",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "09:23:08"
-        },
-        {
-          "studentId": "s-00000718",
-          "status": "exited",
-          "inTime": "11:00:12",
-          "outTime": "11:00:29",
-          "lastDirection": "out",
-          "lastSeenTime": "11:00:29"
-        },
-        {
-          "studentId": "s-00000717",
-          "status": "exited",
-          "inTime": "10:59:29",
-          "outTime": "10:57:57",
-          "lastDirection": "out",
-          "lastSeenTime": "10:57:57"
-        },
-        {
-          "studentId": "s-00000711",
-          "status": "present",
-          "inTime": "10:52:00",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "10:52:00"
+          "lastSeenTime": "11:47:52"
         },
         {
           "studentId": "s-00000702",
           "status": "exited",
-          "inTime": "11:36:39",
-          "outTime": "11:36:39",
+          "inTime": "11:49:38",
+          "outTime": "11:46:46",
           "lastDirection": "out",
-          "lastSeenTime": "11:36:39"
+          "lastSeenTime": "11:46:46"
         },
         {
-          "studentId": "s-00000707",
+          "studentId": "s-00000699",
+          "status": "present",
+          "inTime": "11:49:53",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:49:53"
+        },
+        {
+          "studentId": "s-00000708",
+          "status": "exited",
+          "inTime": "11:50:31",
+          "outTime": "11:47:30",
+          "lastDirection": "out",
+          "lastSeenTime": "11:47:30"
+        },
+        {
+          "studentId": "s-00000716",
           "status": "exited",
           "inTime": null,
-          "outTime": "10:58:51",
+          "outTime": "11:46:21",
           "lastDirection": "out",
-          "lastSeenTime": "10:58:51"
+          "lastSeenTime": "11:46:21"
         },
         {
-          "studentId": "s-00000713",
+          "studentId": "s-00000703",
           "status": "exited",
-          "inTime": "11:34:57",
-          "outTime": "11:34:57",
+          "inTime": null,
+          "outTime": "11:46:24",
           "lastDirection": "out",
-          "lastSeenTime": "11:34:57"
+          "lastSeenTime": "11:46:24"
+        },
+        {
+          "studentId": "s-00000719",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "11:46:28",
+          "lastDirection": "out",
+          "lastSeenTime": "11:46:28"
+        },
+        {
+          "studentId": "s-00000712",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "11:46:32",
+          "lastDirection": "out",
+          "lastSeenTime": "11:46:32"
+        },
+        {
+          "studentId": "s-00000693",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "11:46:34",
+          "lastDirection": "out",
+          "lastSeenTime": "11:46:34"
+        },
+        {
+          "studentId": "s-00000718",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "11:46:44",
+          "lastDirection": "out",
+          "lastSeenTime": "11:46:44"
+        },
+        {
+          "studentId": "s-00000705",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "11:46:47",
+          "lastDirection": "out",
+          "lastSeenTime": "11:46:47"
+        },
+        {
+          "studentId": "s-00000704",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "11:46:54",
+          "lastDirection": "out",
+          "lastSeenTime": "11:46:54"
         },
         {
           "studentId": "s-00000710",
-          "status": "present",
-          "inTime": "11:38:47",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:38:47"
-        }
-      ]
-    },
-    {
-      "id": "att-face-1792729240298",
-      "date": "2026-10-23",
-      "classId": "c-11a",
-      "inspectorName": "Turniket: Turniket 4 (Kirish)",
-      "timestamp": "09:20:32",
-      "records": [
-        {
-          "studentId": "s-00000220",
-          "status": "present",
-          "inTime": "09:20:32",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "09:20:32"
-        },
-        {
-          "studentId": "s-00000217",
-          "status": "exited",
-          "inTime": "10:59:28",
-          "outTime": "10:59:28",
-          "lastDirection": "out",
-          "lastSeenTime": "10:59:28"
-        },
-        {
-          "studentId": "s-00000032",
-          "status": "present",
-          "inTime": "10:56:06",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "10:56:06"
-        },
-        {
-          "studentId": "s-00000029",
-          "status": "present",
-          "inTime": "10:56:10",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "10:56:10"
-        },
-        {
-          "studentId": "s-00000216",
-          "status": "present",
-          "inTime": "11:01:03",
-          "outTime": "11:09:51",
-          "lastDirection": "in",
-          "lastSeenTime": "11:01:03"
-        },
-        {
-          "studentId": "s-00000046",
-          "status": "present",
-          "inTime": "11:04:36",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:04:36"
-        }
-      ]
-    },
-    {
-      "id": "att-face-1792729278459",
-      "date": "2026-10-23",
-      "classId": "c-8b",
-      "inspectorName": "Turniket: Turniket 6 (Chiqish)",
-      "timestamp": "09:21:12",
-      "records": [
-        {
-          "studentId": "s-00000377",
           "status": "exited",
           "inTime": null,
-          "outTime": "09:21:12",
+          "outTime": "11:46:56",
           "lastDirection": "out",
-          "lastSeenTime": "09:21:12"
+          "lastSeenTime": "11:46:56"
         },
         {
-          "studentId": "s-00000358",
+          "studentId": "s-00000714",
           "status": "exited",
-          "inTime": "09:21:36",
-          "outTime": "09:21:36",
+          "inTime": null,
+          "outTime": "11:47:01",
           "lastDirection": "out",
-          "lastSeenTime": "09:21:36"
+          "lastSeenTime": "11:47:01"
         },
         {
-          "studentId": "s-00000352",
-          "status": "present",
-          "inTime": "10:42:11",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "10:42:11"
+          "studentId": "s-00000694",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "11:47:02",
+          "lastDirection": "out",
+          "lastSeenTime": "11:47:02"
+        },
+        {
+          "studentId": "s-00000717",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "11:47:53",
+          "lastDirection": "out",
+          "lastSeenTime": "11:47:53"
         }
       ]
     },
     {
-      "id": "att-face-1792729284020",
+      "id": "att-face-1792745559273",
       "date": "2026-10-23",
       "classId": "c-8a",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)",
-      "timestamp": "09:21:20",
+      "inspectorName": "Turniket: Turniket 4 (Kirish)",
+      "timestamp": "11:47:34",
       "records": [
-        {
-          "studentId": "s-00000327",
-          "status": "exited",
-          "inTime": "09:23:08",
-          "outTime": "09:23:08",
-          "lastDirection": "out",
-          "lastSeenTime": "09:23:08"
-        },
-        {
-          "studentId": "s-00000328",
-          "status": "present",
-          "inTime": "10:39:00",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "10:39:00"
-        },
         {
           "studentId": "s-00000319",
           "status": "exited",
-          "inTime": "11:04:47",
-          "outTime": "11:04:54",
+          "inTime": "11:47:34",
+          "outTime": "11:47:23",
           "lastDirection": "out",
-          "lastSeenTime": "11:04:54"
+          "lastSeenTime": "11:47:23"
+        },
+        {
+          "studentId": "s-00000341",
+          "status": "present",
+          "inTime": "11:49:47",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:49:47"
+        },
+        {
+          "studentId": "s-00000615",
+          "status": "present",
+          "inTime": "11:50:11",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:50:11"
+        },
+        {
+          "studentId": "s-00000320",
+          "status": "exited",
+          "inTime": "11:47:08",
+          "outTime": "11:47:08",
+          "lastDirection": "out",
+          "lastSeenTime": "11:47:08"
         }
       ]
     },
     {
-      "id": "att-face-1792729330499",
-      "date": "2026-10-23",
-      "classId": "c-10b",
-      "inspectorName": "Turniket: Turniket 4 (Kirish)",
-      "timestamp": "09:22:01",
-      "records": [
-        {
-          "studentId": "s-00000077",
-          "status": "present",
-          "inTime": "09:22:01",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "09:22:01"
-        },
-        {
-          "studentId": "s-00000091",
-          "status": "present",
-          "inTime": "09:22:05",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "09:22:05"
-        },
-        {
-          "studentId": "s-00000173",
-          "status": "present",
-          "inTime": "11:02:15",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:02:15"
-        },
-        {
-          "studentId": "s-00000089",
-          "status": "present",
-          "inTime": "10:55:41",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "10:55:41"
-        },
-        {
-          "studentId": "s-00000159",
-          "status": "present",
-          "inTime": "10:55:43",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "10:55:43"
-        },
-        {
-          "studentId": "s-00000168",
-          "status": "present",
-          "inTime": "10:59:18",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "10:59:18"
-        },
-        {
-          "studentId": "s-00000171",
-          "status": "present",
-          "inTime": "10:59:21",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "10:59:21"
-        },
-        {
-          "studentId": "s-00000082",
-          "status": "present",
-          "inTime": "11:01:50",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:01:50"
-        },
-        {
-          "studentId": "s-00000092",
-          "status": "present",
-          "inTime": "11:01:52",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:01:52"
-        }
-      ]
-    },
-    {
-      "id": "att-face-1792729354065",
-      "date": "2026-10-23",
-      "classId": "c-1a",
-      "inspectorName": "Turniket: Turniket 4 (Kirish)",
-      "timestamp": "09:22:15",
-      "records": [
-        {
-          "studentId": "s-00000665",
-          "status": "present",
-          "inTime": "09:22:15",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "09:22:15"
-        },
-        {
-          "studentId": "s-00000304",
-          "status": "exited",
-          "inTime": "10:47:33",
-          "outTime": "10:50:15",
-          "lastDirection": "out",
-          "lastSeenTime": "10:50:15"
-        },
-        {
-          "studentId": "s-00000300",
-          "status": "exited",
-          "inTime": "10:51:45",
-          "outTime": "10:51:05",
-          "lastDirection": "out",
-          "lastSeenTime": "10:51:05"
-        },
-        {
-          "studentId": "s-00000531",
-          "status": "exited",
-          "inTime": "10:51:42",
-          "outTime": "10:51:28",
-          "lastDirection": "out",
-          "lastSeenTime": "10:51:28"
-        },
-        {
-          "studentId": "s-00000303",
-          "status": "exited",
-          "inTime": "10:51:57",
-          "outTime": "10:51:21",
-          "lastDirection": "out",
-          "lastSeenTime": "10:51:21"
-        },
-        {
-          "studentId": "s-00000611",
-          "status": "present",
-          "inTime": "10:58:42",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "10:58:42"
-        },
-        {
-          "studentId": "s-00000483",
-          "status": "exited",
-          "inTime": "10:45:36",
-          "outTime": "10:58:08",
-          "lastDirection": "out",
-          "lastSeenTime": "10:58:08"
-        },
-        {
-          "studentId": "s-00000480",
-          "status": "present",
-          "inTime": "10:59:56",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "10:59:56"
-        },
-        {
-          "studentId": "s-00000241",
-          "status": "present",
-          "inTime": "11:03:38",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:03:38"
-        },
-        {
-          "studentId": "s-00000451",
-          "status": "present",
-          "inTime": "11:06:02",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:06:02"
-        },
-        {
-          "studentId": "s-00000242",
-          "status": "present",
-          "inTime": "11:07:20",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:07:20"
-        },
-        {
-          "studentId": "s-00000539",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "10:49:25",
-          "lastDirection": "out",
-          "lastSeenTime": "10:49:25"
-        },
-        {
-          "studentId": "s-00000481",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "10:57:18",
-          "lastDirection": "out",
-          "lastSeenTime": "10:57:18"
-        },
-        {
-          "studentId": "s-00000472",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "10:57:50",
-          "lastDirection": "out",
-          "lastSeenTime": "10:57:50"
-        },
-        {
-          "studentId": "s-00000667",
-          "status": "present",
-          "inTime": "11:42:37",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:42:37"
-        }
-      ]
-    },
-    {
-      "id": "att-face-1792729359923",
-      "date": "2026-10-23",
-      "classId": "c-5b",
-      "inspectorName": "Turniket: Turniket 6 (Chiqish)",
-      "timestamp": "09:22:31",
-      "records": [
-        {
-          "studentId": "s-00000250",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "09:22:31",
-          "lastDirection": "out",
-          "lastSeenTime": "09:22:31"
-        },
-        {
-          "studentId": "s-00000251",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "09:26:00",
-          "lastDirection": "out",
-          "lastSeenTime": "09:26:00"
-        },
-        {
-          "studentId": "s-00000258",
-          "status": "present",
-          "inTime": "10:38:27",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "10:38:27"
-        },
-        {
-          "studentId": "s-00000259",
-          "status": "present",
-          "inTime": "10:40:56",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "10:40:56"
-        },
-        {
-          "studentId": "s-00000243",
-          "status": "present",
-          "inTime": "10:52:01",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "10:52:01"
-        },
-        {
-          "studentId": "s-00000255",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "10:53:10",
-          "lastDirection": "out",
-          "lastSeenTime": "10:53:10"
-        }
-      ]
-    },
-    {
-      "id": "att-face-1792729372116",
+      "id": "att-face-1792745559274",
       "date": "2026-10-23",
       "classId": "c-9d",
-      "inspectorName": "Turniket: Turniket 6 (Chiqish)",
-      "timestamp": "09:22:48",
+      "inspectorName": "Turniket: Turniket 4 (Kirish)",
+      "timestamp": "11:48:46",
       "records": [
         {
-          "studentId": "s-00000107",
+          "studentId": "s-00000400",
+          "status": "present",
+          "inTime": "11:48:46",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:48:46"
+        },
+        {
+          "studentId": "s-00000100",
+          "status": "exited",
+          "inTime": "11:47:54",
+          "outTime": "11:47:54",
+          "lastDirection": "out",
+          "lastSeenTime": "11:47:54"
+        },
+        {
+          "studentId": "s-00000101",
+          "status": "exited",
+          "inTime": "12:29:46",
+          "outTime": "11:49:25",
+          "lastDirection": "out",
+          "lastSeenTime": "11:49:25"
+        },
+        {
+          "studentId": "s-00000097",
           "status": "exited",
           "inTime": null,
-          "outTime": "09:22:48",
+          "outTime": "11:47:20",
           "lastDirection": "out",
-          "lastSeenTime": "09:22:48"
-        }
-      ]
-    },
-    {
-      "id": "att-face-1792729541042",
-      "date": "2026-10-23",
-      "classId": "c-10a",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)",
-      "timestamp": "09:25:33",
-      "records": [
-        {
-          "studentId": "s-00000430",
-          "status": "present",
-          "inTime": "11:06:47",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:06:47"
+          "lastSeenTime": "11:47:20"
         },
         {
-          "studentId": "s-00000422",
-          "status": "exited",
-          "inTime": "09:25:35",
-          "outTime": "10:57:11",
-          "lastDirection": "out",
-          "lastSeenTime": "10:57:11"
-        },
-        {
-          "studentId": "s-00000412",
-          "status": "present",
-          "inTime": "11:01:23",
-          "outTime": "10:58:19",
-          "lastDirection": "in",
-          "lastSeenTime": "11:01:23"
-        },
-        {
-          "studentId": "s-00000425",
+          "studentId": "s-00000404",
           "status": "exited",
           "inTime": null,
-          "outTime": "10:57:08",
+          "outTime": "11:47:25",
           "lastDirection": "out",
-          "lastSeenTime": "10:57:08"
-        }
-      ]
-    },
-    {
-      "id": "att-face-1792729666815",
-      "date": "2026-10-23",
-      "classId": "c-5a",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)",
-      "timestamp": "09:27:39",
-      "records": [
+          "lastSeenTime": "11:47:25"
+        },
         {
-          "studentId": "s-00000621",
-          "status": "present",
-          "inTime": "09:27:39",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "09:27:39"
-        }
-      ]
-    },
-    {
-      "id": "att-face-1792734673791",
-      "date": "2026-10-23",
-      "classId": "c-6b",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)",
-      "timestamp": "10:51:10",
-      "records": [
-        {
-          "studentId": "s-00000742",
-          "status": "present",
-          "inTime": "10:51:26",
-          "outTime": "10:51:32",
-          "lastDirection": "in",
-          "lastSeenTime": "10:51:26"
-        }
-      ]
-    },
-    {
-      "id": "att-face-1792734907836",
-      "date": "2026-10-23",
-      "classId": "c-11b",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)",
-      "timestamp": "10:55:06",
-      "records": [
-        {
-          "studentId": "s-00000136",
+          "studentId": "s-00000403",
           "status": "exited",
-          "inTime": "10:55:06",
-          "outTime": "10:55:06",
+          "inTime": null,
+          "outTime": "11:47:29",
           "lastDirection": "out",
-          "lastSeenTime": "10:55:06"
-        },
-        {
-          "studentId": "s-00000115",
-          "status": "present",
-          "inTime": "10:51:38",
-          "outTime": "10:57:21",
-          "lastDirection": "in",
-          "lastSeenTime": "10:51:38"
-        },
-        {
-          "studentId": "s-00000139",
-          "status": "exited",
-          "inTime": "10:51:35",
-          "outTime": "11:28:42",
-          "lastDirection": "out",
-          "lastSeenTime": "11:28:42"
-        },
-        {
-          "studentId": "s-00000137",
-          "status": "present",
-          "inTime": "11:05:43",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:05:43"
+          "lastSeenTime": "11:47:29"
         }
       ]
     },
     {
-      "id": "att-face-1792735064241",
-      "date": "2026-10-23",
-      "classId": "c-9a",
-      "inspectorName": "Turniket: Turniket 1 (Chiqish)",
-      "timestamp": "10:57:40",
-      "records": [
-        {
-          "studentId": "s-00000022",
-          "status": "exited",
-          "inTime": "10:57:40",
-          "outTime": "10:57:40",
-          "lastDirection": "out",
-          "lastSeenTime": "10:57:40"
-        },
-        {
-          "studentId": "s-00000024",
-          "status": "exited",
-          "inTime": "10:54:35",
-          "outTime": "10:48:25",
-          "lastDirection": "out",
-          "lastSeenTime": "10:48:25"
-        },
-        {
-          "studentId": "s-00000003",
-          "status": "present",
-          "inTime": "11:01:39",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:01:39"
-        },
-        {
-          "studentId": "s-00000023",
-          "status": "present",
-          "inTime": "11:00:11",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:00:11"
-        }
-      ]
-    },
-    {
-      "id": "att-face-1792736123458",
+      "id": "att-face-1792745559275",
       "date": "2026-10-23",
       "classId": "c-4a",
       "inspectorName": "Turniket: Turniket 4 (Kirish)",
-      "timestamp": "10:49:18",
+      "timestamp": "11:48:57",
       "records": [
-        {
-          "studentId": "s-00000295",
-          "status": "exited",
-          "inTime": "10:51:49",
-          "outTime": "10:51:23",
-          "lastDirection": "out",
-          "lastSeenTime": "10:51:23"
-        },
         {
           "studentId": "s-00000662",
           "status": "present",
-          "inTime": "11:42:33",
+          "inTime": "11:48:57",
           "outTime": null,
           "lastDirection": "in",
-          "lastSeenTime": "11:42:33"
+          "lastSeenTime": "11:48:57"
         }
       ]
     },
     {
-      "id": "att-face-1792736123524",
-      "date": "2026-10-23",
-      "classId": "c-4b",
-      "inspectorName": "Turniket: Turniket 4 (Kirish)",
-      "timestamp": "11:00:44",
-      "records": [
-        {
-          "studentId": "s-00000466",
-          "status": "present",
-          "inTime": "11:00:44",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:00:44"
-        },
-        {
-          "studentId": "s-00000039",
-          "status": "present",
-          "inTime": "11:04:38",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:04:38"
-        },
-        {
-          "studentId": "s-00000522",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "10:51:24",
-          "lastDirection": "out",
-          "lastSeenTime": "10:51:24"
-        },
-        {
-          "studentId": "s-00000691",
-          "status": "exited",
-          "inTime": "11:43:29",
-          "outTime": "11:44:32",
-          "lastDirection": "out",
-          "lastSeenTime": "11:44:32"
-        }
-      ]
-    },
-    {
-      "id": "att-face-1792736123628",
-      "date": "2026-10-23",
-      "classId": "c-7b",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)",
-      "timestamp": "11:02:24",
-      "records": [
-        {
-          "studentId": "s-00000147",
-          "status": "exited",
-          "inTime": "11:02:24",
-          "outTime": "10:58:13",
-          "lastDirection": "out",
-          "lastSeenTime": "10:58:13"
-        }
-      ]
-    },
-    {
-      "id": "att-face-1792736123631",
-      "date": "2026-10-23",
-      "classId": "c-6a",
-      "inspectorName": "Turniket: Turniket 3 (Kirish)",
-      "timestamp": "11:02:50",
-      "records": [
-        {
-          "studentId": "s-00000504",
-          "status": "present",
-          "inTime": "11:02:50",
-          "outTime": null,
-          "lastDirection": "in",
-          "lastSeenTime": "11:02:50"
-        }
-      ]
-    },
-    {
-      "id": "att-face-1792736207781",
+      "id": "att-face-1792745559276",
       "date": "2026-10-23",
       "classId": "graduated",
-      "inspectorName": "Turniket: Turniket 6 (Chiqish)",
-      "timestamp": "10:57:25",
+      "inspectorName": "Turniket: Turniket 4 (Kirish)",
+      "timestamp": "11:49:04",
       "records": [
-        {
-          "studentId": "s-00000486",
-          "status": "exited",
-          "inTime": null,
-          "outTime": "10:57:25",
-          "lastDirection": "out",
-          "lastSeenTime": "10:57:25"
-        },
         {
           "studentId": "s-00000654",
           "status": "present",
-          "inTime": "11:42:07",
+          "inTime": "11:49:10",
           "outTime": null,
           "lastDirection": "in",
-          "lastSeenTime": "11:42:07"
+          "lastSeenTime": "11:49:10"
         }
       ]
     },
     {
-      "id": "att-face-1792736207800",
+      "id": "att-face-1792745559279",
       "date": "2026-10-23",
-      "classId": "c-3d",
-      "inspectorName": "Turniket: Turniket 6 (Chiqish)",
-      "timestamp": "10:58:11",
+      "classId": "c-7b",
+      "inspectorName": "Turniket: Turniket 4 (Kirish)",
+      "timestamp": "11:49:26",
       "records": [
         {
-          "studentId": "s-00000464",
+          "studentId": "s-00000619",
+          "status": "present",
+          "inTime": "11:49:26",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "11:49:26"
+        },
+        {
+          "studentId": "s-00000153",
           "status": "exited",
           "inTime": null,
-          "outTime": "10:58:11",
+          "outTime": "11:46:52",
           "lastDirection": "out",
-          "lastSeenTime": "10:58:11"
+          "lastSeenTime": "11:46:52"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792745559282",
+      "date": "2026-10-23",
+      "classId": "c-11b",
+      "inspectorName": "Turniket: Turniket 4 (Kirish)",
+      "timestamp": "11:50:02",
+      "records": [
+        {
+          "studentId": "s-00000132",
+          "status": "exited",
+          "inTime": "11:50:02",
+          "outTime": "11:52:29",
+          "lastDirection": "out",
+          "lastSeenTime": "11:52:29"
+        },
+        {
+          "studentId": "s-00000136",
+          "status": "exited",
+          "inTime": "11:46:15",
+          "outTime": "11:46:15",
+          "lastDirection": "out",
+          "lastSeenTime": "11:46:15"
+        },
+        {
+          "studentId": "s-00000114",
+          "status": "exited",
+          "inTime": "11:51:24",
+          "outTime": "11:51:24",
+          "lastDirection": "out",
+          "lastSeenTime": "11:51:24"
         }
       ]
     }
@@ -28389,7 +23943,7 @@
       "updated_at": "2026-10-14T04:42:17.882+00:00"
     }
   ],
-  "lastUpdated": 1792737875194,
+  "lastUpdated": 1792745642047,
   "test_key": "test_val",
   "global_stream_url": "https://neo-proudly-chelsea-grew.trycloudflare.com",
   "camera_latest_frames": {

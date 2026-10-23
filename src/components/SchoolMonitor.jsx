@@ -208,13 +208,19 @@ export const SchoolMonitor = () => {
   // Dars tartibi bo'yicha saralash (1-dars, 2-dars, ...)
   const scheduleLessons = [...selectedClassSchedules].sort((a, b) => (a.lessonOrder || 0) - (b.lessonOrder || 0));
 
-  // Sana formatlash (O'zbekcha)
-  const dateFormatted = new Intl.DateTimeFormat('uz-UZ', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }).format(currentTime);
+  // Sana formatlash (To'liq va aniq o'zbekcha: masalan "2026-yil 23-Oktabr, Juma")
+  const dateFormatted = useMemo(() => {
+    const days = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
+    const months = [
+      'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
+      'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'
+    ];
+    const dayName = days[currentTime.getDay()];
+    const day = currentTime.getDate();
+    const monthName = months[currentTime.getMonth()];
+    const year = currentTime.getFullYear();
+    return `${year}-yil ${day}-${monthName}, ${dayName}`;
+  }, [currentTime]);
 
   const timeFormatted = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
