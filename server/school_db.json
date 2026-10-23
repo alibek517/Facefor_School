@@ -9687,60 +9687,6 @@
       "isFaceEnrolled": true
     },
     {
-      "id": "s-00000545",
-      "name": "Xudoyberganova Dilnoza Maqsudovna",
-      "grade": 2,
-      "phone": "+998 90 634-84-48",
-      "faceId": "00000545",
-      "gender": "Qiz",
-      "address": "Umid MFY, Bo'stonliq 20-uy",
-      "classId": "c-2d",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000533.jpg@WEB000000001696",
-      "fullName": "Xudoyberganova Dilnoza Maqsudovna",
-      "userType": "normal",
-      "className": "2-D",
-      "studentId": "00000545",
-      "parentName": "Xudoyberganovaning ota-onasi",
-      "parentPhone": "+998 91 634-84-48",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000546",
-      "name": "Xo'jamuratova Shoira Xolboyevna",
-      "grade": 3,
-      "phone": "+998 90 635-85-55",
-      "faceId": "00000546",
-      "gender": "Qiz",
-      "address": "Paxtakor MFY, Bobur 15-uy",
-      "classId": "c-3a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000534.jpg@WEB000000001697",
-      "fullName": "Xo'jamuratova Shoira Xolboyevna",
-      "userType": "normal",
-      "className": "3-A",
-      "studentId": "00000546",
-      "parentName": "Xo'jamuratovaning ota-onasi",
-      "parentPhone": "+998 91 635-85-55",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000547",
-      "name": "Xalillayeva Saboxat Xolboyevna",
-      "grade": 3,
-      "phone": "+998 90 636-86-62",
-      "faceId": "00000547",
-      "gender": "Qiz",
-      "address": "Ozodlik MFY, Chinorlar 8-uy",
-      "classId": "c-3b",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000535.jpg@WEB000000001698",
-      "fullName": "Xalillayeva Saboxat Xolboyevna",
-      "userType": "normal",
-      "className": "3-B",
-      "studentId": "00000547",
-      "parentName": "Xalillayevaning ota-onasi",
-      "parentPhone": "+998 91 636-86-62",
-      "isFaceEnrolled": true
-    },
-    {
       "id": "s-00000548",
       "name": "Xalillayeva Feruza Ikrom qizi",
       "grade": 3,
@@ -9792,24 +9738,6 @@
       "studentId": "00000550",
       "parentName": "Ataxanovning ota-onasi",
       "parentPhone": "+998 91 639-89-83",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000551",
-      "name": "Otaxonova Nasiba Yakupbayevna",
-      "grade": 4,
-      "phone": "+998 90 640-00-00",
-      "faceId": "00000551",
-      "gender": "Qiz",
-      "address": "Markaziy MFY, Al-Xorazmiy 14-uy",
-      "classId": "c-4a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000539.jpg@WEB000000001702",
-      "fullName": "Otaxonova Nasiba Yakupbayevna",
-      "userType": "normal",
-      "className": "4-A",
-      "studentId": "00000551",
-      "parentName": "Otaxonovaning ota-onasi",
-      "parentPhone": "+998 91 640-00-00",
       "isFaceEnrolled": true
     },
     {
@@ -9918,24 +9846,6 @@
       "studentId": "00000557",
       "parentName": "Madaminovning ota-onasi",
       "parentPhone": "+998 91 646-06-42",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000558",
-      "name": "Mamashev Viktor Aleksandrovich",
-      "grade": 7,
-      "phone": "+998 90 647-07-49",
-      "faceId": "00000558",
-      "gender": "O'g'il",
-      "address": "Yuksalish MFY, Amir Temur 55-uy",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000546.jpg@WEB000000001709",
-      "fullName": "Mamashev Viktor Aleksandrovich",
-      "userType": "normal",
-      "className": "1-A",
-      "studentId": "00000558",
-      "parentName": "Mamashevning ota-onasi",
-      "parentPhone": "+998 91 647-07-49",
       "isFaceEnrolled": true
     },
     {
@@ -10739,96 +10649,6 @@
       "isFaceEnrolled": true
     },
     {
-      "id": "s-00000603",
-      "name": "Davletova Zamira Urolovna",
-      "grade": 3,
-      "phone": "+998 90 692-52-04",
-      "faceId": "00000603",
-      "gender": "Qiz",
-      "address": "Yuksalish MFY, Amir Temur 55-uy",
-      "classId": "c-3b",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000591.jpg@WEB000000001754",
-      "fullName": "Davletova Zamira Urolovna",
-      "userType": "normal",
-      "className": "3-B",
-      "studentId": "00000603",
-      "parentName": "Davletovaning ota-onasi",
-      "parentPhone": "+998 91 692-52-04",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000604",
-      "name": "Urazmetova Dilafruz Madrimovna",
-      "grade": 3,
-      "phone": "+998 90 693-53-11",
-      "faceId": "00000604",
-      "gender": "Qiz",
-      "address": "Shodlik MFY, Qorasuv 12-uy",
-      "classId": "c-3d",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000592.jpg@WEB000000001755",
-      "fullName": "Urazmetova Dilafruz Madrimovna",
-      "userType": "normal",
-      "className": "3-D",
-      "studentId": "00000604",
-      "parentName": "Urazmetovaning ota-onasi",
-      "parentPhone": "+998 91 693-53-11",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000605",
-      "name": "Yuldasheva Muqaddas Baxtiyarovna",
-      "grade": 4,
-      "phone": "+998 90 694-54-18",
-      "faceId": "00000605",
-      "gender": "Qiz",
-      "address": "Umid MFY, Bo'stonliq 20-uy",
-      "classId": "c-4a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000593.jpg@WEB000000001756",
-      "fullName": "Yuldasheva Muqaddas Baxtiyarovna",
-      "userType": "normal",
-      "className": "4-A",
-      "studentId": "00000605",
-      "parentName": "Yuldashevaning ota-onasi",
-      "parentPhone": "+998 91 694-54-18",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000606",
-      "name": "Sabirova Sharofat Saliyevna",
-      "grade": 4,
-      "phone": "+998 90 695-55-25",
-      "faceId": "00000606",
-      "gender": "Qiz",
-      "address": "Paxtakor MFY, Bobur 15-uy",
-      "classId": "c-4b",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000594.jpg@WEB000000001757",
-      "fullName": "Sabirova Sharofat Saliyevna",
-      "userType": "normal",
-      "className": "4-B",
-      "studentId": "00000606",
-      "parentName": "Sabirovaning ota-onasi",
-      "parentPhone": "+998 91 695-55-25",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000607",
-      "name": "Qurbonniyozova Mashhura Zafarovna",
-      "grade": 4,
-      "phone": "+998 90 696-56-32",
-      "faceId": "00000607",
-      "gender": "Qiz",
-      "address": "Ozodlik MFY, Chinorlar 8-uy",
-      "classId": "c-4a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000595.jpg@WEB000000001758",
-      "fullName": "Qurbonniyozova Mashhura Zafarovna",
-      "userType": "normal",
-      "className": "4-A",
-      "studentId": "00000607",
-      "parentName": "Qurbonniyozovaning ota-onasi",
-      "parentPhone": "+998 91 696-56-32",
-      "isFaceEnrolled": true
-    },
-    {
       "id": "s-00000608",
       "name": "Narimanova Nazokat Alisher qizi",
       "grade": 5,
@@ -10844,96 +10664,6 @@
       "studentId": "00000608",
       "parentName": "Narimanovaning ota-onasi",
       "parentPhone": "+998 91 697-57-39",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000609",
-      "name": "Karimova Zevarjon Xamidovna",
-      "grade": 5,
-      "phone": "+998 90 698-58-46",
-      "faceId": "00000609",
-      "gender": "Qiz",
-      "address": "G'alaba MFY, Samarqand 63-uy",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000597.jpg@WEB000000001760",
-      "fullName": "Karimova Zevarjon Xamidovna",
-      "userType": "normal",
-      "className": "1-A",
-      "studentId": "00000609",
-      "parentName": "Karimovaning ota-onasi",
-      "parentPhone": "+998 91 698-58-46",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000610",
-      "name": "Raxmatullayeva Umida Sadullayevna",
-      "grade": 6,
-      "phone": "+998 90 699-59-53",
-      "faceId": "00000610",
-      "gender": "Qiz",
-      "address": "Yangiobod MFY, Yangi hayot 11-uy",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000598.jpg@WEB000000001761",
-      "fullName": "Raxmatullayeva Umida Sadullayevna",
-      "userType": "normal",
-      "className": "1-A",
-      "studentId": "00000610",
-      "parentName": "Raxmatullayevaning ota-onasi",
-      "parentPhone": "+998 91 699-59-53",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000611",
-      "name": "Karimova Aziza Kurolbayevna",
-      "grade": 6,
-      "phone": "+998 90 700-60-60",
-      "faceId": "00000611",
-      "gender": "Qiz",
-      "address": "Markaziy MFY, Al-Xorazmiy 14-uy",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000599.jpg@WEB000000001762",
-      "fullName": "Karimova Aziza Kurolbayevna",
-      "userType": "normal",
-      "className": "1-A",
-      "studentId": "00000611",
-      "parentName": "Karimovaning ota-onasi",
-      "parentPhone": "+998 91 700-60-60",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000612",
-      "name": "Seydabullayeva Feruza Azimjanovna",
-      "grade": 6,
-      "phone": "+998 90 701-61-67",
-      "faceId": "00000612",
-      "gender": "Qiz",
-      "address": "Istiqlol MFY, Mustaqillik 25-uy",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000600.jpg@WEB000000001763",
-      "fullName": "Seydabullayeva Feruza Azimjanovna",
-      "userType": "normal",
-      "className": "1-A",
-      "studentId": "00000612",
-      "parentName": "Seydabullayevaning ota-onasi",
-      "parentPhone": "+998 91 701-61-67",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000613",
-      "name": "Yangibayeva Zuhra Rajabovna",
-      "grade": 7,
-      "phone": "+998 90 702-62-74",
-      "faceId": "00000613",
-      "gender": "Qiz",
-      "address": "Guliston MFY, Shifokorlar 18-uy",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000601.jpg@WEB000000001764",
-      "fullName": "Yangibayeva Zuhra Rajabovna",
-      "userType": "normal",
-      "className": "1-A",
-      "studentId": "00000613",
-      "parentName": "Yangibayevaning ota-onasi",
-      "parentPhone": "+998 91 702-62-74",
       "isFaceEnrolled": true
     },
     {
@@ -10970,42 +10700,6 @@
       "studentId": "00000615",
       "parentName": "Gulimovning ota-onasi",
       "parentPhone": "+998 91 704-64-88",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000616",
-      "name": "Turg‘anbayeva Indira Janabayevna",
-      "grade": 8,
-      "phone": "+998 90 705-65-05",
-      "faceId": "00000616",
-      "gender": "Qiz",
-      "address": "Do'stlik MFY, Tinchlik 42-uy",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000604.jpg@WEB000000001767",
-      "fullName": "Turg‘anbayeva Indira Janabayevna",
-      "userType": "normal",
-      "className": "1-A",
-      "studentId": "00000616",
-      "parentName": "Turg‘anbayevaning ota-onasi",
-      "parentPhone": "+998 91 705-65-05",
-      "isFaceEnrolled": true
-    },
-    {
-      "id": "s-00000617",
-      "name": "Saidova Dilfuza",
-      "grade": 8,
-      "phone": "+998 90 706-66-12",
-      "faceId": "00000617",
-      "gender": "Qiz",
-      "address": "Bahor MFY, Sayilgoh 7-uy",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000605.jpg@WEB000000001768",
-      "fullName": "Saidova Dilfuza",
-      "userType": "normal",
-      "className": "1-A",
-      "studentId": "00000617",
-      "parentName": "Saidovaning ota-onasi",
-      "parentPhone": "+998 91 706-66-12",
       "isFaceEnrolled": true
     },
     {
@@ -12587,24 +12281,6 @@
       "isFaceEnrolled": true
     },
     {
-      "id": "s-00000706",
-      "name": "Maxmudjanov Elbek Husanovich",
-      "grade": 10,
-      "phone": "+998 90 794-64-88",
-      "faceId": "00000706",
-      "gender": "O'g'il",
-      "address": "Bunyodkor MFY, Yoshlar 31-uy",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000693.jpg@WEB000000001856",
-      "fullName": "Maxmudjanov Elbek Husanovich",
-      "userType": "normal",
-      "className": "1-A",
-      "studentId": "00000706",
-      "parentName": "Maxmudjanovning ota-onasi",
-      "parentPhone": "+998 91 794-64-88",
-      "isFaceEnrolled": true
-    },
-    {
       "id": "s-00000707",
       "name": "Madraximova Kamola Sardorbek Qizi",
       "grade": 10,
@@ -14057,196 +13733,7 @@
       "grade": 11
     }
   ],
-  "teachers": [
-    {
-      "id": "t-1791520951199",
-      "name": "Davletova Gulasal",
-      "role": "Sinf rahbari",
-      "phone": "+998-94-114-17-68",
-      "classId": "c-10a",
-      "subject": "Tarix"
-    },
-    {
-      "id": "t-00000545",
-      "name": "Xudoyberganova Dilnoza Maqsudovna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-634-84-48",
-      "faceId": "00000545",
-      "classId": "c-2d",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000533.jpg@WEB000000001696",
-      "subject": "Boshlang'ich ta'lim"
-    },
-    {
-      "id": "t-00000546",
-      "name": "Xo'jamuratova Shoira Xolboyevna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-635-85-55",
-      "faceId": "00000546",
-      "classId": "c-3a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000534.jpg@WEB000000001697",
-      "subject": "Boshlang'ich ta'lim"
-    },
-    {
-      "id": "t-00000547",
-      "name": "Xalillayeva Saboxat Xolboyevna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-636-86-62",
-      "faceId": "00000547",
-      "classId": "c-3b",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000535.jpg@WEB000000001698",
-      "subject": "Boshlang'ich ta'lim"
-    },
-    {
-      "id": "t-00000551",
-      "name": "Otaxonova Nasiba Yakupbayevna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-640-00-00",
-      "faceId": "00000551",
-      "classId": "c-4a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000539.jpg@WEB000000001702",
-      "subject": "Boshlang'ich ta'lim"
-    },
-    {
-      "id": "t-00000558",
-      "name": "Mamashev Viktor Aleksandrovich",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-647-07-49",
-      "faceId": "00000558",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000546.jpg@WEB000000001709",
-      "subject": "Jismoniy tarbiya"
-    },
-    {
-      "id": "t-00000603",
-      "name": "Davletova Zamira Urolovna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-692-52-04",
-      "faceId": "00000603",
-      "classId": "c-3b",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000591.jpg@WEB000000001754",
-      "subject": "Boshlang'ich ta'lim"
-    },
-    {
-      "id": "t-00000604",
-      "name": "Urazmetova Dilafruz Madrimovna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-693-53-11",
-      "faceId": "00000604",
-      "classId": "c-3d",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000592.jpg@WEB000000001755",
-      "subject": "Boshlang'ich ta'lim"
-    },
-    {
-      "id": "t-00000605",
-      "name": "Yuldasheva Muqaddas Baxtiyarovna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-694-54-18",
-      "faceId": "00000605",
-      "classId": "c-4a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000593.jpg@WEB000000001756",
-      "subject": "Boshlang'ich ta'lim"
-    },
-    {
-      "id": "t-00000606",
-      "name": "Sabirova Sharofat Saliyevna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-695-55-25",
-      "faceId": "00000606",
-      "classId": "c-4b",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000594.jpg@WEB000000001757",
-      "subject": "Boshlang'ich ta'lim"
-    },
-    {
-      "id": "t-00000607",
-      "name": "Qurbonniyozova Mashhura Zafarovna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-696-56-32",
-      "faceId": "00000607",
-      "classId": "c-4a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000595.jpg@WEB000000001758",
-      "subject": "Boshlang'ich ta'lim"
-    },
-    {
-      "id": "t-00000609",
-      "name": "Karimova Zevarjon Xamidovna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-698-58-46",
-      "faceId": "00000609",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000597.jpg@WEB000000001760",
-      "subject": "Boshlang'ich ta'lim"
-    },
-    {
-      "id": "t-00000610",
-      "name": "Raxmatullayeva Umida Sadullayevna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-699-59-53",
-      "faceId": "00000610",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000598.jpg@WEB000000001761",
-      "subject": "Boshlang'ich ta'lim"
-    },
-    {
-      "id": "t-00000611",
-      "name": "Karimova Aziza Kurolbayevna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-700-60-60",
-      "faceId": "00000611",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000599.jpg@WEB000000001762",
-      "subject": "Boshlang'ich ta'lim"
-    },
-    {
-      "id": "t-00000612",
-      "name": "Seydabullayeva Feruza Azimjanovna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-701-61-67",
-      "faceId": "00000612",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000600.jpg@WEB000000001763",
-      "subject": "Boshlang'ich ta'lim"
-    },
-    {
-      "id": "t-00000613",
-      "name": "Yangibayeva Zuhra Rajabovna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-702-62-74",
-      "faceId": "00000613",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000601.jpg@WEB000000001764",
-      "subject": "Boshlang'ich ta'lim"
-    },
-    {
-      "id": "t-00000616",
-      "name": "Turg‘anbayeva Indira Janabayevna",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-705-65-05",
-      "faceId": "00000616",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000604.jpg@WEB000000001767",
-      "subject": "Ingliz tili"
-    },
-    {
-      "id": "t-00000617",
-      "name": "Saidova Dilfuza",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-706-66-12",
-      "faceId": "00000617",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000605.jpg@WEB000000001768",
-      "subject": "Musiqa"
-    },
-    {
-      "id": "t-00000706",
-      "name": "Maxmudjanov Elbek Husanovich",
-      "role": "Sinf rahbari",
-      "phone": "+998-90-794-64-88",
-      "faceId": "00000706",
-      "classId": "c-1a",
-      "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000693.jpg@WEB000000001856",
-      "subject": "Informatika"
-    }
-  ],
+  "teachers": [],
   "schedules": [
     {
       "id": "sch-1a-m1",
@@ -27621,154 +27108,284 @@
       ],
       "timestamp": "09:01:07",
       "inspectorName": "Turniket: Turniket 4 (Kirish)"
+    },
+    {
+      "id": "att-face-1792729196691",
+      "date": "2026-10-23",
+      "classId": "c-9b",
+      "inspectorName": "Turniket: Turniket 1 (Chiqish)",
+      "timestamp": "09:19:52",
+      "records": [
+        {
+          "studentId": "s-00000192",
+          "status": "exited",
+          "inTime": "09:19:52",
+          "outTime": "09:20:02",
+          "lastDirection": "out",
+          "lastSeenTime": "09:20:02"
+        },
+        {
+          "studentId": "s-00000200",
+          "status": "exited",
+          "inTime": "09:19:59",
+          "outTime": "09:26:34",
+          "lastDirection": "out",
+          "lastSeenTime": "09:26:34"
+        },
+        {
+          "studentId": "s-00000186",
+          "status": "present",
+          "inTime": "09:20:37",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "09:20:37"
+        },
+        {
+          "studentId": "s-00000197",
+          "status": "present",
+          "inTime": "09:26:51",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "09:26:51"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792729204414",
+      "date": "2026-10-23",
+      "classId": "c-7a",
+      "inspectorName": "Turniket: Turniket 3 (Kirish)",
+      "timestamp": "09:19:57",
+      "records": [
+        {
+          "studentId": "s-00000705",
+          "status": "present",
+          "inTime": "09:19:57",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "09:19:57"
+        },
+        {
+          "studentId": "s-00000695",
+          "status": "exited",
+          "inTime": "09:20:42",
+          "outTime": "09:20:42",
+          "lastDirection": "out",
+          "lastSeenTime": "09:20:42"
+        },
+        {
+          "studentId": "s-00000719",
+          "status": "present",
+          "inTime": "09:23:12",
+          "outTime": "09:20:44",
+          "lastDirection": "in",
+          "lastSeenTime": "09:23:12"
+        },
+        {
+          "studentId": "s-00000716",
+          "status": "present",
+          "inTime": "09:23:08",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "09:23:08"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792729240298",
+      "date": "2026-10-23",
+      "classId": "c-11a",
+      "inspectorName": "Turniket: Turniket 4 (Kirish)",
+      "timestamp": "09:20:32",
+      "records": [
+        {
+          "studentId": "s-00000220",
+          "status": "present",
+          "inTime": "09:20:32",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "09:20:32"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792729278459",
+      "date": "2026-10-23",
+      "classId": "c-8b",
+      "inspectorName": "Turniket: Turniket 6 (Chiqish)",
+      "timestamp": "09:21:12",
+      "records": [
+        {
+          "studentId": "s-00000377",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "09:21:12",
+          "lastDirection": "out",
+          "lastSeenTime": "09:21:12"
+        },
+        {
+          "studentId": "s-00000358",
+          "status": "exited",
+          "inTime": "09:21:36",
+          "outTime": "09:21:36",
+          "lastDirection": "out",
+          "lastSeenTime": "09:21:36"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792729284020",
+      "date": "2026-10-23",
+      "classId": "c-8a",
+      "inspectorName": "Turniket: Turniket 1 (Chiqish)",
+      "timestamp": "09:21:20",
+      "records": [
+        {
+          "studentId": "s-00000327",
+          "status": "exited",
+          "inTime": "09:23:08",
+          "outTime": "09:23:08",
+          "lastDirection": "out",
+          "lastSeenTime": "09:23:08"
+        },
+        {
+          "studentId": "s-00000328",
+          "status": "present",
+          "inTime": "09:29:02",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "09:29:02"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792729330499",
+      "date": "2026-10-23",
+      "classId": "c-10b",
+      "inspectorName": "Turniket: Turniket 4 (Kirish)",
+      "timestamp": "09:22:01",
+      "records": [
+        {
+          "studentId": "s-00000077",
+          "status": "present",
+          "inTime": "09:22:01",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "09:22:01"
+        },
+        {
+          "studentId": "s-00000091",
+          "status": "present",
+          "inTime": "09:22:05",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "09:22:05"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792729354065",
+      "date": "2026-10-23",
+      "classId": "c-1a",
+      "inspectorName": "Turniket: Turniket 4 (Kirish)",
+      "timestamp": "09:22:15",
+      "records": [
+        {
+          "studentId": "s-00000665",
+          "status": "present",
+          "inTime": "09:22:15",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "09:22:15"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792729359923",
+      "date": "2026-10-23",
+      "classId": "c-5b",
+      "inspectorName": "Turniket: Turniket 6 (Chiqish)",
+      "timestamp": "09:22:31",
+      "records": [
+        {
+          "studentId": "s-00000250",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "09:22:31",
+          "lastDirection": "out",
+          "lastSeenTime": "09:22:31"
+        },
+        {
+          "studentId": "s-00000251",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "09:26:00",
+          "lastDirection": "out",
+          "lastSeenTime": "09:26:00"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792729372116",
+      "date": "2026-10-23",
+      "classId": "c-9d",
+      "inspectorName": "Turniket: Turniket 6 (Chiqish)",
+      "timestamp": "09:22:48",
+      "records": [
+        {
+          "studentId": "s-00000107",
+          "status": "exited",
+          "inTime": null,
+          "outTime": "09:22:48",
+          "lastDirection": "out",
+          "lastSeenTime": "09:22:48"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792729541042",
+      "date": "2026-10-23",
+      "classId": "c-10a",
+      "inspectorName": "Turniket: Turniket 3 (Kirish)",
+      "timestamp": "09:25:33",
+      "records": [
+        {
+          "studentId": "s-00000430",
+          "status": "present",
+          "inTime": "09:25:33",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "09:25:33"
+        },
+        {
+          "studentId": "s-00000422",
+          "status": "exited",
+          "inTime": "09:25:35",
+          "outTime": "09:25:41",
+          "lastDirection": "out",
+          "lastSeenTime": "09:25:41"
+        }
+      ]
+    },
+    {
+      "id": "att-face-1792729666815",
+      "date": "2026-10-23",
+      "classId": "c-5a",
+      "inspectorName": "Turniket: Turniket 3 (Kirish)",
+      "timestamp": "09:27:39",
+      "records": [
+        {
+          "studentId": "s-00000621",
+          "status": "present",
+          "inTime": "09:27:39",
+          "outTime": null,
+          "lastDirection": "in",
+          "lastSeenTime": "09:27:39"
+        }
+      ]
     }
   ],
-  "teacherAttendance": [
-    {
-      "date": "2026-10-12",
-      "inTime": "12:44:54",
-      "status": "present",
-      "outTime": null,
-      "teacherId": "t-00000603",
-      "lastSeenTime": "12:44:54",
-      "lastDirection": "in"
-    },
-    {
-      "date": "2026-10-12",
-      "inTime": "12:45:39",
-      "status": "absent",
-      "outTime": "12:50:46",
-      "teacherId": "t-00000605",
-      "lastSeenTime": "12:50:46",
-      "lastDirection": "out"
-    },
-    {
-      "date": "2026-10-12",
-      "inTime": "12:45:29",
-      "status": "present",
-      "outTime": null,
-      "teacherId": "t-00000607",
-      "lastSeenTime": "12:45:29",
-      "lastDirection": "in"
-    },
-    {
-      "date": "2026-10-12",
-      "inTime": "12:47:41",
-      "status": "absent",
-      "outTime": "12:48:02",
-      "teacherId": "t-00000616",
-      "lastSeenTime": "12:48:02",
-      "lastDirection": "out"
-    },
-    {
-      "date": "2026-10-12",
-      "inTime": "14:45:35",
-      "status": "present",
-      "outTime": null,
-      "teacherId": "t-00000612",
-      "lastSeenTime": "14:45:35",
-      "lastDirection": "in"
-    },
-    {
-      "date": "2026-10-12",
-      "inTime": "14:31:54",
-      "status": "present",
-      "outTime": null,
-      "teacherId": "t-00000610",
-      "lastSeenTime": "14:31:54",
-      "lastDirection": "in"
-    },
-    {
-      "date": "2026-10-12",
-      "inTime": "16:00:08",
-      "status": "present",
-      "outTime": null,
-      "teacherId": "t-00000609",
-      "lastSeenTime": "16:00:08",
-      "lastDirection": "in"
-    },
-    {
-      "date": "2026-10-12",
-      "inTime": "16:01:47",
-      "status": "present",
-      "outTime": null,
-      "teacherId": "t-00000551",
-      "lastSeenTime": "16:01:47",
-      "lastDirection": "in"
-    },
-    {
-      "date": "2026-10-12",
-      "inTime": null,
-      "status": "absent",
-      "outTime": "16:09:24",
-      "teacherId": "t-00000617",
-      "lastSeenTime": "16:09:24",
-      "lastDirection": "out"
-    },
-    {
-      "date": "2026-10-14",
-      "inTime": "13:38:37",
-      "status": "present",
-      "outTime": "13:38:08",
-      "teacherId": "t-00000610",
-      "lastSeenTime": "13:38:37",
-      "lastDirection": "in"
-    },
-    {
-      "date": "2026-10-14",
-      "inTime": "13:48:48",
-      "status": "present",
-      "outTime": "13:46:21",
-      "teacherId": "t-00000547",
-      "lastSeenTime": "13:48:48",
-      "lastDirection": "in"
-    },
-    {
-      "date": "2026-10-14",
-      "inTime": "12:07:42",
-      "status": "present",
-      "outTime": null,
-      "teacherId": "t-00000558",
-      "lastSeenTime": "12:07:42",
-      "lastDirection": "in"
-    },
-    {
-      "date": "2026-10-14",
-      "inTime": "15:39:19",
-      "status": "present",
-      "outTime": "12:01:12",
-      "teacherId": "t-00000603",
-      "lastSeenTime": "15:39:19",
-      "lastDirection": "in"
-    },
-    {
-      "date": "2026-10-14",
-      "inTime": "14:53:43",
-      "status": "present",
-      "outTime": null,
-      "teacherId": "t-00000606",
-      "lastSeenTime": "14:53:43",
-      "lastDirection": "in"
-    },
-    {
-      "date": "2026-10-14",
-      "inTime": "14:53:45",
-      "status": "present",
-      "outTime": null,
-      "teacherId": "t-00000611",
-      "lastSeenTime": "14:53:45",
-      "lastDirection": "in"
-    },
-    {
-      "date": "2026-10-14",
-      "inTime": "16:21:11",
-      "status": "present",
-      "outTime": null,
-      "teacherId": "t-00000612",
-      "lastSeenTime": "16:21:11",
-      "lastDirection": "in"
-    }
-  ],
+  "teacherAttendance": [],
   "hourlyAttendance": {},
   "cameras": [
     {
@@ -27832,7 +27449,7 @@
       "updated_at": "2026-10-14T04:42:17.882+00:00"
     }
   ],
-  "lastUpdated": 1792144740406,
+  "lastUpdated": 1792729754075,
   "test_key": "test_val",
   "global_stream_url": "https://neo-proudly-chelsea-grew.trycloudflare.com",
   "camera_latest_frames": {
