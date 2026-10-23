@@ -528,10 +528,13 @@ export const SchoolProvider = ({ children }) => {
   // Hikvision Ko'prik serveri bilan avtomatik bog'lanish (Port 5001 yoki Cloudflare tunnel)
   const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
   const bridgeHost = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost';
-  const BRIDGE_API = (isLocalHostEnv && !isHttps) ? `http://${bridgeHost}:5001` : '';
+  const isCloudflareTunnel = typeof window !== 'undefined' && window.location.hostname.includes('trycloudflare.com');
+  const BRIDGE_API = (isLocalHostEnv && !isHttps) 
+    ? `http://${bridgeHost}:5001` 
+    : (isCloudflareTunnel ? (typeof window !== 'undefined' ? window.location.origin : '') : '');
 
   const getActiveBridgeUrl = () => {
-    if (isLocalHostEnv && !isHttps && BRIDGE_API) return BRIDGE_API;
+    if (BRIDGE_API) return BRIDGE_API;
     if (globalStreamUrl && globalStreamUrl.startsWith('http')) return globalStreamUrl;
     return '';
   };
@@ -869,13 +872,13 @@ export const SchoolProvider = ({ children }) => {
 
     const pollDevice = async () => {
       let localReachable = false;
-      const shouldProbeLocal = isLocalHostEnv && !isHttps && Boolean(BRIDGE_API) && (localFailuresCount.current === 0 || manualRetryLocal.current || (localFailuresCount.current % 24 === 0));
+      const shouldProbeLocal = Boolean(BRIDGE_API) && (localFailuresCount.current === 0 || manualRetryLocal.current || (localFailuresCount.current % 3 === 0));
       manualRetryLocal.current = false;
 
       if (shouldProbeLocal) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 1000);
+          const timeoutId = setTimeout(() => controller.abort(), 1500);
           const res = await fetch(`${BRIDGE_API}/api/device/status`, { signal: controller.signal }).catch(() => null);
           clearTimeout(timeoutId);
           if (res && res.ok) {
@@ -935,6 +938,7 @@ export const SchoolProvider = ({ children }) => {
         setNetworkMode('global');
 
         // Agar Cloudflare global stream tunnel faol bo'lsa, voqealarni tunnel orqali to'liq yuklaymiz
+        let tunnelReachable = false;
         const activeTunnel = getActiveBridgeUrl();
         if (activeTunnel) {
           try {
@@ -944,22 +948,26 @@ export const SchoolProvider = ({ children }) => {
               if (evJson && Array.isArray(evJson.data) && evJson.data.length > 0) {
                 setRecentFaceScans(evJson.data);
               }
+              setIsSchoolLocalOnline(true);
+              tunnelReachable = true;
             }
           } catch (e) {}
         }
 
-        // Supabase dan "local_status" heartbeat ni tekshiramiz
-        try {
-          const localStatus = await getLocalStatusFromSupabase();
-          if (localStatus && localStatus.online) {
-            const isFresh = (Date.now() - (localStatus.timestamp || 0)) < 45000;
-            setIsSchoolLocalOnline(isFresh);
-            if (isFresh) setLocalBridgeInfo(localStatus);
-          } else {
+        // Agar tunnel orqali aloqa bo'lmasa, Supabase dan "local_status" heartbeat ni tekshiramiz
+        if (!tunnelReachable) {
+          try {
+            const localStatus = await getLocalStatusFromSupabase();
+            if (localStatus && localStatus.online) {
+              const isFresh = (Date.now() - (localStatus.timestamp || 0)) < 45000;
+              setIsSchoolLocalOnline(isFresh);
+              if (isFresh) setLocalBridgeInfo(localStatus);
+            } else {
+              setIsSchoolLocalOnline(false);
+            }
+          } catch (e) {
             setIsSchoolLocalOnline(false);
           }
-        } catch (e) {
-          setIsSchoolLocalOnline(false);
         }
 
         // Supabase dan oxirgi kamera kadrlarini yangilab turish (Global rejim uchun)
