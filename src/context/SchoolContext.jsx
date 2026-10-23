@@ -2003,7 +2003,20 @@ export const SchoolProvider = ({ children }) => {
 
     setAttendanceList(prev => {
       const attIndex = prev.findIndex(a => a.classId === classId && a.date === todayDate);
-      if (attIndex === -1) return prev;
+      if (attIndex === -1) {
+        const newClassAtt = {
+          id: 'att-' + todayDate + '-' + classId,
+          classId: classId,
+          date: todayDate,
+          inspectorName: 'Sinf Rahbari',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          records: [{ studentId, status: newStatus, reason, note }]
+        };
+        const updatedList = [newClassAtt, ...prev];
+        saveToServer('attendanceList', updatedList);
+        saveModuleToSupabase('attendanceList', updatedList).catch(() => {});
+        return updatedList;
+      }
 
       const currentClassAtt = { ...prev[attIndex] };
       const recIndex = currentClassAtt.records.findIndex(r => r.studentId === studentId);

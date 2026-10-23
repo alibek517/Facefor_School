@@ -36,7 +36,9 @@ export const ClassTeacherView = () => {
     students, 
     schedules,
     attendanceList, 
+    recentFaceScans,
     updateStudentAttendance,
+    submitAttendance,
     addStudent,
     updateStudent,
     bridgeUrl,
@@ -60,6 +62,9 @@ export const ClassTeacherView = () => {
 
   // Ichki faol tab: 'attendance' | 'students' | 'schedule'
   const [activeTab, setActiveTab] = useState('attendance');
+
+  // Davomat filtri: 'all' (Barchasi) | 'present' (Kelganlar) | 'absent' (Kelmaganlar) | 'late' (Kechikkanlar)
+  const [attendanceFilter, setAttendanceFilter] = useState('all');
 
   // Davomat holatini tahrirlash modali
   const [editingAttendanceStudent, setEditingAttendanceStudent] = useState(null);
@@ -115,16 +120,118 @@ export const ClassTeacherView = () => {
     return (schedules || []).filter(s => s.classId === myClass.id);
   }, [schedules, myClass.id]);
 
-  const myAttendance = (attendanceList || []).find(a => a.classId === myClass.id);
-  const absentRecords = myAttendance?.records?.filter(r => r.status === 'absent') || [];
-  const lateRecords = myAttendance?.records?.filter(r => r.status === 'late') || [];
-  const presentCount = myAttendance?.records ? myAttendance.records.filter(r => r.status === 'present').length : (myStudents.length - absentRecords.length - lateRecords.length);
+  // Bugungi sana (YYYY-MM-DD)
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, []);
+
+  // Bugungi jonli Face-ID skanlari
+  const todayScans = useMemo(() => {
+    return (recentFaceScans || []).filter(s => {
+      if (!s.timestamp) return false;
+      return String(s.timestamp).startsWith(todayStr);
+    });
+  }, [recentFaceScans, todayStr]);
+
+  // Bugungi sinf davomat ro'yxati (o'qituvchi kiritgan yozuvlar)
+  const myAttendance = useMemo(() => {
+    return (attendanceList || []).find(a => a.classId === myClass.id && (a.date === todayStr || !a.date));
+  }, [attendanceList, myClass.id, todayStr]);
+
+  // Har bir o'quvchining bugungi ANIQ va KAFOLATLI davomat holati
+  const studentAttendanceList = useMemo(() => {
+    return myStudents.map(st => {
+      const normId = String(st.studentId || st.faceId || st.id || '').replace(/^s-/, '').replace(/^0+/, '');
+      const stName = (st.fullName || st.name || '').toLowerCase().trim();
+
+      // Bugungi Face-ID skanlaridan tekshirish
+      const scans = todayScans.filter(s => {
+        const sEmp = String(s.employeeNo || '').replace(/^0+/, '');
+        const sName = (s.name || '').toLowerCase().trim();
+        return (normId && sEmp && sEmp === normId) || (sName && stName && (sName === stName || sName.includes(stName) || stName.includes(sName)));
+      });
+
+      const inScans = scans.filter(s => s.direction === 'in');
+      const outScans = scans.filter(s => s.direction === 'out');
+      const firstInScan = inScans[inScans.length - 1] || inScans[0];
+      const hasAnyScan = scans.length > 0;
+
+      // Rasmiy o'qituvchi yozuvi (agar mavjud bo'lsa)
+      const rec = myAttendance?.records?.find(r => r.studentId === st.id || r.studentId === st.studentId);
+
+      let inTime = null;
+      let outTime = null;
+
+      if (firstInScan) {
+        inTime = firstInScan.timeFormatted || (firstInScan.timestamp ? String(firstInScan.timestamp).slice(11, 16) : null);
+      } else if (rec?.inTime) {
+        inTime = rec.inTime;
+      }
+
+      if (outScans.length > 0) {
+        outTime = outScans[0].timeFormatted || (outScans[0].timestamp ? String(outScans[0].timestamp).slice(11, 16) : null);
+      } else if (rec?.outTime) {
+        outTime = rec.outTime;
+      }
+
+      let status = 'absent';
+      if (rec && rec.status) {
+        status = rec.status === 'exited' ? 'present' : rec.status;
+      } else if (hasAnyScan) {
+        // Agar birinchi kirishi 08:30 dan kech bo'lsa kechikkan deb hisoblanadi
+        const isLateScan = inTime && inTime > '08:30:00';
+        status = isLateScan ? 'late' : 'present';
+      } else {
+        status = 'absent';
+      }
+
+      const reason = rec?.reason || (status === 'absent' ? 'Sababsiz' : (status === 'late' ? 'Kechikkan' : ''));
+
+      return {
+        ...st,
+        status, // 'present' | 'absent' | 'late'
+        inTime,
+        outTime,
+        hasFaceScan: hasAnyScan,
+        rec,
+        reason
+      };
+    });
+  }, [myStudents, todayScans, myAttendance]);
+
+  const presentStudents = useMemo(() => studentAttendanceList.filter(s => s.status === 'present'), [studentAttendanceList]);
+  const absentStudents = useMemo(() => studentAttendanceList.filter(s => s.status === 'absent'), [studentAttendanceList]);
+  const lateStudents = useMemo(() => studentAttendanceList.filter(s => s.status === 'late'), [studentAttendanceList]);
+  const totalCount = myStudents.length;
+
+  // Filtr bo'yicha ko'rsatiladigan o'quvchilar ro'yxati
+  const displayedAttendanceStudents = useMemo(() => {
+    let list = studentAttendanceList;
+    if (attendanceFilter === 'present') {
+      list = list.filter(s => s.status === 'present');
+    } else if (attendanceFilter === 'absent') {
+      list = list.filter(s => s.status === 'absent');
+    } else if (attendanceFilter === 'late') {
+      list = list.filter(s => s.status === 'late');
+    }
+    if (studentSearch.trim()) {
+      const q = studentSearch.toLowerCase().trim();
+      list = list.filter(s => 
+        (s.fullName || s.name || '').toLowerCase().includes(q) ||
+        (s.parentName || '').toLowerCase().includes(q) ||
+        (s.address || '').toLowerCase().includes(q) ||
+        (s.phone || s.parentPhone || '').includes(q)
+      );
+    }
+    return list;
+  }, [studentAttendanceList, attendanceFilter, studentSearch]);
 
   // Davomat tahrirlash ochish
   const handleOpenAttendanceEdit = (student, currentRec) => {
     setEditingAttendanceStudent(student);
-    setNewStatus(currentRec?.status || 'present');
-    setNewReason(currentRec?.reason || 'Sababsiz');
+    setNewStatus(student.status || currentRec?.status || 'present');
+    setNewReason(currentRec?.reason || (student.status === 'absent' ? 'Sababsiz' : ''));
   };
 
   // Davomat tahrirlashni saqlash
@@ -133,7 +240,7 @@ export const ClassTeacherView = () => {
       updateStudentAttendance(myClass.id, editingAttendanceStudent.id, newStatus, newReason);
       setEditingAttendanceStudent(null);
       if (showToast) {
-        showToast('Saqlandi', `${editingAttendanceStudent.fullName} davomat holati yangilandi.`, 'success');
+        showToast('Saqlandi', `${editingAttendanceStudent.fullName || editingAttendanceStudent.name} davomat holati yangilandi.`, 'success');
       }
     }
   };
@@ -215,7 +322,6 @@ export const ClassTeacherView = () => {
               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold text-xs rounded-lg border border-indigo-200 dark:border-indigo-800 shadow-2xs">
                 <Lock className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
                 <span>{myClass.name} sinfi</span>
-                <span className="text-[10px] opacity-75 font-normal">({myClass.room || 'Xona belgilanmagan'})</span>
               </div>
             ) : (
               <select
@@ -224,7 +330,7 @@ export const ClassTeacherView = () => {
                 className="text-xs font-bold bg-slate-100 dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 outline-none cursor-pointer"
               >
                 {classes.map(c => (
-                  <option key={c.id} value={c.id}>{c.name} sinfi ({c.room})</option>
+                  <option key={c.id} value={c.id}>{c.name} sinfi</option>
                 ))}
               </select>
             )}
@@ -241,10 +347,10 @@ export const ClassTeacherView = () => {
             <span className={`text-[11px] font-bold px-2.5 py-1 rounded-md border flex items-center gap-1.5 ${
               myAttendance 
                 ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
             }`}>
-              <span className={`w-2 h-2 rounded-full ${myAttendance ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-              {myAttendance ? 'Bugungi davomat topshirilgan' : 'Davomat kutilmoqda'}
+              <span className={`w-2 h-2 rounded-full ${myAttendance ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500'}`} />
+              {myAttendance ? 'Bugungi davomat topshirilgan' : 'Jonli Face-ID faol'}
             </span>
           </div>
         </div>
@@ -262,9 +368,9 @@ export const ClassTeacherView = () => {
         >
           <ClipboardList className="w-4 h-4" />
           <span>Sinf Davomati</span>
-          {absentRecords.length > 0 && (
+          {absentStudents.length > 0 && (
             <span className="ml-0.5 px-1.5 py-0.2 bg-rose-500 text-white text-[10px] rounded-full font-black">
-              {absentRecords.length}
+              {absentStudents.length}
             </span>
           )}
         </button>
@@ -310,39 +416,119 @@ export const ClassTeacherView = () => {
       {activeTab === 'attendance' && (
         <div className="space-y-3">
           
-          {/* Tezkor hisobot kartalari */}
+          {/* Tezkor hisobot kartalari (Bosilsa filtrlash imkoni bilan) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Jami o'quvchilar</span>
-              <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{myStudents.length}</p>
+            
+            {/* 1. Jami o'quvchilar */}
+            <div 
+              onClick={() => setAttendanceFilter('all')}
+              className={`p-3 rounded-xl border transition-all cursor-pointer select-none relative group ${
+                attendanceFilter === 'all'
+                  ? 'bg-blue-50/90 dark:bg-blue-950/50 border-blue-500 dark:border-blue-500 shadow-md ring-2 ring-blue-500/30'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs hover:scale-[1.01]'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Jami o'quvchilar</span>
+                {attendanceFilter === 'all' && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-500 text-white">Faol</span>
+                )}
+              </div>
+              <p className="text-xl font-black text-slate-900 dark:text-white mt-1">{totalCount}</p>
+              <div className="mt-1 flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 font-medium">
+                <span>Barchasini ko'rish</span>
+              </div>
             </div>
-            <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-950/20 shadow-2xs">
-              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Kelganlar</span>
-              <p className="text-lg font-black text-emerald-700 dark:text-emerald-300 mt-0.5">{presentCount}</p>
+
+            {/* 2. Kelganlar */}
+            <div 
+              onClick={() => setAttendanceFilter(prev => prev === 'present' ? 'all' : 'present')}
+              className={`p-3 rounded-xl border transition-all cursor-pointer select-none relative group ${
+                attendanceFilter === 'present'
+                  ? 'bg-emerald-100/80 dark:bg-emerald-950/70 border-emerald-500 dark:border-emerald-500 shadow-md ring-2 ring-emerald-500/30'
+                  : 'bg-white dark:bg-slate-900 border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-950/20 hover:border-emerald-300 dark:hover:border-emerald-800 shadow-2xs hover:scale-[1.01]'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">Kelganlar</span>
+                {attendanceFilter === 'present' ? (
+                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-600 text-white">Faol</span>
+                ) : (
+                  <span className="text-[10px] text-emerald-500 opacity-70 group-hover:opacity-100">Filtr ↵</span>
+                )}
+              </div>
+              <p className="text-xl font-black text-emerald-700 dark:text-emerald-300 mt-1">{presentStudents.length}</p>
+              <div className="mt-1 flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                <span>{attendanceFilter === 'present' ? 'Filtrni yopish' : 'Faqat kelganlar'}</span>
+              </div>
             </div>
-            <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50/20 dark:bg-rose-950/20 shadow-2xs">
-              <span className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">Kelmaganlar</span>
-              <p className="text-lg font-black text-rose-700 dark:text-rose-300 mt-0.5">{absentRecords.length}</p>
+
+            {/* 3. Kelmaganlar */}
+            <div 
+              onClick={() => setAttendanceFilter(prev => prev === 'absent' ? 'all' : 'absent')}
+              className={`p-3 rounded-xl border transition-all cursor-pointer select-none relative group ${
+                attendanceFilter === 'absent'
+                  ? 'bg-rose-100/80 dark:bg-rose-950/70 border-rose-500 dark:border-rose-500 shadow-md ring-2 ring-rose-500/30'
+                  : 'bg-white dark:bg-slate-900 border-rose-200 dark:border-rose-900/40 bg-rose-50/20 dark:bg-rose-950/20 hover:border-rose-300 dark:hover:border-rose-800 shadow-2xs hover:scale-[1.01]'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold">Kelmaganlar</span>
+                {attendanceFilter === 'absent' ? (
+                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-600 text-white">Faol</span>
+                ) : (
+                  <span className="text-[10px] text-rose-500 opacity-70 group-hover:opacity-100">Filtr ↵</span>
+                )}
+              </div>
+              <p className="text-xl font-black text-rose-700 dark:text-rose-300 mt-1">{absentStudents.length}</p>
+              <div className="mt-1 flex items-center gap-1 text-[10px] text-rose-600 dark:text-rose-400 font-medium">
+                <span>{attendanceFilter === 'absent' ? 'Filtrni yopish' : 'Faqat kelmaganlar'}</span>
+              </div>
             </div>
-            <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/20 dark:bg-amber-950/20 shadow-2xs">
-              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">Kechikkanlar</span>
-              <p className="text-lg font-black text-amber-700 dark:text-amber-300 mt-0.5">{lateRecords.length}</p>
+
+            {/* 4. Kechikkanlar */}
+            <div 
+              onClick={() => setAttendanceFilter(prev => prev === 'late' ? 'all' : 'late')}
+              className={`p-3 rounded-xl border transition-all cursor-pointer select-none relative group ${
+                attendanceFilter === 'late'
+                  ? 'bg-amber-100/80 dark:bg-amber-950/70 border-amber-500 dark:border-amber-500 shadow-md ring-2 ring-amber-500/30'
+                  : 'bg-white dark:bg-slate-900 border-amber-200 dark:border-amber-900/40 bg-amber-50/20 dark:bg-amber-950/20 hover:border-amber-300 dark:hover:border-amber-800 shadow-2xs hover:scale-[1.01]'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">Kechikkanlar</span>
+                {attendanceFilter === 'late' ? (
+                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-600 text-white">Faol</span>
+                ) : (
+                  <span className="text-[10px] text-amber-500 opacity-70 group-hover:opacity-100">Filtr ↵</span>
+                )}
+              </div>
+              <p className="text-xl font-black text-amber-700 dark:text-amber-300 mt-1">{lateStudents.length}</p>
+              <div className="mt-1 flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                <span>{attendanceFilter === 'late' ? 'Filtrni yopish' : 'Faqat kechikkanlar'}</span>
+              </div>
             </div>
+
           </div>
 
           {/* Kelmaganlar haqida tezkor ogohlantirish */}
-          {absentRecords.length > 0 && (
+          {absentStudents.length > 0 && (
             <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 rounded-xl p-3 transition-colors">
-              <div className="flex items-center gap-1.5 text-rose-800 dark:text-rose-300 text-xs font-bold mb-2">
-                <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-                <span>Bugun {absentRecords.length} nafar o'quvchi darsga kelmadi:</span>
+              <div className="flex items-center justify-between gap-1.5 text-rose-800 dark:text-rose-300 text-xs font-bold mb-2">
+                <div className="flex items-center gap-1.5">
+                  <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                  <span>Bugun {absentStudents.length} nafar o'quvchi darsga kelmadi:</span>
+                </div>
+                <button
+                  onClick={() => setAttendanceFilter('absent')}
+                  className="text-[11px] font-bold text-rose-700 dark:text-rose-400 hover:underline cursor-pointer"
+                >
+                  Ro'yxatda ko'rish →
+                </button>
               </div>
 
               <div className="space-y-2">
-                {absentRecords.map(rec => {
-                  const st = myStudents.find(s => s.id === rec.studentId);
-                  if (!st) return null;
-
+                {absentStudents.map(st => {
                   return (
                     <div key={st.id} className="bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-rose-200 dark:border-rose-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-colors">
                       <div className="min-w-0 flex items-center gap-2.5">
@@ -351,27 +537,29 @@ export const ClassTeacherView = () => {
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{st.fullName || st.name}</span>
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 rounded">
-                              {rec.reason || 'Sababsiz'}
+                              {st.reason || 'Sababsiz'}
                             </span>
                           </div>
                           <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1 truncate">
                             <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span className="truncate">{rec.customAddress || st.address || 'Manzil kiritilmagan'}</span>
+                            <span className="truncate">{st.address || 'Manzil kiritilmagan'}</span>
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-                        <a
-                          href={`tel:${st.parentPhone || st.phone}`}
-                          className="px-2.5 py-1 text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-md border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 transition-colors"
-                          title={formatPhoneNumber(st.parentPhone || st.phone)}
-                        >
-                          <Phone className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                          <span>{formatPhoneNumber(st.parentPhone || st.phone) || "Qo'ng'iroq"}</span>
-                        </a>
+                        {(st.parentPhone || st.phone) && (
+                          <a
+                            href={`tel:${st.parentPhone || st.phone}`}
+                            className="px-2.5 py-1 text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-md border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 transition-colors"
+                            title={formatPhoneNumber(st.parentPhone || st.phone)}
+                          >
+                            <Phone className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                            <span>{formatPhoneNumber(st.parentPhone || st.phone) || "Qo'ng'iroq"}</span>
+                          </a>
+                        )}
                         <button
-                          onClick={() => handleOpenAttendanceEdit(st, rec)}
+                          onClick={() => handleOpenAttendanceEdit(st, st.rec)}
                           className="px-2 py-1 text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md flex items-center gap-1 transition-colors"
                         >
                           <Edit2 className="w-3 h-3" />
@@ -387,63 +575,107 @@ export const ClassTeacherView = () => {
 
           {/* Sinf O'quvchilari Davomati Ro'yxati */}
           <div className="bg-white dark:bg-slate-900 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-800 transition-colors shadow-2xs">
-            <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-xs font-bold text-slate-800 dark:text-white">
-                {myClass.name} sinf davomat ro'yxati ({myStudents.length} nafar o'quvchi)
-              </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                Xona: <b className="text-slate-700 dark:text-slate-300">{myClass.room}</b>
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 mb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-slate-800 dark:text-white">
+                  {myClass.name} sinf davomat ro'yxati ({displayedAttendanceStudents.length} / {totalCount} nafar o'quvchi)
+                </span>
+                {attendanceFilter !== 'all' && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    attendanceFilter === 'present'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                      : attendanceFilter === 'absent'
+                      ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                      : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                  }`}>
+                    {attendanceFilter === 'present' && '✓ Faqat kelganlar'}
+                    {attendanceFilter === 'absent' && '✗ Faqat kelmaganlar'}
+                    {attendanceFilter === 'late' && '⏰ Faqat kechikkanlar'}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {attendanceFilter !== 'all' && (
+                  <button
+                    onClick={() => setAttendanceFilter('all')}
+                    className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    ✕ Barchasini ko'rsatish
+                  </button>
+                )}
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                  Sana: <b className="text-slate-700 dark:text-slate-300">{todayStr}</b>
+                </span>
+              </div>
             </div>
 
             <div className="space-y-1.5">
-              {myStudents.map((st, idx) => {
-                const rec = myAttendance?.records?.find(r => r.studentId === st.id);
-                const isAbsent = rec?.status === 'absent';
-                const isLate = rec?.status === 'late';
-
-                return (
-                  <div
-                    key={st.id}
-                    className="p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              {displayedAttendanceStudents.length === 0 ? (
+                <div className="text-center py-8 text-xs text-slate-400">
+                  Ushbu filtr bo'yicha hech qanday o'quvchi topilmadi.
+                  <button 
+                    onClick={() => setAttendanceFilter('all')} 
+                    className="block mx-auto mt-2 text-blue-600 dark:text-blue-400 underline font-bold cursor-pointer"
                   >
-                    <div className="min-w-0 flex items-center gap-2.5">
-                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 w-5 shrink-0 text-center">{idx + 1}.</span>
-                      <StudentAvatar student={st} effectiveBaseUrl={effectiveBaseUrl} size="w-8 h-8" />
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate block">{st.fullName || st.name}</span>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate block">
-                          {st.address || "Manzil ko'rsatilmagan"}
-                        </span>
+                    Barcha o'quvchilarni ko'rsatish
+                  </button>
+                </div>
+              ) : (
+                displayedAttendanceStudents.map((st, idx) => {
+                  const isAbsent = st.status === 'absent';
+                  const isLate = st.status === 'late';
+                  const isPresent = st.status === 'present';
+
+                  return (
+                    <div
+                      key={st.id}
+                      className="p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                    >
+                      <div className="min-w-0 flex items-center gap-2.5">
+                        <span className="text-xs font-bold text-slate-400 dark:text-slate-500 w-5 shrink-0 text-center">{idx + 1}.</span>
+                        <StudentAvatar student={st} effectiveBaseUrl={effectiveBaseUrl} size="w-8 h-8" />
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-slate-900 dark:text-white truncate block">{st.fullName || st.name}</span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate block">
+                            {st.address || "Manzil ko'rsatilmagan"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {st.inTime && (
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono hidden sm:inline">
+                            {st.inTime}
+                          </span>
+                        )}
+
+                        {isAbsent ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 rounded">
+                            Kelmadi {st.reason ? `(${st.reason})` : ''}
+                          </span>
+                        ) : isLate ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded">
+                            Kechikdi {st.inTime ? `(${st.inTime})` : ''}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 rounded">
+                            Kelgan {st.inTime ? `(${st.inTime})` : ''}
+                          </span>
+                        )}
+
+                        <button
+                          onClick={() => handleOpenAttendanceEdit(st, st.rec)}
+                          className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+                          title="Davomat holatini o'zgartirish"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {isAbsent ? (
-                        <span className="text-[10px] font-bold px-2 py-0.5 bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 rounded">
-                          Kelmadi
-                        </span>
-                      ) : isLate ? (
-                        <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded">
-                          Kechikdi
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 rounded">
-                          Kelgan
-                        </span>
-                      )}
-
-                      <button
-                        onClick={() => handleOpenAttendanceEdit(st, rec)}
-                        className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-                        title="Davomat holatini o'zgartirish"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -598,7 +830,7 @@ export const ClassTeacherView = () => {
                   {myClass.name} sinfining haftalik dars jadvali
                 </h3>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Jami darslar soni: <b className="text-slate-800 dark:text-slate-200">{mySchedules.length} ta</b> • Xona: <b className="text-slate-800 dark:text-slate-200">{myClass.room}</b>
+                  Jami darslar soni: <b className="text-slate-800 dark:text-slate-200">{mySchedules.length} ta</b>
                 </p>
               </div>
             </div>
@@ -679,9 +911,6 @@ export const ClassTeacherView = () => {
                                         </span>
                                       )}
                                     </div>
-                                    <div className="text-[10px] text-slate-400 dark:text-slate-500">
-                                      Xona: {myClass.room}
-                                    </div>
                                   </div>
                                 ) : (
                                   <div className="h-14 flex items-center justify-center text-slate-300 dark:text-slate-700 text-xs">
@@ -755,8 +984,6 @@ export const ClassTeacherView = () => {
                             <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
                               <Clock className="w-3 h-3 text-slate-400" />
                               <span>{lesson.time || `${lesson.lessonOrder}-soat`}</span>
-                              <span>•</span>
-                              <span>Xona: {myClass.room}</span>
                             </p>
                           </div>
                         </div>
