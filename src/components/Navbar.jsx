@@ -184,44 +184,17 @@ export const Navbar = () => {
           {/* O'ng tomon: Mavzu, Bildirishnoma, Foydalanuvchi ismi va Chiqish */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             
-            {/* Tarmoq holati nishoni (Lokal Wi-Fi vs Global Bulut) */}
+            {/* Tarmoq holati nishoni (100% Global Jonli Rejim) */}
             <div 
-              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
-                isLocalConnected
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-                  : isSchoolLocalOnline
-                    ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
-                    : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700'
-              }`}
-              title={
-                isLocalConnected 
-                  ? "Maktab lokal serveriga to'g'ridan-to'g'ri ulangan (Ko'prik profili faol)" 
-                  : isSchoolLocalOnline 
-                    ? `Global Bulut rejimida (Maktabdagi ${localBridgeInfo?.bridged_by || 'profil'} orqali jonli bog'langan)` 
-                    : "Global Bulut rejimida (Maktab lokal tarmog'iga ulanish kutilmoqda)"
-              }
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+              title="Kameralar va Turniketlar Global Onlayn Holatda"
             >
-              {isLocalConnected ? (
-                <>
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <Wifi className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>Wi-Fi Lokal</span>
-                </>
-              ) : isSchoolLocalOnline ? (
-                <>
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <Cloud className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                  <span>Global Live</span>
-                </>
-              ) : (
-                <>
-                  <Cloud className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  <span>Global Bulut</span>
-                  <span className="text-[10px] bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 px-1 rounded font-semibold ml-0.5">
-                    Lokal kutilmoqda
-                  </span>
-                </>
-              )}
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <Cloud className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Global Live</span>
+              <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.2 rounded font-mono font-semibold ml-0.5">
+                Onlayn
+              </span>
             </div>
 
             {/* Dark / Light almashtirish tugmasi */}
