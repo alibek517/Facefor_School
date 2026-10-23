@@ -2044,6 +2044,88 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // 12.2 O'qituvchini saqlash (yoki yangilash) va fotosuratini Face-ID apparatlariga kiritish
+  if (pathname === '/api/school/save-teacher' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        let { teacher } = JSON.parse(body);
+        if (teacher) {
+          if (!Array.isArray(schoolDB.teachers)) schoolDB.teachers = [];
+          
+          let rawNum = parseInt(String(teacher.faceId || teacher.employeeNo || teacher.id || '').replace(/^t-/, '').replace(/\D/g, ''), 10);
+          if (isNaN(rawNum) || rawNum <= 0 || rawNum > 90000000) {
+            let maxEmp = 0;
+            (schoolDB.students || []).concat(schoolDB.teachers || []).forEach(p => {
+              const n = parseInt(String(p.studentId || p.faceId || p.employeeNo || p.id || '').replace(/^[st]-/, '').replace(/\D/g, ''), 10);
+              if (!isNaN(n) && n > maxEmp && n < 90000000) maxEmp = n;
+            });
+            rawNum = maxEmp + 1;
+          }
+          const empPadded = String(rawNum).padStart(8, '0');
+          teacher = {
+            ...teacher,
+            id: teacher.id || `t-${empPadded}`,
+            faceId: empPadded,
+            employeeNo: empPadded,
+            role: teacher.role || 'O\'qituvchi'
+          };
+
+          const existsIdx = schoolDB.teachers.findIndex(t => t.id === teacher.id || t.faceId === teacher.faceId);
+          if (existsIdx >= 0) {
+            schoolDB.teachers[existsIdx] = teacher;
+          } else {
+            schoolDB.teachers.unshift(teacher);
+          }
+          saveSchoolDB(schoolDB);
+          syncModuleToSupabase('teachers', schoolDB.teachers);
+          broadcastSSE('school_data_sync', schoolDB);
+          await syncStudentToHardware(existsIdx >= 0 ? 'update' : 'add', {
+            ...teacher,
+            role: 'teacher'
+          });
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true, message: "O'qituvchi saqlandi va Face-ID apparatiga yuklandi" }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 12.3 O'qituvchini o'chirish va Face-ID dan olib tashlash
+  if (pathname === '/api/school/delete-teacher' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { teacherId, employeeNo } = JSON.parse(body);
+        const empNoToDel = String(employeeNo || teacherId || '').replace(/^t-/, '');
+
+        if (schoolDB.teachers && Array.isArray(schoolDB.teachers)) {
+          schoolDB.teachers = schoolDB.teachers.filter(t => 
+            t.id !== teacherId && t.faceId !== teacherId && t.faceId !== empNoToDel && t.id !== `t-${empNoToDel}`
+          );
+          saveSchoolDB(schoolDB);
+          syncModuleToSupabase('teachers', schoolDB.teachers);
+          broadcastSSE('school_data_sync', schoolDB);
+        }
+
+        await syncStudentToHardware('delete', { id: teacherId, employeeNo: empNoToDel });
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true, message: "O'qituvchi bazadan va Face-ID dan o'chirildi" }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
   // 13. Face-ID O'quvchilarini XAVFSIZ SINXRONLASH (Smart Merge - Sinflar yoki o'zgarishlar o'chmaydi!)
   if (pathname === '/api/school/sync-face-students' && req.method === 'POST') {
     let baseList = schoolDB.students || [];

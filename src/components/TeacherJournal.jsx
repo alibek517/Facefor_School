@@ -233,18 +233,22 @@ export const TeacherJournal = () => {
 
           {/* O'qituvchi tanlash yoki Rejim almashtirish */}
           <div className="flex items-center gap-2">
-            {(currentUser?.isDirector || currentUser?.role === 'director' || teachers.length > 1) && (
+            {(currentUser?.isDirector || currentUser?.role === 'director' || teachers.length > 0) && (
               <select
                 value={currentTeacher?.id || ''}
                 onChange={(e) => setSelectedTeacherId && setSelectedTeacherId(e.target.value)}
                 className="text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 outline-none cursor-pointer"
                 title="O'qituvchi profilini tanlash"
               >
-                {teachers.map(t => (
-                  <option key={t.id} value={t.id}>
-                    👨‍🏫 {t.name} ({t.subject || 'O\'qituvchi'})
-                  </option>
-                ))}
+                {teachers.length === 0 ? (
+                  <option value="">O'qituvchilar mavjud emas (Yangi qo'shing)</option>
+                ) : (
+                  teachers.map(t => (
+                    <option key={t.id} value={t.id}>
+                      👨‍🏫 {t.name} ({t.subject || 'O\'qituvchi'})
+                    </option>
+                  ))
+                )}
               </select>
             )}
 

@@ -28,9 +28,11 @@ import {
   Check,
   GraduationCap,
   UserCheck,
-  Sparkles
+  Sparkles,
+  Camera
 } from 'lucide-react';
 import { StudentAvatar } from './StudentAvatar';
+import { compressImageBase64 } from '../utils/excelAndPromotion';
 
 export const SchoolSettings = () => {
   const { 
@@ -279,6 +281,7 @@ export const SchoolSettings = () => {
   const [tSubject, setTSubject] = useState('');
   const [tPhone, setTPhone] = useState('');
   const [tClassId, setTClassId] = useState('');
+  const [tPhoto, setTPhoto] = useState('');
 
   // Schedule modal
   const [schModal, setSchModal] = useState(false);
@@ -305,6 +308,7 @@ export const SchoolSettings = () => {
     setTSubject('');
     setTPhone('');
     setTClassId('');
+    setTPhoto('');
     setTeacherModal(true);
   };
 
@@ -314,6 +318,7 @@ export const SchoolSettings = () => {
     setTSubject(t.subject);
     setTPhone(formatPhoneNumber(t.phone || ''));
     setTClassId(t.classId || '');
+    setTPhoto(t.photo || t.photoUrl || t.faceURL || '');
     setTeacherModal(true);
   };
 
@@ -326,7 +331,9 @@ export const SchoolSettings = () => {
       subject: tSubject,
       phone: formatPhoneNumber(tPhone),
       classId: tClassId || null,
-      role: tClassId ? 'Sinf rahbari' : "Fan o'qituvchisi"
+      role: tClassId ? 'Sinf rahbari' : "Fan o'qituvchisi",
+      photo: tPhoto || null,
+      photoUrl: tPhoto || null
     };
 
     if (editTeacherId) {
@@ -1372,6 +1379,61 @@ export const SchoolSettings = () => {
             </div>
 
             <form onSubmit={handleTeacherSubmit} className="space-y-2.5">
+              {/* Face-ID Surat yuklash */}
+              <div className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 shrink-0 flex items-center justify-center relative">
+                  {tPhoto ? (
+                    <img src={tPhoto} alt="O'qituvchi yuzi" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                      <Camera className="w-5 h-5 text-slate-400" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Face-ID Surati:</span>
+                    <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">(Kamera uchun)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <label className="cursor-pointer px-2.5 py-1 text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-1 shadow-xs">
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>{tPhoto ? "O'zgartirish" : "Rasm tanlash"}</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        capture="user"
+                        className="hidden" 
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            try {
+                              const base64 = await compressImageBase64(file, 480, 0.85);
+                              setTPhoto(base64);
+                            } catch (err) {
+                              console.error(err);
+                            }
+                          }
+                        }} 
+                      />
+                    </label>
+                    {tPhoto && (
+                      <button
+                        type="button"
+                        onClick={() => setTPhoto('')}
+                        className="px-2 py-1 text-[11px] font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+                      >
+                        O'chirish
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[9px] text-slate-400 mt-1 leading-tight">
+                    O'qituvchining yuzi aniq ko'ringan fotosurat (Face-ID apparati tanishi uchun)
+                  </p>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-0.5">F.I.Sh:</label>
                 <input

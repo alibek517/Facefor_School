@@ -1527,30 +1527,82 @@ export const SchoolProvider = ({ children }) => {
     return formatted.length;
   };
 
-  // =================== CRUD: O'QITUVCHILAR ===================
+  // =================== CRUD: O'QITUVCHILAR (FACE-ID VA RASM BILAN) ===================
   const addTeacher = (teacherData) => {
+    let maxEmp = 0;
+    (students || []).concat(teachers || []).forEach(p => {
+      const num = parseInt(String(p.faceId || p.employeeNo || p.studentId || p.id || '').replace(/^[st]-/, ''), 10);
+      if (!isNaN(num) && num > maxEmp && num < 90000000) {
+        maxEmp = num;
+      }
+    });
+    const nextEmpNo = String(maxEmp + 1).padStart(8, '0');
+    const assignedEmpNo = teacherData.faceId || teacherData.employeeNo || nextEmpNo;
+
     const newTeacher = {
       ...teacherData,
-      id: 't-' + Date.now()
+      id: 't-' + assignedEmpNo,
+      faceId: assignedEmpNo,
+      employeeNo: assignedEmpNo,
+      photo: teacherData.photo || null,
+      photoUrl: teacherData.photoUrl || teacherData.photo || null
     };
+
     setTeachers(prev => {
       const next = [newTeacher, ...prev];
       saveToServer('teachers', next);
       return next;
     });
-    showToast('Qo\'shildi', 'Yangi o\'qituvchi serverga qo\'shildi.', 'success');
+
+    const targetUrl = getActiveBridgeUrl();
+    if (targetUrl) {
+      try {
+        fetch(`${targetUrl}/api/school/save-teacher`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teacher: newTeacher })
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    showToast('Qo\'shildi', 'Yangi o\'qituvchi saqlandi va Face-ID ga kiritildi.', 'success');
   };
 
   const updateTeacher = (teacherId, updatedData) => {
+    let updatedTeacherObj = null;
     setTeachers(prev => {
-      const next = prev.map(t => t.id === teacherId ? { ...t, ...updatedData } : t);
+      const next = prev.map(t => {
+        if (t.id === teacherId) {
+          updatedTeacherObj = { 
+            ...t, 
+            ...updatedData,
+            photo: updatedData.photo !== undefined ? updatedData.photo : t.photo,
+            photoUrl: updatedData.photoUrl !== undefined ? updatedData.photoUrl : (updatedData.photo !== undefined ? updatedData.photo : t.photoUrl)
+          };
+          return updatedTeacherObj;
+        }
+        return t;
+      });
       saveToServer('teachers', next);
       return next;
     });
-    showToast('Yangilandi', 'O\'qituvchi ma\'lumotlari yangilandi.', 'info');
+
+    const targetUrl = getActiveBridgeUrl();
+    if (targetUrl && updatedTeacherObj) {
+      try {
+        fetch(`${targetUrl}/api/school/save-teacher`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teacher: updatedTeacherObj })
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    showToast('Yangilandi', 'O\'qituvchi ma\'lumotlari va Face-ID surati yangilandi.', 'info');
   };
 
   const deleteTeacher = (teacherId) => {
+    const teacherToDelete = (teachers || []).find(t => t.id === teacherId);
     setTeachers(prev => {
       const next = prev.filter(t => t.id !== teacherId);
       saveToServer('teachers', next);
@@ -1561,7 +1613,19 @@ export const SchoolProvider = ({ children }) => {
       saveToServer('schedules', next);
       return next;
     });
-    showToast('O\'chirildi', 'O\'qituvchi o\'chirildi.', 'info');
+
+    const targetUrl = getActiveBridgeUrl();
+    if (targetUrl && teacherToDelete) {
+      try {
+        fetch(`${targetUrl}/api/school/delete-teacher`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teacherId: teacherToDelete.id, employeeNo: teacherToDelete.employeeNo || teacherToDelete.faceId })
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    showToast('O\'chirildi', 'O\'qituvchi tizimdan va Face-ID dan o\'chirildi.', 'info');
   };
 
   // =================== CRUD: DARS FANLARI / JADVAL ===================
