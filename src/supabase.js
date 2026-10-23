@@ -3,6 +3,22 @@ import { createClient } from '@supabase/supabase-js';
 export const SUPABASE_URL = 'https://ffwbxpqfzlkevxhijvtd.supabase.co';
 export const SUPABASE_KEY = 'sb_publishable_IN4OpUU6gNpnZINpifQSAg_DZuksmMD';
 
+let isSupabaseQuotaExceeded = false;
+
+export function checkQuota(error) {
+  if (!error) return false;
+  const msg = String(error.message || '');
+  const status = error.status || error.code;
+  if (status === 402 || msg.includes('exceed_egress_quota') || msg.includes('restricted')) {
+    if (!isSupabaseQuotaExceeded) {
+      isSupabaseQuotaExceeded = true;
+      console.warn('[SUPABASE] Egress kvotasi tugagan (402). Tizim lokal ko\'prik va tunnel orqali uzluksiz ishlamoqda.');
+    }
+    return true;
+  }
+  return false;
+}
+
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: false,
@@ -19,14 +35,17 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
  * Supabase ulanish holatini tekshirish
  */
 export async function checkSupabaseConnection() {
+  if (isSupabaseQuotaExceeded) return { connected: false, error: 'Quota exceeded', schoolDataReady: false };
   try {
     const { error: camError } = await supabase.from('camera_settings').select('id').limit(1);
     if (camError) {
+      checkQuota(camError);
       return { connected: false, error: camError.message, schoolDataReady: false };
     }
 
     const { data: sData, error: sError } = await supabase.from('school_data').select('key').limit(10);
     if (sError) {
+      checkQuota(sError);
       return { 
         connected: true, 
         schoolDataReady: false, 
@@ -40,6 +59,7 @@ export async function checkSupabaseConnection() {
       keysCount: sData?.length || 0 
     };
   } catch (e) {
+    checkQuota(e);
     return { connected: false, error: e.message, schoolDataReady: false };
   }
 }
@@ -48,13 +68,16 @@ export async function checkSupabaseConnection() {
  * Supabase dan barcha maktab ma'lumotlarini yuklab olish
  */
 export async function loadAllSchoolDataFromSupabase() {
+  if (isSupabaseQuotaExceeded) return null;
   try {
     const { data, error } = await supabase
       .from('school_data')
       .select('*');
 
     if (error) {
-      console.warn('[SUPABASE] school_data o\'qishda xatolik:', error.message);
+      if (!checkQuota(error)) {
+        console.warn('[SUPABASE] school_data o\'qishda xatolik:', error.message);
+      }
       return null;
     }
 
@@ -68,7 +91,9 @@ export async function loadAllSchoolDataFromSupabase() {
     }
     return result;
   } catch (err) {
-    console.error('[SUPABASE] Tarmoq xatosi:', err);
+    if (!checkQuota(err)) {
+      console.error('[SUPABASE] Tarmoq xatosi:', err);
+    }
     return null;
   }
 }
@@ -77,6 +102,7 @@ export async function loadAllSchoolDataFromSupabase() {
  * Supabase ga aniq bir modulni (masalan: students, classes, attendanceList) saqlash
  */
 export async function saveModuleToSupabase(key, data) {
+  if (isSupabaseQuotaExceeded) return false;
   try {
     const { error } = await supabase
       .from('school_data')
@@ -87,12 +113,16 @@ export async function saveModuleToSupabase(key, data) {
       }, { onConflict: 'key' });
 
     if (error) {
-      console.warn(`[SUPABASE] ${key} saqlashda xatolik:`, error.message);
+      if (!checkQuota(error)) {
+        console.warn(`[SUPABASE] ${key} saqlashda xatolik:`, error.message);
+      }
       return false;
     }
     return true;
   } catch (err) {
-    console.warn(`[SUPABASE] ${key} saqlashda tarmoq xatosi:`, err);
+    if (!checkQuota(err)) {
+      console.warn(`[SUPABASE] ${key} saqlashda tarmoq xatosi:`, err);
+    }
     return false;
   }
 }
@@ -101,6 +131,7 @@ export async function saveModuleToSupabase(key, data) {
  * Supabase dan maktab lokal serverining oxirgi faollik (heartbeat) holatini olish
  */
 export async function getLocalStatusFromSupabase() {
+  if (isSupabaseQuotaExceeded) return null;
   try {
     const { data, error } = await supabase
       .from('school_data')
@@ -108,9 +139,14 @@ export async function getLocalStatusFromSupabase() {
       .eq('key', 'local_status')
       .maybeSingle();
 
-    if (error || !data || !data.data) return null;
+    if (error) {
+      checkQuota(error);
+      return null;
+    }
+    if (!data || !data.data) return null;
     return data.data;
   } catch (e) {
+    checkQuota(e);
     return null;
   }
 }
@@ -119,14 +155,20 @@ export async function getLocalStatusFromSupabase() {
  * Supabase dan kameralar sozlamasini yuklab olish
  */
 export async function loadCamerasFromSupabase() {
+  if (isSupabaseQuotaExceeded) return null;
   try {
     const { data, error } = await supabase
       .from('camera_settings')
       .select('*');
 
-    if (error || !data || data.length === 0) return null;
+    if (error) {
+      checkQuota(error);
+      return null;
+    }
+    if (!data || data.length === 0) return null;
     return data;
   } catch (err) {
+    checkQuota(err);
     return null;
   }
 }
@@ -135,6 +177,7 @@ export async function loadCamerasFromSupabase() {
  * Supabase ga kameralar sozlamasini saqlash
  */
 export async function saveCamerasToSupabase(cameras) {
+  if (isSupabaseQuotaExceeded) return false;
   try {
     const rows = cameras.map((c, idx) => ({
       id: c.id,
@@ -153,12 +196,16 @@ export async function saveCamerasToSupabase(cameras) {
     await saveModuleToSupabase('cameras', cameras);
 
     if (error) {
-      console.warn('[SUPABASE] Kameralarni saqlashda xatolik:', error.message);
+      if (!checkQuota(error)) {
+        console.warn('[SUPABASE] Kameralarni saqlashda xatolik:', error.message);
+      }
       return false;
     }
     return true;
   } catch (err) {
-    console.warn('[SUPABASE] Kameralar tarmoq xatosi:', err);
+    if (!checkQuota(err)) {
+      console.warn('[SUPABASE] Kameralar tarmoq xatosi:', err);
+    }
     return false;
   }
 }
@@ -167,6 +214,7 @@ export async function saveCamerasToSupabase(cameras) {
  * Face skanini Supabase face_scans jadvaliga kiritish
  */
 export async function insertFaceScanToSupabase(scan) {
+  if (isSupabaseQuotaExceeded) return false;
   try {
     const { error } = await supabase
       .from('face_scans')
@@ -181,10 +229,12 @@ export async function insertFaceScanToSupabase(scan) {
       }]);
 
     if (error) {
+      checkQuota(error);
       return false;
     }
     return true;
   } catch (e) {
+    checkQuota(e);
     return false;
   }
 }
@@ -193,6 +243,7 @@ export async function insertFaceScanToSupabase(scan) {
  * Bugungi Face-ID o'tishlarini Supabase dan yuklab olish
  */
 export async function loadTodayFaceScansFromSupabase(dateStr) {
+  if (isSupabaseQuotaExceeded) return [];
   try {
     const today = dateStr || new Date().toISOString().split('T')[0];
     const { data, error } = await supabase
@@ -203,7 +254,11 @@ export async function loadTodayFaceScansFromSupabase(dateStr) {
       .order('id', { ascending: false })
       .limit(2000);
 
-    if (error || !data) return [];
+    if (error) {
+      checkQuota(error);
+      return [];
+    }
+    if (!data) return [];
     return data.map(row => ({
       id: `scan-cloud-${row.id}`,
       employeeNo: row.employee_no,
@@ -216,6 +271,7 @@ export async function loadTodayFaceScansFromSupabase(dateStr) {
       serialNo: row.id
     }));
   } catch (e) {
+    checkQuota(e);
     return [];
   }
 }
@@ -224,6 +280,7 @@ export async function loadTodayFaceScansFromSupabase(dateStr) {
  * 6 ta kameraning oxirgi bulut kadrlarini Supabase dan olish
  */
 export async function getLatestCameraFramesFromSupabase() {
+  if (isSupabaseQuotaExceeded) return {};
   try {
     const { data, error } = await supabase
       .from('school_data')
@@ -231,10 +288,15 @@ export async function getLatestCameraFramesFromSupabase() {
       .eq('key', 'camera_latest_frames')
       .maybeSingle();
 
-    if (error || !data || !data.data) return null;
+    if (error) {
+      checkQuota(error);
+      return {};
+    }
+    if (!data || !data.data) return {};
     return data.data;
   } catch (e) {
-    return null;
+    checkQuota(e);
+    return {};
   }
 }
 

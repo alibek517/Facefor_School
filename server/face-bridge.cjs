@@ -253,7 +253,20 @@ const SUPABASE_CONFIG = {
   KEY: 'sb_publishable_IN4OpUU6gNpnZINpifQSAg_DZuksmMD'
 };
 
+let isSupabaseDisabled = false;
+function checkSupabaseRes(res) {
+  if (res && (res.status === 402 || res.status === 403)) {
+    if (!isSupabaseDisabled) {
+      isSupabaseDisabled = true;
+      console.warn('[SUPABASE] Egress kvotasi tugagan (402). Tizim lokal ko\'prik va tunnel orqali uzluksiz ishlamoqda.');
+    }
+    return true;
+  }
+  return false;
+}
+
 async function syncCamerasToSupabase(camerasList) {
+  if (isSupabaseDisabled) return;
   try {
     const payload = camerasList.map(c => ({
       id: c.id,
@@ -275,6 +288,8 @@ async function syncCamerasToSupabase(camerasList) {
       body: JSON.stringify(payload)
     });
 
+    if (checkSupabaseRes(res)) return;
+
     if (res.ok) {
       console.log('[SUPABASE] 6 ta kamera yo\'nalishlari Supabase bulutiga saqlandi.');
     }
@@ -282,6 +297,7 @@ async function syncCamerasToSupabase(camerasList) {
 }
 
 async function loadCamerasFromSupabase() {
+  if (isSupabaseDisabled) return;
   try {
     const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/camera_settings?select=*`, {
       headers: {
@@ -289,6 +305,7 @@ async function loadCamerasFromSupabase() {
         'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`
       }
     });
+    if (checkSupabaseRes(res)) return;
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
@@ -312,8 +329,9 @@ async function loadCamerasFromSupabase() {
 }
 
 async function syncModuleToSupabase(key, data) {
+  if (isSupabaseDisabled) return;
   try {
-    await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/school_data`, {
+    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/school_data`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_CONFIG.KEY,
@@ -323,6 +341,7 @@ async function syncModuleToSupabase(key, data) {
       },
       body: JSON.stringify({ key, data, updated_at: new Date().toISOString() })
     });
+    checkSupabaseRes(res);
   } catch (err) {}
 }
 
@@ -604,6 +623,7 @@ function detectAndSyncStudentDifferences(oldStudents, newStudents) {
 }
 
 async function loadSchoolDataFromSupabase() {
+  if (isSupabaseDisabled) return;
   try {
     const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/school_data?select=*`, {
       headers: {
@@ -611,6 +631,7 @@ async function loadSchoolDataFromSupabase() {
         'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`
       }
     });
+    if (checkSupabaseRes(res)) return;
     if (res.ok) {
       const rows = await res.json();
       if (Array.isArray(rows) && rows.length > 0) {
@@ -660,8 +681,9 @@ async function loadSchoolDataFromSupabase() {
 }
 
 async function logScanToSupabase(scan) {
+  if (isSupabaseDisabled) return;
   try {
-    await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/face_scans`, {
+    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/face_scans`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_CONFIG.KEY,
@@ -678,6 +700,7 @@ async function logScanToSupabase(scan) {
         created_at: new Date().toISOString()
       })
     });
+    checkSupabaseRes(res);
   } catch (err) {}
 }
 
@@ -700,6 +723,7 @@ if (schoolDB.cameras && Array.isArray(schoolDB.cameras) && schoolDB.cameras.leng
 
 // 2. Supabase bulutidan ham tekshirib olish va har 10 soniyada sinxronizatsiya qilib turish
 async function sendHeartbeatToSupabase() {
+  if (isSupabaseDisabled) return;
   try {
     const onlineCameras = CAMERAS.filter(c => c.online).length;
     const isBridgeConnected = onlineCameras > 0;
@@ -718,6 +742,7 @@ async function sendHeartbeatToSupabase() {
 }
 
 async function loadRecentScansFromSupabase() {
+  if (isSupabaseDisabled) return;
   try {
     const today = new Date().toISOString().split('T')[0];
     const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/face_scans?created_at=gte.${today}T00:00:00&order=id.desc&limit=1000`, {
@@ -726,6 +751,7 @@ async function loadRecentScansFromSupabase() {
         'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`
       }
     });
+    if (checkSupabaseRes(res)) return;
     if (res.ok) {
       const rows = await res.json();
       if (Array.isArray(rows) && rows.length > 0) {

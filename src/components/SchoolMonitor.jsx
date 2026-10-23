@@ -208,6 +208,7 @@ export const SchoolMonitor = () => {
   const totalStudents = classStats.reduce((sum, c) => sum + c.totalCount, 0) || students.length || 1;
   const totalStudentsInside = classStats.reduce((sum, c) => sum + (c.presentCount || 0), 0);
   const totalStudentsArrived = classStats.reduce((sum, c) => sum + (c.arrivedCount || 0), 0);
+  const totalStudentsPresent = totalStudentsInside;
   // Bugun umuman yuzi tushmaganlar
   const totalStudentsAbsent = Math.max(0, totalStudents - totalStudentsArrived);
   const totalStudentsPercent = totalStudents > 0 

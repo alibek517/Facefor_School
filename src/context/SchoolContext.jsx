@@ -894,8 +894,9 @@ export const SchoolProvider = ({ children }) => {
           } else {
             isChannelSubscribedRef.current = false;
             if (status === 'CHANNEL_ERROR') {
-              // Internet yoki DNS uzilishida jim ogohlantirish (tizim lokal rejimda ishlayveradi)
-              console.warn('[SUPABASE REALTIME] Tarmoq kutilyapti, qayta ulanish davom etmoqda...');
+              if (err && (String(err).includes('402') || String(err.message || '').includes('402'))) {
+                try { supabase.removeChannel(channel); } catch (e) {}
+              }
             }
           }
         });
