@@ -35,12 +35,12 @@ echo [3/3] Tizim to'liq ulanishi uchun 3 soniya kutilmoqda...
 timeout /t 3 /nobreak >nul
 
 echo.
-echo Foye monitori brauzerda ochilmoqda...
-start http://localhost:5001/monitor
+echo Tizim brauzerda ochilmoqda...
+start http://localhost:5001/
 
 echo.
 echo =======================================================
 echo  TIZIM MUVAFFAQIYATLI ISHGA TUSHDI!
-echo  6 ta Face-ID kamerasi faol va o'tishlar qabul qilinmoqda.
+echo  Turniket kameralari faol va o'tishlar qabul qilinmoqda.
 echo  Ushbu oynani yopmasdan minimallashtirib qo'yishingiz mumkin.
 echo =======================================================

@@ -104,6 +104,8 @@ let CAMERAS = [
   { id: 'cam-5', ip: '192.168.1.33', type: 'in', name: 'Turniket 5 (Kirish)', location: 'Chiqish yo\'lagi (2)', online: false, lastEvent: null },
 ];
 
+var activeCameraWorkers = new Set();
+
 // Suratlar keshi papkasi
 const PHOTO_CACHE_DIR = path.join(__dirname, 'photo_cache');
 if (!fs.existsSync(PHOTO_CACHE_DIR)) {
@@ -1384,7 +1386,6 @@ async function syncLatestFramesToSupabase() {
 }
 
 // Har bir kamera uchun alohida, mustaqil va uzluksiz video oqim aylanishi (~2.5 FPS)
-const activeCameraWorkers = new Set();
 function startCameraWorker(cam) {
   if (!cam || !cam.ip || activeCameraWorkers.has(cam.ip)) return;
   activeCameraWorkers.add(cam.ip);
