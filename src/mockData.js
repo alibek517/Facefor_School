@@ -10,6 +10,8 @@ export const DAYS_OF_WEEK = [
 ];
 
 export const AVAILABLE_PERMISSIONS = [
+  { key: 'bigadmin', label: 'Big Admin Paneli', desc: 'Barcha maktablar va turniketlarni to\'liq boshqarish' },
+  { key: 'schools', label: 'Maktablar Boshqaruvi', desc: 'Yangi maktablar ochish va turniketlar biriktirish' },
   { key: 'dashboard', label: 'Direktor Monitoring Paneli', desc: 'Davomat tahlili, sinflar matritsasi va grafiklar' },
   { key: 'cameras', label: 'Turniket Kameralari (Jonli)', desc: '6 ta turniket kamerasini jonli kuzatish' },
   { key: 'playback', label: 'Kameralar Arxivi (Playback)', desc: 'Kameralarni ortga qaytarib tomosha qilish' },
@@ -119,7 +121,43 @@ export const SCHOOL_LEADERSHIP = [
   }
 ];
 
+export const INITIAL_SCHOOLS = [
+  {
+    id: 'sch-1',
+    name: "1-sonli ixtisoslashtirilgan umumta'lim maktabi",
+    code: "SCH-001",
+    address: "Urganch shahri, Al-Xorazmiy ko'chasi 12",
+    phone: "+998 90 123 45 67",
+    director: "Yaxshimuratov Otabek Yuldashevich",
+    status: "active",
+    createdAt: "2026-10-01T08:00:00.000Z",
+    turnstiles: [
+      { id: 'cam-1', schoolId: 'sch-1', ip: '192.168.1.35', name: 'Turniket 1 (Chiqish)', type: 'out', location: 'Bosh kirish eshigi (1)', online: true },
+      { id: 'cam-6', schoolId: 'sch-1', ip: '192.168.1.13', name: 'Turniket 6 (Chiqish)', type: 'out', location: 'Chiqish yo\'lagi (3)', online: true },
+      { id: 'cam-2', schoolId: 'sch-1', ip: '192.168.1.32', name: 'Turniket 2 (Chiqish)', type: 'out', location: 'Bosh kirish eshigi (2)', online: true },
+      { id: 'cam-3', schoolId: 'sch-1', ip: '192.168.1.36', name: 'Turniket 3 (Kirish)', type: 'in', location: 'Bosh kirish eshigi (3)', online: true },
+      { id: 'cam-4', schoolId: 'sch-1', ip: '192.168.1.86', name: 'Turniket 4 (Kirish)', type: 'in', location: 'Chiqish yo\'lagi (1)', online: true },
+      { id: 'cam-5', schoolId: 'sch-1', ip: '192.168.1.33', name: 'Turniket 5 (Kirish)', type: 'in', location: 'Chiqish yo\'lagi (2)', online: true }
+    ]
+  },
+  {
+    id: 'sch-2',
+    name: "21-sonli umumiy o'rta ta'lim maktabi",
+    code: "SCH-021",
+    address: "Urganch shahri, Amir Temur ko'chasi 45",
+    phone: "+998 91 345 67 89",
+    director: "Karimov Anvar Rashidovich",
+    status: "active",
+    createdAt: "2026-10-15T08:00:00.000Z",
+    turnstiles: [
+      { id: 'cam-21-1', schoolId: 'sch-2', ip: '192.168.2.10', name: 'Turniket 1 (Bosh kirish)', type: 'in', location: 'Bosh kirish eshigi', online: false },
+      { id: 'cam-21-2', schoolId: 'sch-2', ip: '192.168.2.11', name: 'Turniket 2 (Chiqish)', type: 'out', location: 'Chiqish yo\'lagi', online: false }
+    ]
+  }
+];
+
 export const USERS_AUTH = [
+  { id: 'u-bigadmin', login: 'bigadmin', password: '123', role: 'bigadmin', name: 'Bosh Administrator (BigAdmin)', detail: 'Tizim Boshqaruvi & Barcha Maktablar', isBigAdmin: true, isDirector: true, permissions: ['bigadmin', 'schools', 'dashboard', 'cameras', 'playback', 'students', 'teachers', 'leadership', 'classes', 'schedules', 'attendance_control', 'class_attendance', 'notifications', 'settings'] },
   { id: 'u-dir', login: 'direktor', password: '123', role: 'director', name: 'Maktab Direktori', detail: 'Maktab Rahbariyati', isDirector: true, permissions: ['dashboard', 'cameras', 'playback', 'students', 'teachers', 'leadership', 'classes', 'schedules', 'attendance_control', 'class_attendance', 'notifications', 'settings'] },
   { id: 'u-zam1', login: 'zamdirektor', password: '123', role: 'director', name: 'Direktor o\'rinbosari', detail: 'O\'quv ishlari', permissions: ['dashboard', 'cameras', 'playback', 'students', 'teachers', 'schedules', 'notifications'] },
   { id: 'u-nav', login: 'navbatchi', password: '123', role: 'inspector', name: 'Navbatchi xodim', detail: 'Davomat nazorati', permissions: ['dashboard', 'attendance_control'] },

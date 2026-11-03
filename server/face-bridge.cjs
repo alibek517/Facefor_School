@@ -704,6 +704,94 @@ async function logScanToSupabase(scan) {
   } catch (err) {}
 }
 
+// ==================== MAKTABLAR VA TURNIKETLARNI BOSHQARISH (BIG ADMIN) ====================
+function syncCamerasFromSchools() {
+  if (!schoolDB || !Array.isArray(schoolDB.schools)) return;
+  const allTurnstiles = [];
+  schoolDB.schools.forEach(sch => {
+    if (Array.isArray(sch.turnstiles)) {
+      sch.turnstiles.forEach(t => {
+        allTurnstiles.push({
+          id: t.id,
+          schoolId: sch.id,
+          ip: t.ip,
+          type: t.type || 'in',
+          name: t.name || `Turniket (${t.ip})`,
+          location: t.location || '',
+          port: t.port || 80,
+          online: t.online || false,
+          lastEvent: t.lastEvent || null
+        });
+      });
+    }
+  });
+
+  // Global CAMERAS ro'yxatini ham yangilaymiz
+  allTurnstiles.forEach(t => {
+    const existing = CAMERAS.find(c => c.ip === t.ip || c.id === t.id);
+    if (existing) {
+      existing.name = t.name;
+      existing.type = t.type;
+      existing.location = t.location;
+      existing.schoolId = t.schoolId;
+      existing.port = t.port;
+    } else {
+      CAMERAS.push(t);
+      if (typeof startCameraWorker === 'function') {
+        startCameraWorker(t);
+      }
+    }
+  });
+
+  schoolDB.cameras = allTurnstiles;
+}
+
+function ensureSchoolsInDB() {
+  if (!schoolDB) return;
+  if (!Array.isArray(schoolDB.schools) || schoolDB.schools.length === 0) {
+    const defaultCameras = (Array.isArray(schoolDB.cameras) && schoolDB.cameras.length > 0)
+      ? schoolDB.cameras.map(c => ({ ...c, schoolId: 'sch-1' }))
+      : CAMERAS.map(c => ({ ...c, schoolId: 'sch-1' }));
+
+    schoolDB.schools = [
+      {
+        id: 'sch-1',
+        name: "1-sonli ixtisoslashtirilgan umumta'lim maktabi",
+        code: "SCH-001",
+        address: "Urganch shahri, Al-Xorazmiy ko'chasi 12",
+        phone: "+998 90 123 45 67",
+        director: "Yaxshimuratov Otabek Yuldashevich",
+        status: "active",
+        createdAt: "2026-10-01T08:00:00.000Z",
+        turnstiles: defaultCameras,
+        students: schoolDB.students || [],
+        classes: schoolDB.classes || [],
+        teachers: schoolDB.teachers || [],
+        schedules: schoolDB.schedules || [],
+        attendanceList: schoolDB.attendanceList || [],
+        teacherAttendance: schoolDB.teacherAttendance || [],
+        hourlyAttendance: schoolDB.hourlyAttendance || {}
+      }
+    ];
+    saveSchoolDB(schoolDB);
+    console.log('[DB] Standart maktab yaratildi va unga ma\'lumotlar biriktirildi.');
+  } else {
+    // Har bir maktabning o'z ma'lumotlari to'liq va mustaqil bo'lishini ta'minlash (Aralashib ketmaydi!)
+    schoolDB.schools.forEach((sch, idx) => {
+      if (!Array.isArray(sch.turnstiles)) sch.turnstiles = [];
+      if (!Array.isArray(sch.students)) sch.students = idx === 0 ? (schoolDB.students || []) : [];
+      if (!Array.isArray(sch.classes)) sch.classes = idx === 0 ? (schoolDB.classes || []) : [];
+      if (!Array.isArray(sch.teachers)) sch.teachers = idx === 0 ? (schoolDB.teachers || []) : [];
+      if (!Array.isArray(sch.schedules)) sch.schedules = idx === 0 ? (schoolDB.schedules || []) : [];
+      if (!Array.isArray(sch.attendanceList)) sch.attendanceList = idx === 0 ? (schoolDB.attendanceList || []) : [];
+      if (!Array.isArray(sch.teacherAttendance)) sch.teacherAttendance = idx === 0 ? (schoolDB.teacherAttendance || []) : [];
+      if (!sch.hourlyAttendance) sch.hourlyAttendance = idx === 0 ? (schoolDB.hourlyAttendance || {}) : {};
+    });
+  }
+
+  syncCamerasFromSchools();
+}
+
 // 1. Saqlangan kamera yo'nalishlarini va tartibini school_db.json dan tiklash
 if (schoolDB.cameras && Array.isArray(schoolDB.cameras) && schoolDB.cameras.length > 0) {
   const reordered = [];
@@ -720,6 +808,8 @@ if (schoolDB.cameras && Array.isArray(schoolDB.cameras) && schoolDB.cameras.leng
   CAMERAS = reordered;
   console.log('[DB] school_db.json dan kamera yo\'nalishlari va tartibi tiklandi.');
 }
+
+ensureSchoolsInDB();
 
 // 2. Supabase bulutidan ham tekshirib olish va har 10 soniyada sinxronizatsiya qilib turish
 async function sendHeartbeatToSupabase() {
@@ -1294,12 +1384,15 @@ async function syncLatestFramesToSupabase() {
 }
 
 // Har bir kamera uchun alohida, mustaqil va uzluksiz video oqim aylanishi (~2.5 FPS)
+const activeCameraWorkers = new Set();
 function startCameraWorker(cam) {
+  if (!cam || !cam.ip || activeCameraWorkers.has(cam.ip)) return;
+  activeCameraWorkers.add(cam.ip);
   let isRunning = false;
   const workerLoop = async () => {
     if (isRunning) return;
     isRunning = true;
-    while (true) {
+    while (activeCameraWorkers.has(cam.ip)) {
       try {
         await updateCameraFrame(cam);
       } catch (e) {}
@@ -1308,6 +1401,12 @@ function startCameraWorker(cam) {
     }
   };
   setTimeout(workerLoop, (CAMERAS.indexOf(cam) % 6) * 150 + 100);
+}
+
+function stopCameraWorker(ip) {
+  if (ip) {
+    activeCameraWorkers.delete(ip);
+  }
 }
 
 // Barcha 6 ta kamerani parallel ravishda uzluksiz video oqim rejimida ishga tushirish
@@ -1676,12 +1775,371 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 2. 6 ta Kameralar ro'yxati
-  if (pathname === '/api/device/cameras') {
+  // ==================== BIG ADMIN & MAKTABLAR & TURNIKETLAR API ====================
+  // 1. Maktablar ro'yxatini olish (Har bir maktab va uning turniketlari)
+  if (pathname === '/api/schools' && req.method === 'GET') {
+    ensureSchoolsInDB();
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({
       success: true,
-      cameras: CAMERAS
+      schools: schoolDB.schools || []
+    }));
+    return;
+  }
+
+  // 2. Yangi maktab yaratish (Big Admin)
+  if (pathname === '/api/schools/create' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        if (!payload.name || !payload.name.trim()) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: 'Maktab nomi kiritilishi shart!' }));
+          return;
+        }
+
+        ensureSchoolsInDB();
+        const schoolId = payload.id || `sch-${Date.now()}`;
+        const newSchool = {
+          id: schoolId,
+          name: payload.name.trim(),
+          code: payload.code ? payload.code.trim() : `SCH-${(schoolDB.schools.length + 1).toString().padStart(3, '0')}`,
+          address: payload.address ? payload.address.trim() : '',
+          phone: payload.phone ? payload.phone.trim() : '',
+          director: payload.director ? payload.director.trim() : '',
+          status: payload.status || 'active',
+          createdAt: new Date().toISOString(),
+          turnstiles: []
+        };
+
+        // Agar boshlang'ich turniketlar berilgan bo'lsa
+        if (Array.isArray(payload.turnstiles)) {
+          payload.turnstiles.forEach((t, idx) => {
+            if (t.ip) {
+              const camObj = {
+                id: t.id || `cam-${Date.now()}-${idx}`,
+                schoolId: schoolId,
+                ip: t.ip.trim(),
+                name: t.name ? t.name.trim() : `Turniket (${t.ip})`,
+                type: t.type === 'out' ? 'out' : 'in',
+                location: t.location ? t.location.trim() : 'Asosiy kirish',
+                port: Number(t.port) || 80,
+                online: false,
+                lastEvent: null
+              };
+              newSchool.turnstiles.push(camObj);
+              if (!CAMERAS.some(c => c.ip === camObj.ip)) {
+                CAMERAS.push(camObj);
+                startCameraWorker(camObj);
+              }
+            }
+          });
+        }
+
+        schoolDB.schools.push(newSchool);
+        syncCamerasFromSchools();
+        saveSchoolDB(schoolDB);
+
+        broadcastSSE('schools_updated', schoolDB.schools);
+        broadcastSSE('cameras_updated', CAMERAS);
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: true,
+          message: 'Yangi maktab muvaffaqiyatli yaratildi!',
+          school: newSchool,
+          schools: schoolDB.schools
+        }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 3. Maktab ma'lumotlarini yangilash
+  if (pathname === '/api/schools/update' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        ensureSchoolsInDB();
+        const school = (schoolDB.schools || []).find(s => s.id === payload.id);
+        if (!school) {
+          res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: 'Maktab topilmadi!' }));
+          return;
+        }
+
+        if (payload.name) school.name = payload.name.trim();
+        if (payload.code) school.code = payload.code.trim();
+        if (payload.address !== undefined) school.address = payload.address.trim();
+        if (payload.phone !== undefined) school.phone = payload.phone.trim();
+        if (payload.director !== undefined) school.director = payload.director.trim();
+        if (payload.status) school.status = payload.status;
+
+        saveSchoolDB(schoolDB);
+        broadcastSSE('schools_updated', schoolDB.schools);
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: true,
+          message: 'Maktab ma\'lumotlari yangilandi!',
+          school,
+          schools: schoolDB.schools
+        }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 4. Maktabni o'chirish
+  if (pathname === '/api/schools/delete' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        ensureSchoolsInDB();
+        if (schoolDB.schools.length <= 1) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: 'Kamida bitta maktab saqlanishi shart!' }));
+          return;
+        }
+
+        const schoolIndex = schoolDB.schools.findIndex(s => s.id === payload.id);
+        if (schoolIndex === -1) {
+          res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: 'Maktab topilmadi!' }));
+          return;
+        }
+
+        const removedSchool = schoolDB.schools.splice(schoolIndex, 1)[0];
+        // Uning turniketlarini to'xtatish va CAMERAS dan olib tashlash
+        if (Array.isArray(removedSchool.turnstiles)) {
+          removedSchool.turnstiles.forEach(t => {
+            stopCameraWorker(t.ip);
+            const cIdx = CAMERAS.findIndex(c => c.ip === t.ip);
+            if (cIdx !== -1) CAMERAS.splice(cIdx, 1);
+          });
+        }
+
+        syncCamerasFromSchools();
+        saveSchoolDB(schoolDB);
+        broadcastSSE('schools_updated', schoolDB.schools);
+        broadcastSSE('cameras_updated', CAMERAS);
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: true,
+          message: 'Maktab o\'chirildi!',
+          schools: schoolDB.schools
+        }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 5. Maktabga yangi turniket biriktirish (qo'shish)
+  if (pathname === '/api/schools/cameras/add' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        ensureSchoolsInDB();
+        const schoolId = payload.schoolId || schoolDB.schools?.[0]?.id || 'sch-1';
+        const school = (schoolDB.schools || []).find(s => s.id === schoolId);
+        if (!school) {
+          res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: 'Maktab topilmadi!' }));
+          return;
+        }
+
+        if (!payload.ip || !payload.ip.trim()) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: 'Turniket IP manzili kiritilishi shart!' }));
+          return;
+        }
+
+        const ip = payload.ip.trim();
+        const newCam = {
+          id: payload.id || `cam-${Date.now()}`,
+          schoolId: school.id,
+          ip: ip,
+          name: payload.name ? payload.name.trim() : `Turniket (${ip})`,
+          type: payload.type === 'out' ? 'out' : 'in',
+          location: payload.location ? payload.location.trim() : 'Kirish yo\'lagi',
+          port: Number(payload.port) || 80,
+          online: false,
+          lastEvent: null
+        };
+
+        if (!Array.isArray(school.turnstiles)) school.turnstiles = [];
+        school.turnstiles.push(newCam);
+
+        // Global CAMERAS ro'yxatiga qo'shish yoki yangilash
+        const existingCamIdx = CAMERAS.findIndex(c => c.ip === ip);
+        if (existingCamIdx !== -1) {
+          CAMERAS[existingCamIdx] = { ...CAMERAS[existingCamIdx], ...newCam };
+        } else {
+          CAMERAS.push(newCam);
+          startCameraWorker(newCam);
+        }
+
+        syncCamerasFromSchools();
+        saveSchoolDB(schoolDB);
+
+        broadcastSSE('schools_updated', schoolDB.schools);
+        broadcastSSE('cameras_updated', CAMERAS);
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: true,
+          message: `${school.name} maktabiga yangi turniket biriktirildi!`,
+          camera: newCam,
+          turnstiles: school.turnstiles,
+          schools: schoolDB.schools
+        }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 6. Turniket sozlamalarini tahrirlash
+  if (pathname === '/api/schools/cameras/update' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        ensureSchoolsInDB();
+
+        let foundTurnstile = null;
+        let foundSchool = null;
+
+        for (const sch of schoolDB.schools) {
+          const t = (sch.turnstiles || []).find(x => x.id === payload.id || x.ip === payload.ip);
+          if (t) {
+            foundTurnstile = t;
+            foundSchool = sch;
+            break;
+          }
+        }
+
+        if (!foundTurnstile) {
+          res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: 'Turniket topilmadi!' }));
+          return;
+        }
+
+        if (payload.name) foundTurnstile.name = payload.name.trim();
+        if (payload.type) foundTurnstile.type = payload.type;
+        if (payload.location !== undefined) foundTurnstile.location = payload.location.trim();
+        if (payload.port) foundTurnstile.port = Number(payload.port) || 80;
+
+        if (payload.ip && payload.ip.trim() !== foundTurnstile.ip) {
+          stopCameraWorker(foundTurnstile.ip);
+          foundTurnstile.ip = payload.ip.trim();
+          startCameraWorker(foundTurnstile);
+        }
+
+        // Global CAMERAS ro'yxatini ham yangilash
+        const camObj = CAMERAS.find(c => c.id === foundTurnstile.id || c.ip === foundTurnstile.ip);
+        if (camObj) {
+          Object.assign(camObj, foundTurnstile);
+        }
+
+        syncCamerasFromSchools();
+        saveSchoolDB(schoolDB);
+
+        broadcastSSE('schools_updated', schoolDB.schools);
+        broadcastSSE('cameras_updated', CAMERAS);
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: true,
+          message: 'Turniket sozlamalari yangilandi!',
+          camera: foundTurnstile,
+          schools: schoolDB.schools
+        }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 7. Turniketni maktabdan o'chirish
+  if (pathname === '/api/schools/cameras/delete' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        ensureSchoolsInDB();
+
+        for (const sch of schoolDB.schools) {
+          const tIdx = (sch.turnstiles || []).findIndex(x => x.id === payload.id || x.ip === payload.ip);
+          if (tIdx !== -1) {
+            const removed = sch.turnstiles.splice(tIdx, 1)[0];
+            stopCameraWorker(removed.ip);
+            const cIdx = CAMERAS.findIndex(c => c.id === removed.id || c.ip === removed.ip);
+            if (cIdx !== -1) CAMERAS.splice(cIdx, 1);
+            break;
+          }
+        }
+
+        syncCamerasFromSchools();
+        saveSchoolDB(schoolDB);
+
+        broadcastSSE('schools_updated', schoolDB.schools);
+        broadcastSSE('cameras_updated', CAMERAS);
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: true,
+          message: 'Turniket olib tashlandi!',
+          schools: schoolDB.schools,
+          cameras: CAMERAS
+        }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 2. Kameralar ro'yxati (Barcha yoki maktab bo'yicha)
+  if (pathname === '/api/device/cameras') {
+    ensureSchoolsInDB();
+    const filterSchoolId = parsedUrl.searchParams.get('schoolId');
+    let returnCameras = CAMERAS;
+    if (filterSchoolId) {
+      const sch = (schoolDB.schools || []).find(s => s.id === filterSchoolId);
+      if (sch && Array.isArray(sch.turnstiles)) {
+        returnCameras = sch.turnstiles;
+      }
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+      success: true,
+      cameras: returnCameras
     }));
     return;
   }
@@ -1700,8 +2158,22 @@ const server = http.createServer(async (req, res) => {
           if (cam) cam.type = update.type;
         }
 
+        // Maktablardagi turniketlarni ham mos ravishda yangilash
+        if (Array.isArray(schoolDB.schools)) {
+          schoolDB.schools.forEach(sch => {
+            if (Array.isArray(sch.turnstiles)) {
+              sch.turnstiles.forEach(t => {
+                const updatedCam = CAMERAS.find(c => c.id === t.id || c.ip === t.ip);
+                if (updatedCam && updatedCam.type) {
+                  t.type = updatedCam.type;
+                }
+              });
+            }
+          });
+        }
+
         // 1. Mahalliy Server bazasiga (school_db.json) doimiy saqlash
-        schoolDB.cameras = CAMERAS.map(c => ({ id: c.id, ip: c.ip, type: c.type, name: c.name, location: c.location }));
+        schoolDB.cameras = CAMERAS.map(c => ({ id: c.id, ip: c.ip, type: c.type, name: c.name, location: c.location, schoolId: c.schoolId, port: c.port }));
         saveSchoolDB(schoolDB);
 
         // 2. Supabase bulutiga zaxiralash
@@ -1709,11 +2181,12 @@ const server = http.createServer(async (req, res) => {
 
         // 3. Tarmoqdagi barcha kompyuterlarga tarqatish
         broadcastSSE('cameras_updated', CAMERAS);
+        broadcastSSE('schools_updated', schoolDB.schools);
 
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Kamera yo\'nalishlari saqlandi', cameras: CAMERAS }));
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true, message: 'Kamera yo\'nalishlari saqlandi', cameras: CAMERAS, schools: schoolDB.schools }));
       } catch (e) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ error: e.message }));
       }
     });
@@ -2039,8 +2512,59 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 10. Maktab Ma'lumotlarini olish (Server DB)
+  // ==================== LOKAL XAVFSIZLIK: BIG ADMIN LOKAL ORQALI KIRA OLMAYDI ====================
+  // Lokal API da BigAdmin ning login va paroli saqlanmaydi va lokal kirish bloklanadi!
+  if ((pathname === '/api/auth/login' || pathname === '/api/login') && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const username = String(payload.login || payload.username || '').trim().toLowerCase();
+        if (username === 'bigadmin') {
+          res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({
+            success: false,
+            error: "XAVFSIZLIK CHEKLOVI: BigAdmin hisobiga lokal maktab tarmog'idan kirish taqiqlangan! BigAdmin login/paroli lokal serverda saqlanmaydi. Faqat markaziy global portal orqali kiring."
+          }));
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // 10. Maktab Ma'lumotlarini olish (Server DB) - Maktablar bo'yicha to'liq alohida!
   if (pathname === '/api/school/data' && req.method === 'GET') {
+    ensureSchoolsInDB();
+    const targetSchoolId = parsedUrl.searchParams.get('schoolId') || schoolDB.schools?.[0]?.id || 'sch-1';
+    const school = (schoolDB.schools || []).find(s => s.id === targetSchoolId);
+
+    if (school) {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        success: true,
+        schoolId: school.id,
+        schoolName: school.name,
+        data: {
+          students: school.students || [],
+          classes: school.classes || [],
+          teachers: school.teachers || [],
+          schedules: school.schedules || [],
+          attendanceList: school.attendanceList || [],
+          teacherAttendance: school.teacherAttendance || [],
+          hourlyAttendance: school.hourlyAttendance || {},
+          cameras: school.turnstiles || []
+        }
+      }));
+      return;
+    }
+
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({
       success: true,
@@ -2049,32 +2573,43 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 11. Maktab Ma'lumotlarini Serverga Saqlash (Barcha kompyuterlar uchun yagona)
+  // 11. Maktab Ma'lumotlarini Serverga Saqlash (Aynan tanlangan maktabga alohida saqlanadi!)
   if (pathname === '/api/school/save' && req.method === 'POST') {
     let body = '';
     req.on('data', c => body += c);
     req.on('end', () => {
       try {
         const payload = JSON.parse(body);
+        ensureSchoolsInDB();
+        const targetSchoolId = payload.schoolId || parsedUrl.searchParams.get('schoolId') || schoolDB.schools?.[0]?.id || 'sch-1';
+        const school = (schoolDB.schools || []).find(s => s.id === targetSchoolId);
+
         if (payload.key && payload.data) {
-          if (payload.key === 'students' && Array.isArray(payload.data)) {
-            const oldStudents = Array.isArray(schoolDB.students) ? JSON.parse(JSON.stringify(schoolDB.students)) : [];
-            detectAndSyncStudentDifferences(oldStudents, payload.data);
+          if (school) {
+            school[payload.key] = payload.data;
           }
-          schoolDB[payload.key] = payload.data;
-          syncModuleToSupabase(payload.key, payload.data);
+          if (targetSchoolId === schoolDB.schools?.[0]?.id || !school) {
+            schoolDB[payload.key] = payload.data;
+          }
         } else {
-          if (payload.students && Array.isArray(payload.students)) {
-            const oldStudents = Array.isArray(schoolDB.students) ? JSON.parse(JSON.stringify(schoolDB.students)) : [];
-            detectAndSyncStudentDifferences(oldStudents, payload.students);
+          if (school) {
+            Object.assign(school, payload);
           }
-          Object.assign(schoolDB, payload);
-          Object.keys(payload).forEach(k => syncModuleToSupabase(k, payload[k]));
+          if (targetSchoolId === schoolDB.schools?.[0]?.id || !school) {
+            Object.assign(schoolDB, payload);
+          }
         }
+
         saveSchoolDB(schoolDB);
-        broadcastSSE('school_data_sync', schoolDB);
+        broadcastSSE('school_data_sync', { schoolId: targetSchoolId, data: school || schoolDB });
+
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ success: true, message: 'Server bazasiga saqlandi', lastUpdated: schoolDB.lastUpdated }));
+        res.end(JSON.stringify({ 
+          success: true, 
+          message: `${school ? school.name : 'Maktab'} ma'lumotlari alohida saqlandi`, 
+          schoolId: targetSchoolId,
+          lastUpdated: Date.now() 
+        }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ error: err.message }));

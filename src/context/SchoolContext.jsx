@@ -11,6 +11,7 @@ import {
   INITIAL_NOTIFICATIONS,
   INITIAL_TEACHER_ATTENDANCE,
   INITIAL_HOURLY_ATTENDANCE,
+  INITIAL_SCHOOLS,
   TODAY_DATE
 } from '../mockData';
 import {
@@ -147,6 +148,83 @@ export const SchoolProvider = ({ children }) => {
 
   const [cameras, setCameras] = useState(DEFAULT_CAMERAS);
 
+  // Maktablar (Schools) ro'yxati va tanlangan maktab (BigAdmin uchun)
+  const [schools, setSchools] = useState(() => {
+    return getSafeStorage('school_list', INITIAL_SCHOOLS);
+  });
+  const [selectedSchoolId, setSelectedSchoolId] = useState(() => {
+    try {
+      const saved = localStorage.getItem('school_selected_id');
+      if (saved) return saved;
+    } catch (e) {}
+    return 'sch-1';
+  });
+
+  const currentSchool = schools.find(s => s.id === selectedSchoolId) || schools[0] || null;
+
+  const selectSchool = async (schoolId) => {
+    // 1. Joriy maktab ma'lumotlarini o'sha maktab obyekti ichida xavfsiz saqlash
+    setSchools(prev => prev.map(s => {
+      if (s.id === selectedSchoolId) {
+        return {
+          ...s,
+          students,
+          classes,
+          teachers,
+          schedules,
+          attendanceList,
+          teacherAttendance,
+          hourlyAttendance,
+          turnstiles: cameras
+        };
+      }
+      return s;
+    }));
+
+    setSelectedSchoolId(schoolId);
+    try {
+      localStorage.setItem('school_selected_id', schoolId);
+    } catch (e) {}
+
+    const found = schools.find(s => s.id === schoolId);
+    if (found) {
+      const isFirstSchool = found.id === 'sch-1';
+      // 2. Yangi maktab ma'lumotlarini yuklash (hech bir maktab boshqasi bilan aralashmaydi!)
+      setClasses(Array.isArray(found.classes) ? found.classes : (isFirstSchool ? INITIAL_CLASSES : []));
+      setTeachers(Array.isArray(found.teachers) ? found.teachers : []);
+      setStudents(Array.isArray(found.students) ? found.students : (isFirstSchool ? INITIAL_STUDENTS : []));
+      setSchedules(Array.isArray(found.schedules) ? found.schedules : (isFirstSchool ? INITIAL_SCHEDULE : []));
+      setAttendanceList(Array.isArray(found.attendanceList) ? found.attendanceList : (isFirstSchool ? INITIAL_ATTENDANCE : []));
+      setTeacherAttendance(Array.isArray(found.teacherAttendance) ? found.teacherAttendance : []);
+      setHourlyAttendance(found.hourlyAttendance || {});
+      setCameras(Array.isArray(found.turnstiles) ? found.turnstiles : (isFirstSchool ? DEFAULT_CAMERAS : []));
+
+      // 3. Agar server mavjud bo'lsa, o'sha maktabning yangi ma'lumotlarini alohida yuklab olish
+      try {
+        const targetUrl = getActiveBridgeUrl();
+        if (targetUrl) {
+          const res = await fetch(`${targetUrl}/api/school/data?schoolId=${schoolId}`, { signal: AbortSignal.timeout(3000) });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.data) {
+              const d = json.data;
+              if (Array.isArray(d.students)) setStudents(d.students);
+              if (Array.isArray(d.classes)) setClasses(d.classes);
+              if (Array.isArray(d.teachers)) setTeachers(d.teachers);
+              if (Array.isArray(d.schedules)) setSchedules(d.schedules);
+              if (Array.isArray(d.attendanceList)) setAttendanceList(d.attendanceList);
+              if (Array.isArray(d.teacherAttendance)) setTeacherAttendance(d.teacherAttendance);
+              if (d.hourlyAttendance) setHourlyAttendance(d.hourlyAttendance);
+              if (Array.isArray(d.cameras) && d.cameras.length > 0) setCameras(d.cameras);
+            }
+          }
+        }
+      } catch (e) {}
+
+      showToast('Maktab tanlandi', `${found.name} boshqaruviga o'tildi.`, 'info');
+    }
+  };
+
   // 6 ta kameraning oxirgi bulut kadrlari (Global rejim uchun)
   const [cameraLatestFrames, setCameraLatestFrames] = useState({});
 
@@ -263,6 +341,9 @@ export const SchoolProvider = ({ children }) => {
     if (!p.startsWith('/')) p = '/' + p;
     if (p.length > 1 && p.endsWith('/')) p = p.slice(0, -1);
 
+    if (p === '/bigadmin' || p === '/schools' || p === '/superadmin') {
+      return { path: '/bigadmin', role: 'bigadmin', tab: 'bigadmin' };
+    }
     if (p === '/students' || p === '/directory' || p === '/oquvchilar') {
       return { path: '/students', role: 'director', tab: 'directory' };
     }
@@ -632,21 +713,29 @@ export const SchoolProvider = ({ children }) => {
     return '';
   };
 
-  // Serverga va Supabase bulut bazasiga markaziy saqlash (Barcha qurilmalar va brauzerlar uchun global)
+  // Serverga va Supabase bulut bazasiga markaziy saqlash (Maktablar bo'yicha qat'iy izolyatsiya qilingan!)
   const saveToServer = async (key, data) => {
-    // 1. Supabase bulut bazasiga saqlash (agar kvota tugamagan bo'lsa)
+    // 1. Tanlangan maktab obyekti ichida darhol yangilash (aralashib ketmaydi!)
+    setSchools(prev => prev.map(s => {
+      if (s.id === selectedSchoolId) {
+        return { ...s, [key]: data };
+      }
+      return s;
+    }));
+
+    // 2. Supabase bulut bazasiga saqlash (agar kvota tugamagan bo'lsa)
     if (!isQuotaExceeded()) {
       saveModuleToSupabase(key, data).catch(() => {});
     }
 
-    // 2. Faol ko'prik serveriga (lokal yoki Cloudflare tunnel orqali) xabar berish
+    // 3. Faol ko'prik serveriga aynan o'sha maktab ID si bilan yuborish
     const targetUrl = getActiveBridgeUrl();
     if (targetUrl) {
       try {
         fetch(`${targetUrl}/api/school/save`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key, data })
+          body: JSON.stringify({ schoolId: selectedSchoolId, key, data })
         }).catch(() => {});
       } catch (e) {}
     }
@@ -958,6 +1047,15 @@ export const SchoolProvider = ({ children }) => {
             if (Array.isArray(updatedCameras)) setCameras(updatedCameras);
           } catch (err) {}
         });
+        es.addEventListener('schools_updated', (e) => {
+          try {
+            const updatedSchools = JSON.parse(e.data);
+            if (Array.isArray(updatedSchools)) {
+              setSchools(updatedSchools);
+              try { localStorage.setItem('school_list', JSON.stringify(updatedSchools)); } catch (err) {}
+            }
+          } catch (err) {}
+        });
         es.onerror = () => {
           if (es) {
             try { es.close(); } catch (err) {}
@@ -1077,6 +1175,7 @@ export const SchoolProvider = ({ children }) => {
       }
 
       setIsInitialized(true);
+      fetchSchoolsFromBackend();
     };
 
     pollDevice();
@@ -1251,11 +1350,33 @@ export const SchoolProvider = ({ children }) => {
 
   // Login
   const login = (loginText, passwordText) => {
+    const cleanLogin = loginText.trim().toLowerCase();
+
+    // XAVFSIZLIK CHEKLOVI: Lokal maktab tarmog'idan (Wi-Fi, localhost, ko'prik) BigAdmin akkauntiga kirish taqiqlangan!
+    // BigAdmin login va paroli lokal serverda saqlanmaydi va lokal orqali tekshirilmaydi!
+    const isLocalAccess = Boolean(isLocalHostEnv || networkMode === 'local' || isLocalConnected);
+    if (cleanLogin === 'bigadmin') {
+      if (isLocalAccess) {
+        showToast('Xavfsizlik cheklovi', "BigAdmin hisobiga lokal maktab tarmog'idan kirish taqiqlangan! Faqat markaziy global portal orqali kiring.", 'error');
+        return { 
+          success: false, 
+          error: "Xavfsizlik cheklovi: BigAdmin hisobiga lokal maktab tarmog'idan kirish taqiqlangan! BigAdmin login/paroli lokal serverda saqlanmaydi. Faqat markaziy global bulutli portal orqali kiring." 
+        };
+      }
+    }
+
     const found = USERS_AUTH.find(
-      u => u.login.toLowerCase() === loginText.trim().toLowerCase() && u.password === passwordText.trim()
+      u => u.login.toLowerCase() === cleanLogin && u.password === passwordText.trim()
     );
 
     if (found) {
+      if (found.role === 'bigadmin' && isLocalAccess) {
+        return { 
+          success: false, 
+          error: "Xavfsizlik cheklovi: BigAdmin hisobiga lokal maktab tarmog'idan kirish taqiqlangan! Faqat markaziy global portal orqali kiring." 
+        };
+      }
+
       setCurrentUser(found);
       if (found.teacherId) {
         setSelectedTeacherId(found.teacherId);
@@ -1263,7 +1384,8 @@ export const SchoolProvider = ({ children }) => {
       showToast('Xush kelibsiz', `${found.name} sifatida kirdingiz.`, 'success');
 
       let p = '/director';
-      if (found.role === 'inspector') p = '/duty';
+      if (found.role === 'bigadmin') p = '/bigadmin';
+      else if (found.role === 'inspector') p = '/duty';
       else if (found.role === 'class_teacher') p = '/class-teacher';
       else if (found.role === 'subject_teacher') p = '/subject-teacher';
       else if (found.role === 'monitor') p = '/monitor';
@@ -1326,7 +1448,8 @@ export const SchoolProvider = ({ children }) => {
 
       if (updateUrl) {
         let p = '/director';
-        if (role === 'inspector') p = '/duty';
+        if (role === 'bigadmin') p = '/bigadmin';
+        else if (role === 'inspector') p = '/duty';
         else if (role === 'class_teacher') p = '/class-teacher';
         else if (role === 'subject_teacher') p = '/subject-teacher';
         else if (role === 'monitor') p = '/monitor';
@@ -1358,6 +1481,224 @@ export const SchoolProvider = ({ children }) => {
       navigateTo('/director');
       showToast('Xodim tanlandi', `${member.name} profiliga o'tildi.`, 'info');
     }
+  };
+
+  // =================== BIG ADMIN: MAKTABLAR VA TURNIKETLARNI BOSHQARISH ===================
+  const fetchSchoolsFromBackend = async () => {
+    try {
+      const bridgeHost = localBridgeInfo?.ip || 'localhost';
+      const bridgePort = localBridgeInfo?.port || 5001;
+      const res = await fetch(`http://${bridgeHost}:${bridgePort}/api/schools`, { signal: AbortSignal.timeout(3000) });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.schools) && data.schools.length > 0) {
+          setSchools(data.schools);
+          try { localStorage.setItem('school_list', JSON.stringify(data.schools)); } catch (e) {}
+        }
+      }
+    } catch (e) {}
+  };
+
+  const createSchool = async (newSchoolData) => {
+    const tempId = newSchoolData.id || `sch-${Date.now()}`;
+    const schoolObj = {
+      id: tempId,
+      name: newSchoolData.name.trim(),
+      code: newSchoolData.code ? newSchoolData.code.trim() : `SCH-${(schools.length + 1).toString().padStart(3, '0')}`,
+      address: newSchoolData.address ? newSchoolData.address.trim() : '',
+      phone: newSchoolData.phone ? newSchoolData.phone.trim() : '',
+      director: newSchoolData.director ? newSchoolData.director.trim() : '',
+      status: newSchoolData.status || 'active',
+      createdAt: new Date().toISOString(),
+      turnstiles: Array.isArray(newSchoolData.turnstiles) ? newSchoolData.turnstiles.map((t, idx) => ({
+        id: t.id || `cam-${Date.now()}-${idx}`,
+        schoolId: tempId,
+        name: t.name ? t.name.trim() : `Turniket (${t.ip})`,
+        ip: t.ip.trim(),
+        type: t.type === 'out' ? 'out' : 'in',
+        location: t.location ? t.location.trim() : 'Bosh kirish',
+        port: Number(t.port) || 80,
+        online: false
+      })) : []
+    };
+
+    setSchools(prev => {
+      const updated = [...prev, schoolObj];
+      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+
+    if (schoolObj.turnstiles.length > 0) {
+      setCameras(prev => [...prev.filter(c => !schoolObj.turnstiles.some(st => st.ip === c.ip)), ...schoolObj.turnstiles]);
+    }
+
+    try {
+      const bridgeHost = localBridgeInfo?.ip || 'localhost';
+      const bridgePort = localBridgeInfo?.port || 5001;
+      const res = await fetch(`http://${bridgeHost}:${bridgePort}/api/schools/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(schoolObj)
+      });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.success && d.schools) {
+          setSchools(d.schools);
+          try { localStorage.setItem('school_list', JSON.stringify(d.schools)); } catch (e) {}
+        }
+      }
+    } catch (err) {}
+
+    showToast('Muvaffaqiyatli', `${schoolObj.name} muvaffaqiyatli yaratildi!`, 'success');
+    return schoolObj;
+  };
+
+  const updateSchool = async (schoolData) => {
+    setSchools(prev => {
+      const updated = prev.map(s => s.id === schoolData.id ? { ...s, ...schoolData } : s);
+      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+
+    try {
+      const bridgeHost = localBridgeInfo?.ip || 'localhost';
+      const bridgePort = localBridgeInfo?.port || 5001;
+      await fetch(`http://${bridgeHost}:${bridgePort}/api/schools/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(schoolData)
+      });
+    } catch (e) {}
+
+    showToast('Yangilandi', 'Maktab ma\'lumotlari yangilandi.', 'success');
+  };
+
+  const deleteSchool = async (schoolId) => {
+    if (schools.length <= 1) {
+      showToast('Rad etildi', 'Kamida bitta maktab qolishi shart!', 'error');
+      return false;
+    }
+
+    setSchools(prev => {
+      const updated = prev.filter(s => s.id !== schoolId);
+      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+
+    if (selectedSchoolId === schoolId) {
+      const remaining = schools.filter(s => s.id !== schoolId);
+      if (remaining[0]) setSelectedSchoolId(remaining[0].id);
+    }
+
+    try {
+      const bridgeHost = localBridgeInfo?.ip || 'localhost';
+      const bridgePort = localBridgeInfo?.port || 5001;
+      await fetch(`http://${bridgeHost}:${bridgePort}/api/schools/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: schoolId })
+      });
+    } catch (e) {}
+
+    showToast('O\'chirildi', 'Maktab va unga biriktirilgan turniketlar olib tashlandi.', 'info');
+    return true;
+  };
+
+  const addTurnstileToSchool = async (schoolId, turnstileData) => {
+    const targetSchoolId = schoolId || selectedSchoolId || 'sch-1';
+    const newCam = {
+      id: `cam-${Date.now()}`,
+      schoolId: targetSchoolId,
+      name: turnstileData.name ? turnstileData.name.trim() : `Turniket (${turnstileData.ip})`,
+      ip: turnstileData.ip.trim(),
+      type: turnstileData.type === 'out' ? 'out' : 'in',
+      location: turnstileData.location ? turnstileData.location.trim() : 'Kirish yo\'lagi',
+      port: Number(turnstileData.port) || 80,
+      online: false,
+      lastEvent: null
+    };
+
+    setSchools(prev => {
+      const updated = prev.map(s => {
+        if (s.id === targetSchoolId) {
+          const tList = Array.isArray(s.turnstiles) ? [...s.turnstiles, newCam] : [newCam];
+          return { ...s, turnstiles: tList };
+        }
+        return s;
+      });
+      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+
+    setCameras(prev => [...prev.filter(c => c.ip !== newCam.ip), newCam]);
+
+    try {
+      const bridgeHost = localBridgeInfo?.ip || 'localhost';
+      const bridgePort = localBridgeInfo?.port || 5001;
+      await fetch(`http://${bridgeHost}:${bridgePort}/api/schools/cameras/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCam)
+      });
+    } catch (e) {}
+
+    showToast('Turniket biriktirildi', `${newCam.name} muvaffaqiyatli qo'shildi!`, 'success');
+  };
+
+  const updateTurnstile = async (schoolId, turnstileId, updateData) => {
+    setSchools(prev => {
+      const updated = prev.map(s => {
+        if (s.id === schoolId && Array.isArray(s.turnstiles)) {
+          const tList = s.turnstiles.map(t => (t.id === turnstileId || t.ip === updateData.ip) ? { ...t, ...updateData } : t);
+          return { ...s, turnstiles: tList };
+        }
+        return s;
+      });
+      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+
+    setCameras(prev => prev.map(c => (c.id === turnstileId || c.ip === updateData.ip) ? { ...c, ...updateData } : c));
+
+    try {
+      const bridgeHost = localBridgeInfo?.ip || 'localhost';
+      const bridgePort = localBridgeInfo?.port || 5001;
+      await fetch(`http://${bridgeHost}:${bridgePort}/api/schools/cameras/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schoolId, id: turnstileId, ...updateData })
+      });
+    } catch (e) {}
+
+    showToast('Turniket yangilandi', 'Turniket sozlamalari saqlandi.', 'success');
+  };
+
+  const deleteTurnstile = async (schoolId, turnstileId, ip) => {
+    setSchools(prev => {
+      const updated = prev.map(s => {
+        if (s.id === schoolId && Array.isArray(s.turnstiles)) {
+          const tList = s.turnstiles.filter(t => t.id !== turnstileId && t.ip !== ip);
+          return { ...s, turnstiles: tList };
+        }
+        return s;
+      });
+      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+
+    setCameras(prev => prev.filter(c => c.id !== turnstileId && c.ip !== ip));
+
+    try {
+      const bridgeHost = localBridgeInfo?.ip || 'localhost';
+      const bridgePort = localBridgeInfo?.port || 5001;
+      await fetch(`http://${bridgeHost}:${bridgePort}/api/schools/cameras/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schoolId, id: turnstileId, ip })
+      });
+    } catch (e) {}
+
+    showToast('Turniket olib tashlandi', 'Turniket maktabdan olib tashlandi.', 'info');
   };
 
   // =================== CRUD: O'QUVCHILAR (100% DINAMIK VA FACE-ID SINXRON) ===================
@@ -2201,7 +2542,21 @@ export const SchoolProvider = ({ children }) => {
     currentPath,
     navigateTo,
     activeTab,
-    setActiveTab
+    setActiveTab,
+    // Big Admin & Maktablar va Turniketlar boshqaruvi
+    schools,
+    selectedSchoolId,
+    currentSchool,
+    selectSchool,
+    createSchool,
+    updateSchool,
+    deleteSchool,
+    addTurnstileToSchool,
+    updateTurnstile,
+    deleteTurnstile,
+    fetchSchoolsFromBackend,
+    isLocalHostEnv,
+    isBigAdmin: Boolean(currentUser?.role === 'bigadmin' || currentUser?.isBigAdmin)
   };
 
   return (

@@ -9,12 +9,13 @@ import { TeacherJournal } from './components/TeacherJournal';
 import { StudentDirectory } from './components/StudentDirectory';
 import { SchoolSettings } from './components/SchoolSettings';
 import { SchoolMonitor } from './components/SchoolMonitor';
+import { BigAdminDashboard } from './components/BigAdminDashboard';
 import { Toast } from './components/Toast';
 import { LocalNetworkModal } from './components/LocalNetworkModal';
-import { Users, Home, Settings, Tv } from 'lucide-react';
+import { Users, Home, Settings, Tv, ShieldCheck, Building } from 'lucide-react';
 
 const MainLayout = () => {
-  const { currentUser, hasPermission, activeTab, navigateTo, currentPath } = useSchool();
+  const { currentUser, hasPermission, activeTab, navigateTo, currentPath, isBigAdmin, currentSchool } = useSchool();
 
   if (!currentUser) {
     return <LoginModal />;
@@ -23,12 +24,13 @@ const MainLayout = () => {
   const isDirectorUser = Boolean(
     currentUser?.isDirector || 
     currentUser?.role === 'director' || 
+    currentUser?.role === 'bigadmin' ||
     (currentUser?.category === 'leadership' && (hasPermission('teachers') || hasPermission('leadership'))) ||
     (currentUser?.category === 'administrator' && (hasPermission('teachers') || hasPermission('leadership')))
   );
 
-  const canSeeStudents = isDirectorUser && hasPermission('students');
-  const canSeeSettings = isDirectorUser && (hasPermission('teachers') || hasPermission('schedules') || hasPermission('classes') || hasPermission('leadership'));
+  const canSeeStudents = isDirectorUser && (hasPermission('students') || isBigAdmin);
+  const canSeeSettings = isDirectorUser && (hasPermission('teachers') || hasPermission('schedules') || hasPermission('classes') || hasPermission('leadership') || isBigAdmin);
 
   // Direktor bo'lmagan foydalanuvchilar (masalan, sinf rahbari) uchun faqat o'z kabinetini ochish
   React.useEffect(() => {
@@ -47,6 +49,21 @@ const MainLayout = () => {
         <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-2 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-1 shrink-0">
             
+            {/* 0. BigAdmin Paneli */}
+            {isBigAdmin && (
+              <button
+                onClick={() => navigateTo('/bigadmin')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1 ${
+                  activeTab === 'bigadmin'
+                    ? 'bg-indigo-700 text-white shadow-sm'
+                    : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Maktablar & Turniketlar (BigAdmin)</span>
+              </button>
+            )}
+
             {/* 1. Asosiy rol ekrani */}
             <button
               onClick={() => {
@@ -54,16 +71,18 @@ const MainLayout = () => {
                 else if (currentUser?.role === 'class_teacher') navigateTo('/class-teacher');
                 else if (currentUser?.role === 'subject_teacher') navigateTo('/subject-teacher');
                 else if (currentUser?.role === 'monitor') navigateTo('/monitor');
+                else if (currentUser?.role === 'bigadmin') navigateTo('/director');
                 else navigateTo('/director');
               }}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1 ${
-                activeTab === 'main'
+                (activeTab === 'main' && (!isBigAdmin || currentPath === '/director'))
                   ? 'bg-blue-700 text-white shadow-sm'
                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Home className="w-3.5 h-3.5" />
               <span>
+                {currentUser?.role === 'bigadmin' && 'Direktor Paneli'}
                 {currentUser?.role === 'director' && 'Direktor'}
                 {currentUser?.role === 'inspector' && 'Navbatchi'}
                 {currentUser?.role === 'class_teacher' && 'Sinf Rahbari'}
@@ -106,19 +125,25 @@ const MainLayout = () => {
 
           </div>
 
-          <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium shrink-0 hidden sm:block">
-            Jonli Maktab Tizimi
+          <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium shrink-0 hidden sm:flex items-center gap-2">
+            {currentSchool && (
+              <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700">
+                Maktab: {currentSchool.name}
+              </span>
+            )}
+            <span>Jonli Maktab Tizimi</span>
           </div>
         </div>
       </div>
 
       {/* Asosiy qism */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
+        {activeTab === 'bigadmin' && <BigAdminDashboard />}
         {activeTab === 'directory' && canSeeStudents && <StudentDirectory />}
         {activeTab === 'settings' && canSeeSettings && <SchoolSettings />}
-        {(activeTab === 'main' || (!canSeeStudents && activeTab === 'directory') || (!canSeeSettings && activeTab === 'settings')) && (
+        {(activeTab === 'main' || (!canSeeStudents && activeTab === 'directory') || (!canSeeSettings && activeTab === 'settings')) && activeTab !== 'bigadmin' && (
           <>
-            {(currentUser?.role === 'director' || currentUser?.isDirector || currentUser?.category === 'leadership' || currentUser?.category === 'administrator') && <DirectorDashboard />}
+            {(currentUser?.role === 'director' || currentUser?.role === 'bigadmin' || currentUser?.isDirector || currentUser?.category === 'leadership' || currentUser?.category === 'administrator') && <DirectorDashboard />}
             {currentUser?.role === 'inspector' && <InspectorAttendance />}
             {currentUser?.role === 'class_teacher' && <ClassTeacherView />}
             {currentUser?.role === 'subject_teacher' && <TeacherJournal />}

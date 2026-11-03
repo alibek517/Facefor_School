@@ -16,7 +16,9 @@ import {
   Moon,
   Wifi,
   Cloud,
-  WifiOff
+  WifiOff,
+  ShieldCheck,
+  ChevronDown
 } from 'lucide-react';
 
 export const Navbar = () => {
@@ -40,7 +42,11 @@ export const Navbar = () => {
     localBridgeInfo,
     networkMode,
     navigateTo,
-    currentPath
+    currentPath,
+    schools,
+    selectedSchoolId,
+    selectSchool,
+    isBigAdmin
   } = useSchool();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -97,8 +103,41 @@ export const Navbar = () => {
             </div>
           </div>
 
+          {/* Maktab Selektori (Ayniqsa bir nechta maktab bo'lganda yoki BigAdmin uchun) */}
+          {(isBigAdmin || (schools && schools.length > 1)) && (
+            <div className="hidden lg:flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700">
+              <Building className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+              <select
+                value={selectedSchoolId}
+                onChange={(e) => selectSchool(e.target.value)}
+                className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 outline-none cursor-pointer max-w-[200px] truncate"
+                title="Maktabni almashtirish"
+              >
+                {schools.map(s => (
+                  <option key={s.id} value={s.id} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                    {s.name} ({s.turnstiles?.length || 0} turniket)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Headerdagi tez o'tish (Path bilan o'zgaruvchi navigatsiya) */}
           <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 gap-1">
+            {isBigAdmin && (
+              <button
+                onClick={() => navigateTo('/bigadmin')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  (currentUser?.role === 'bigadmin' || currentPath === '/bigadmin')
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-white'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                BigAdmin
+              </button>
+            )}
+
             <button
               onClick={() => navigateTo('/director')}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${

@@ -4,10 +4,18 @@ import { USERS_AUTH } from '../mockData';
 import { LogIn, Key, User, Lock, Shield, Check, Sun, Moon } from 'lucide-react';
 
 export const LoginModal = () => {
-  const { login, theme, toggleTheme } = useSchool();
+  const { login, theme, toggleTheme, isLocalHostEnv, isLocalConnected, networkMode } = useSchool();
   const [username, setUsername] = useState('direktor');
   const [password, setPassword] = useState('123');
   const [error, setError] = useState('');
+
+  const isLocalAccess = Boolean(isLocalHostEnv || networkMode === 'local' || isLocalConnected);
+
+  // Lokal tarmoqda BigAdmin akkaunti ko'rsatilmaydi va saqlanmaydi!
+  const visibleAuthUsers = USERS_AUTH.filter(u => {
+    if (u.role === 'bigadmin' && isLocalAccess) return false;
+    return true;
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -105,7 +113,7 @@ export const LoginModal = () => {
             Tezkor kirish (Login / Parol: 123)
           </p>
           <div className="grid grid-cols-2 gap-2">
-            {USERS_AUTH.map(u => (
+            {visibleAuthUsers.map(u => (
               <button
                 key={u.id}
                 type="button"
