@@ -122,102 +122,35 @@ export const Navbar = () => {
             </div>
           )}
 
-          {/* Headerdagi tez o'tish (Path bilan o'zgaruvchi navigatsiya) */}
-          <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 gap-1">
+          {/* Joriy faol rol va kabinet indikatori (alohida login bilan kirilgani uchun tezkor almashtirish olib tashlandi) */}
+          <div className="hidden md:flex items-center gap-2">
             {isBigAdmin && (
               <button
                 onClick={() => navigateTo('/bigadmin')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   (currentUser?.role === 'bigadmin' || currentPath === '/bigadmin')
                     ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-white'
+                    : 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
                 }`}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
-                BigAdmin
+                BigAdmin Paneli
               </button>
             )}
 
-            <button
-              onClick={() => navigateTo('/director')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                (currentUser?.role === 'director' || currentPath === '/director' || currentPath === '/students' || currentPath === '/teachers')
-                  ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Building className="w-3.5 h-3.5" />
-              Direktor
-            </button>
-
-            <button
-              onClick={() => navigateTo('/duty')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                (currentUser?.role === 'inspector' || currentPath === '/duty')
-                  ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <ClipboardList className="w-3.5 h-3.5" />
-              Navbatchi
-            </button>
-
-            <button
-              onClick={() => navigateTo('/class-teacher')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                (currentUser?.role === 'class_teacher' || currentPath === '/class-teacher')
-                  ? 'bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <GraduationCap className="w-3.5 h-3.5" />
-              Sinf Rahbari
-            </button>
-
-            <button
-              onClick={() => navigateTo('/subject-teacher')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                (currentUser?.role === 'subject_teacher' || currentPath === '/subject-teacher')
-                  ? 'bg-white dark:bg-slate-700 text-amber-700 dark:text-amber-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              Fan O'qituvchisi
-            </button>
-
-            <button
-              onClick={() => navigateTo('/monitor')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                (currentUser?.role === 'monitor' || currentPath === '/monitor')
-                  ? 'bg-white dark:bg-slate-700 text-purple-700 dark:text-purple-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Tv className="w-3.5 h-3.5" />
-              Monitor (Foye)
-            </button>
-
-            {/* Rahbariyat / Admin xodimini tanlash tanlagichi */}
-            {leadership && leadership.length > 0 && (
-              <select
-                value={leadership.some(m => m.id === currentUser?.id) ? currentUser?.id : ''}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    switchStaffMember(e.target.value);
-                  }
-                }}
-                className="text-xs font-semibold p-1 px-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 outline-none hover:border-blue-400 transition-colors"
-                title="Rahbariyat va Admin xodimlari profiliga o'tish (Ruxsatlarni tekshirish)"
-              >
-                <option value="">Xodimlar ({leadership.length})</option>
-                {leadership.map(m => (
-                  <option key={m.id} value={m.id}>
-                    {m.name.split(' ')[0]} ({m.role ? m.role.split(',')[0].trim() : 'Xodim'})
-                  </option>
-                ))}
-              </select>
-            )}
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+              <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+              <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100">
+                {currentUser?.role === 'bigadmin' && 'Boshqaruv: Super Administrator'}
+                {currentUser?.role === 'director' && 'Direktor Kabineti'}
+                {currentUser?.role === 'inspector' && 'Navbatchi Xodim Kabineti'}
+                {currentUser?.role === 'class_teacher' && (myClassObj ? `${myClassObj.name} Sinf Rahbari` : 'Sinf Rahbari')}
+                {currentUser?.role === 'subject_teacher' && 'Fan O\'qituvchisi Kabineti'}
+                {currentUser?.role === 'monitor' && 'Foye Tablosi (Monitor)'}
+                {currentUser?.category === 'leadership' && currentUser?.role !== 'director' && (currentUser?.detail || currentUser?.role || 'Rahbariyat')}
+                {currentUser?.category === 'administrator' && (currentUser?.detail || 'Administrator')}
+              </span>
+            </div>
           </div>
 
           {/* O'ng tomon: Mavzu, Bildirishnoma, Foydalanuvchi ismi va Chiqish */}
@@ -360,57 +293,14 @@ export const Navbar = () => {
             {/* Chiqish (Logout) */}
             <button
               onClick={logout}
-              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
-              title="Chiqish"
+              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors flex items-center gap-1"
+              title="Tizimdan chiqish"
             >
               <LogOut className="w-4 h-4" />
+              <span className="text-xs font-bold hidden sm:inline">Chiqish</span>
             </button>
 
           </div>
-        </div>
-
-        {/* Mobil uchun tezkor rolni tanlash (Kichik ekranlarda) */}
-        <div className="flex md:hidden overflow-x-auto py-1.5 gap-1 no-scrollbar border-t border-slate-100 dark:border-slate-800">
-          <button
-            onClick={() => navigateTo('/director')}
-            className={`px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-colors ${
-              (currentUser?.role === 'director' || currentPath === '/director' || currentPath === '/students' || currentPath === '/teachers') ? 'bg-blue-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-            }`}
-          >
-            Direktor
-          </button>
-          <button
-            onClick={() => navigateTo('/duty')}
-            className={`px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-colors ${
-              (currentUser?.role === 'inspector' || currentPath === '/duty') ? 'bg-emerald-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-            }`}
-          >
-            Navbatchi
-          </button>
-          <button
-            onClick={() => navigateTo('/class-teacher')}
-            className={`px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-colors ${
-              (currentUser?.role === 'class_teacher' || currentPath === '/class-teacher') ? 'bg-indigo-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-            }`}
-          >
-            Sinf Rahbari
-          </button>
-          <button
-            onClick={() => navigateTo('/subject-teacher')}
-            className={`px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-colors ${
-              (currentUser?.role === 'subject_teacher' || currentPath === '/subject-teacher') ? 'bg-amber-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-            }`}
-          >
-            Fan O'qituvchisi
-          </button>
-          <button
-            onClick={() => navigateTo('/monitor')}
-            className={`px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-colors ${
-              (currentUser?.role === 'monitor' || currentPath === '/monitor') ? 'bg-purple-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-            }`}
-          >
-            Monitor (Foye)
-          </button>
         </div>
 
       </div>

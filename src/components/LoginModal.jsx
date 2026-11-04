@@ -5,8 +5,8 @@ import { LogIn, Key, User, Lock, Shield, Check, Sun, Moon } from 'lucide-react';
 
 export const LoginModal = () => {
   const { login, theme, toggleTheme, isLocalHostEnv, isLocalConnected, networkMode } = useSchool();
-  const [username, setUsername] = useState('direktor');
-  const [password, setPassword] = useState('123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   const isLocalAccess = Boolean(isLocalHostEnv || networkMode === 'local' || isLocalConnected);

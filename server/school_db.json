@@ -24871,66 +24871,94 @@
   "cameras": [
     {
       "id": "cam-1",
+      "schoolId": "sch-1",
       "ip": "192.168.1.35",
-      "name": "Turniket 1 (Chiqish)",
       "type": "out",
-      "online": true,
+      "name": "Turniket 1 (Chiqish)",
       "location": "Bosh kirish eshigi (1)",
-      "lastEvent": null,
-      "updated_at": "2026-10-14T04:42:17.882+00:00"
+      "port": 80,
+      "online": true,
+      "lastEvent": null
     },
     {
       "id": "cam-6",
+      "schoolId": "sch-1",
       "ip": "192.168.1.13",
-      "name": "Turniket 6 (Chiqish)",
       "type": "out",
-      "online": true,
+      "name": "Turniket 6 (Chiqish)",
       "location": "Chiqish yo'lagi (3)",
-      "lastEvent": null,
-      "updated_at": "2026-10-14T04:42:17.882+00:00"
+      "port": 80,
+      "online": true,
+      "lastEvent": null
     },
     {
       "id": "cam-2",
+      "schoolId": "sch-1",
       "ip": "192.168.1.32",
-      "name": "Turniket 2 (Chiqish)",
       "type": "out",
-      "online": true,
+      "name": "Turniket 2 (Chiqish)",
       "location": "Bosh kirish eshigi (2)",
-      "lastEvent": null,
-      "updated_at": "2026-10-14T04:42:17.882+00:00"
+      "port": 80,
+      "online": true,
+      "lastEvent": null
     },
     {
       "id": "cam-3",
+      "schoolId": "sch-1",
       "ip": "192.168.1.36",
-      "name": "Turniket 3 (Kirish)",
       "type": "in",
-      "online": true,
+      "name": "Turniket 3 (Kirish)",
       "location": "Bosh kirish eshigi (3)",
-      "lastEvent": null,
-      "updated_at": "2026-10-14T04:42:17.882+00:00"
+      "port": 80,
+      "online": true,
+      "lastEvent": null
     },
     {
       "id": "cam-4",
+      "schoolId": "sch-1",
       "ip": "192.168.1.86",
-      "name": "Turniket 4 (Kirish)",
       "type": "in",
-      "online": true,
+      "name": "Turniket 4 (Kirish)",
       "location": "Chiqish yo'lagi (1)",
-      "lastEvent": null,
-      "updated_at": "2026-10-14T04:42:17.882+00:00"
+      "port": 80,
+      "online": true,
+      "lastEvent": null
     },
     {
       "id": "cam-5",
+      "schoolId": "sch-1",
       "ip": "192.168.1.33",
-      "name": "Turniket 5 (Kirish)",
       "type": "in",
-      "online": true,
+      "name": "Turniket 5 (Kirish)",
       "location": "Chiqish yo'lagi (2)",
-      "lastEvent": null,
-      "updated_at": "2026-10-14T04:42:17.882+00:00"
+      "port": 80,
+      "online": true,
+      "lastEvent": null
+    },
+    {
+      "id": "cam-21-1",
+      "schoolId": "sch-2",
+      "ip": "192.168.2.10",
+      "type": "in",
+      "name": "Turniket 1 (Bosh kirish)",
+      "location": "Bosh kirish eshigi",
+      "port": 80,
+      "online": false,
+      "lastEvent": null
+    },
+    {
+      "id": "cam-21-2",
+      "schoolId": "sch-2",
+      "ip": "192.168.2.11",
+      "type": "out",
+      "name": "Turniket 2 (Chiqish)",
+      "location": "Chiqish yo'lagi",
+      "port": 80,
+      "online": false,
+      "lastEvent": null
     }
   ],
-  "lastUpdated": 1792756490827,
+  "lastUpdated": 1793774667636,
   "test_key": "test_val",
   "global_stream_url": "https://neo-proudly-chelsea-grew.trycloudflare.com",
   "camera_latest_frames": {
@@ -24945,9 +24973,9 @@
   "schools": [
     {
       "id": "sch-1",
-      "name": "1-sonli ixtisoslashtirilgan umumta'lim maktabi",
-      "code": "SCH-001",
-      "address": "Urganch shahri, Al-Xorazmiy ko'chasi 12",
+      "name": "24-maktab",
+      "code": "SCH-024",
+      "address": "Gurlan tumani",
       "phone": "+998 90 123 45 67",
       "director": "Yaxshimuratov Otabek Yuldashevich",
       "status": "active",
@@ -49892,8 +49920,8 @@
     },
     {
       "id": "sch-2",
-      "name": "21-sonli umumiy o'rta ta'lim maktabi",
-      "code": "SCH-021",
+      "name": "1-maktab",
+      "code": "SCH-001",
       "address": "Urganch shahri, Amir Temur ko'chasi 45",
       "phone": "+998 91 345 67 89",
       "director": "Karimov Anvar Rashidovich",
