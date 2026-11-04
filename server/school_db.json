@@ -49916,7 +49916,9 @@
         }
       ],
       "teacherAttendance": [],
-      "hourlyAttendance": {}
+      "hourlyAttendance": {},
+      "supabaseUrl": "https://ffwbxpqfzlkevxhijvtd.supabase.co",
+      "supabaseKey": "sb_publishable_IN4OpUU6gNpnZINpifQSAg_DZuksmMD"
     },
     {
       "id": "sch-2",
@@ -49966,7 +49968,14 @@
       "schedules": [],
       "attendanceList": [],
       "teacherAttendance": [],
-      "hourlyAttendance": {}
+      "hourlyAttendance": {},
+      "supabaseUrl": "",
+      "supabaseKey": ""
     }
-  ]
+  ],
+  "bigadmin_supabase": {
+    "url": "https://rtjymleouwmgjranmfeg.supabase.co",
+    "key": "sb_publishable_WIm-skJQtx1v2vD8RDd3IQ_6YxlhTY0",
+    "dbUrl": "postgresql://postgres:UHkAmWSbaPzGwVq4@db.rtjymleouwmgjranmfeg.supabase.co:5432/postgres"
+  }
 }

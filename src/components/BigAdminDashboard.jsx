@@ -22,7 +22,12 @@ import {
   Settings2, 
   Layers,
   Sparkles,
-  Camera
+  Camera,
+  Database,
+  Cloud,
+  Key,
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 
 export const BigAdminDashboard = () => {
@@ -32,6 +37,8 @@ export const BigAdminDashboard = () => {
     selectSchool,
     createSchool,
     updateSchool,
+    updateSchoolSupabase,
+    testSupabaseConnection,
     deleteSchool,
     addTurnstileToSchool,
     updateTurnstile,
@@ -68,6 +75,16 @@ export const BigAdminDashboard = () => {
     type: 'in',
     location: ''
   });
+
+  // Supabase sozlamalari modali holati
+  const [showSupabaseModal, setShowSupabaseModal] = useState(false);
+  const [selectedSchoolForSupabase, setSelectedSchoolForSupabase] = useState(null);
+  const [supabaseFormData, setSupabaseFormData] = useState({
+    supabaseUrl: '',
+    supabaseKey: ''
+  });
+  const [testingSupabase, setTestingSupabase] = useState(false);
+  const [testResult, setTestResult] = useState(null);
 
   // Barcha turniketlar yig'indisi
   const allTurnstilesWithSchool = useMemo(() => {
@@ -219,6 +236,45 @@ export const BigAdminDashboard = () => {
     navigateTo('/director');
   };
 
+  // Supabase sozlamalari modali
+  const handleOpenSupabaseModal = (school) => {
+    setSelectedSchoolForSupabase(school);
+    const isFirstSchool = school.id === 'sch-1';
+    setSupabaseFormData({
+      supabaseUrl: school.supabaseUrl || (isFirstSchool ? 'https://ffwbxpqfzlkevxhijvtd.supabase.co' : ''),
+      supabaseKey: school.supabaseKey || (isFirstSchool ? 'sb_publishable_IN4OpUU6gNpnZINpifQSAg_DZuksmMD' : '')
+    });
+    setTestResult(null);
+    setShowSupabaseModal(true);
+  };
+
+  const handleTestConnection = async () => {
+    if (!supabaseFormData.supabaseUrl.trim() || !supabaseFormData.supabaseKey.trim()) {
+      setTestResult({ success: false, message: 'URL va Anon Key to\'liq kiritilishi shart!' });
+      return;
+    }
+    setTestingSupabase(true);
+    setTestResult(null);
+    try {
+      const res = await testSupabaseConnection(supabaseFormData.supabaseUrl, supabaseFormData.supabaseKey);
+      setTestResult(res);
+    } catch (e) {
+      setTestResult({ success: false, message: e.message || 'Ulanishda xatolik yuz berdi' });
+    } finally {
+      setTestingSupabase(false);
+    }
+  };
+
+  const handleSaveSupabase = async (e) => {
+    e.preventDefault();
+    if (!selectedSchoolForSupabase) return;
+    await updateSchoolSupabase(selectedSchoolForSupabase.id, {
+      supabaseUrl: supabaseFormData.supabaseUrl.trim(),
+      supabaseKey: supabaseFormData.supabaseKey.trim()
+    });
+    setShowSupabaseModal(false);
+  };
+
   return (
     <div className="space-y-6 pb-12 animate-fadeIn">
       {/* 1. Yuqori Banner & Big Admin statusi */}
@@ -234,7 +290,7 @@ export const BigAdminDashboard = () => {
               Maktablar & Turniketlar Markazi
             </h1>
             <p className="text-slate-300 text-xs sm:text-sm max-w-2xl">
-              Tizimga istalgancha maktab qo'shing, har bir maktabga cheksiz miqdorda Hikvision Face-ID turniketlarini biriktiring va real vaqtda nazorat qiling.
+              Tizimga istalgancha maktab qo'shing, har bir maktabga alohida Supabase bulut bazasini biriktiring va turniketlarni markazlashgan holda boshqaring.
             </p>
           </div>
 
@@ -247,6 +303,18 @@ export const BigAdminDashboard = () => {
               <span>Yangi Maktab Qo'shish</span>
             </button>
           </div>
+        </div>
+
+        {/* BigAdmin Markaziy Supabase xabarnomasi */}
+        <div className="mt-4 px-3.5 py-2.5 rounded-xl bg-indigo-950/70 border border-indigo-700/50 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2">
+            <Database className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="text-slate-300 font-medium">BigAdmin Markaziy Supabase:</span>
+            <span className="font-mono text-emerald-300 font-bold">rtjymleouwmgjranmfeg.supabase.co</span>
+          </div>
+          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold">
+            Alohida Markaziy Baza • Faol
+          </span>
         </div>
 
         {/* KPI Statistik bloklar */}
@@ -410,6 +478,34 @@ export const BigAdminDashboard = () => {
                       <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                       <span className="truncate">{school.address || 'Manzil kiritilmagan'}</span>
                     </div>
+                  </div>
+
+                  {/* Supabase Bulut Bazasi Sozlamalari & Holati */}
+                  <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      {(school.supabaseUrl || school.id === 'sch-1') ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>Supabase Ulangan</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 text-[11px] font-bold">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                          <span>Supabase Kutilmoqda</span>
+                        </span>
+                      )}
+                      <span className="text-[10px] font-mono text-slate-400 truncate max-w-[170px]" title={school.supabaseUrl || (school.id === 'sch-1' ? 'https://ffwbxpqfzlkevxhijvtd.supabase.co' : '')}>
+                        {school.supabaseUrl ? school.supabaseUrl.replace('https://', '').split('.')[0] + '.supabase.co' : (school.id === 'sch-1' ? 'ffwbxpqfzlkevxhijvtd.supabase.co' : 'Baza kiritilmagan')}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => handleOpenSupabaseModal(school)}
+                      className="px-3 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-xl transition-all flex items-center gap-1.5 border border-indigo-200 dark:border-indigo-800/60 shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <Database className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <span>Supabase Sozlamalari</span>
+                    </button>
                   </div>
                 </div>
 
@@ -933,6 +1029,129 @@ export const BigAdminDashboard = () => {
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{editingTurnstile ? 'Yangilash' : 'Turniketni Biriktirish'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== 7. MAKTAB SUPABASE SOZLAMALARI MODALI ==================== */}
+      {showSupabaseModal && selectedSchoolForSupabase && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/30">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
+                    Supabase Bulut Bazasi Sozlamalari
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    {selectedSchoolForSupabase.name} ({selectedSchoolForSupabase.code || 'SCH'})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSupabaseModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold p-1 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSupabase} className="p-4 sm:p-5 space-y-4">
+              <div className="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 text-xs text-indigo-800 dark:text-indigo-300">
+                Ushbu maktabga tegishli barcha Face-ID skanlari, o'quvchilar va davomat faqat mana shu Supabase loyihasiga saqlanadi va boshqa maktablar bilan mutlaqo aralashmaydi.
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Supabase Project URL <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <Cloud className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="url"
+                    required
+                    value={supabaseFormData.supabaseUrl}
+                    onChange={(e) => setSupabaseFormData({ ...supabaseFormData, supabaseUrl: e.target.value })}
+                    placeholder="https://xyzcompany.supabase.co"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none font-mono text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Supabase Anon / Public Key <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <Key className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    required
+                    value={supabaseFormData.supabaseKey}
+                    onChange={(e) => setSupabaseFormData({ ...supabaseFormData, supabaseKey: e.target.value })}
+                    placeholder="sb_publishable_... yoki eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none font-mono text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              {/* Ulanishni tekshirish tugmasi va natijasi */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  disabled={testingSupabase}
+                  onClick={handleTestConnection}
+                  className="w-full py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 disabled:opacity-50"
+                >
+                  {testingSupabase ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                      <span>Supabase bilan aloqa tekshirilmoqda...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Activity className="w-4 h-4 text-indigo-600" />
+                      <span>Ulanishni Tekshirish</span>
+                    </>
+                  )}
+                </button>
+
+                {testResult && (
+                  <div className={`mt-2.5 p-2.5 rounded-xl text-xs font-medium flex items-center gap-2 border ${
+                    testResult.success
+                      ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                      : 'bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                  }`}>
+                    {testResult.success ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    )}
+                    <span>{testResult.message}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowSupabaseModal(false)}
+                  className="px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                >
+                  Bekor Qilish
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Saqlash va Biriktirish</span>
                 </button>
               </div>
             </form>

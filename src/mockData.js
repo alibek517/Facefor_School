@@ -124,13 +124,15 @@ export const SCHOOL_LEADERSHIP = [
 export const INITIAL_SCHOOLS = [
   {
     id: 'sch-1',
-    name: "1-sonli ixtisoslashtirilgan umumta'lim maktabi",
-    code: "SCH-001",
+    name: "24-sonli umumiy o'rta ta'lim maktabi",
+    code: "SCH-024",
     address: "Urganch shahri, Al-Xorazmiy ko'chasi 12",
     phone: "+998 90 123 45 67",
     director: "Yaxshimuratov Otabek Yuldashevich",
     status: "active",
     createdAt: "2026-10-01T08:00:00.000Z",
+    supabaseUrl: "https://ffwbxpqfzlkevxhijvtd.supabase.co",
+    supabaseKey: "sb_publishable_IN4OpUU6gNpnZINpifQSAg_DZuksmMD",
     turnstiles: [
       { id: 'cam-1', schoolId: 'sch-1', ip: '192.168.1.35', name: 'Turniket 1 (Chiqish)', type: 'out', location: 'Bosh kirish eshigi (1)', online: true },
       { id: 'cam-6', schoolId: 'sch-1', ip: '192.168.1.13', name: 'Turniket 6 (Chiqish)', type: 'out', location: 'Chiqish yo\'lagi (3)', online: true },
@@ -142,13 +144,15 @@ export const INITIAL_SCHOOLS = [
   },
   {
     id: 'sch-2',
-    name: "21-sonli umumiy o'rta ta'lim maktabi",
-    code: "SCH-021",
+    name: "1-sonli ixtisoslashtirilgan umumta'lim maktabi",
+    code: "SCH-001",
     address: "Urganch shahri, Amir Temur ko'chasi 45",
     phone: "+998 91 345 67 89",
     director: "Karimov Anvar Rashidovich",
     status: "active",
     createdAt: "2026-10-15T08:00:00.000Z",
+    supabaseUrl: "",
+    supabaseKey: "",
     turnstiles: [
       { id: 'cam-21-1', schoolId: 'sch-2', ip: '192.168.2.10', name: 'Turniket 1 (Bosh kirish)', type: 'in', location: 'Bosh kirish eshigi', online: false },
       { id: 'cam-21-2', schoolId: 'sch-2', ip: '192.168.2.11', name: 'Turniket 2 (Chiqish)', type: 'out', location: 'Chiqish yo\'lagi', online: false }

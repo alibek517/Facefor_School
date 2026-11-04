@@ -250,10 +250,31 @@ let schoolDB = loadSchoolDB() || {
 syncUsersMapWithDB();
 
 // ==================== SUPABASE BULUTLI INTEGRATSIYA ====================
-const SUPABASE_CONFIG = {
+// BigAdmin Markaziy Supabase sozlamalari
+const BIGADMIN_SUPABASE_CONFIG = {
+  URL: 'https://rtjymleouwmgjranmfeg.supabase.co',
+  KEY: 'sb_publishable_WIm-skJQtx1v2vD8RDd3IQ_6YxlhTY0',
+  DB_URL: 'postgresql://postgres:UHkAmWSbaPzGwVq4@db.rtjymleouwmgjranmfeg.supabase.co:5432/postgres'
+};
+
+// Standart 24-maktab Supabase parametrlari
+const DEFAULT_SUPABASE_CONFIG = {
   URL: 'https://ffwbxpqfzlkevxhijvtd.supabase.co',
   KEY: 'sb_publishable_IN4OpUU6gNpnZINpifQSAg_DZuksmMD'
 };
+
+const SUPABASE_CONFIG = DEFAULT_SUPABASE_CONFIG;
+
+function getSupabaseConfigForSchool(schoolId) {
+  if (schoolDB && Array.isArray(schoolDB.schools)) {
+    const found = schoolDB.schools.find(s => s.id === schoolId);
+    if (found && found.supabaseUrl && found.supabaseKey) {
+      return { URL: found.supabaseUrl.trim(), KEY: found.supabaseKey.trim() };
+    }
+  }
+  if (schoolId === 'sch-1') return DEFAULT_SUPABASE_CONFIG;
+  return null;
+}
 
 let isSupabaseDisabled = false;
 function checkSupabaseRes(res) {
@@ -267,8 +288,10 @@ function checkSupabaseRes(res) {
   return false;
 }
 
-async function syncCamerasToSupabase(camerasList) {
+async function syncCamerasToSupabase(camerasList, schoolId = 'sch-1') {
   if (isSupabaseDisabled) return;
+  const cfg = getSupabaseConfigForSchool(schoolId);
+  if (!cfg) return;
   try {
     const payload = camerasList.map(c => ({
       id: c.id,
@@ -279,11 +302,11 @@ async function syncCamerasToSupabase(camerasList) {
       updated_at: new Date().toISOString()
     }));
 
-    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/camera_settings`, {
+    const res = await fetch(`${cfg.URL}/rest/v1/camera_settings`, {
       method: 'POST',
       headers: {
-        'apikey': SUPABASE_CONFIG.KEY,
-        'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`,
+        'apikey': cfg.KEY,
+        'Authorization': `Bearer ${cfg.KEY}`,
         'Content-Type': 'application/json',
         'Prefer': 'resolution=merge-duplicates'
       },
@@ -293,18 +316,20 @@ async function syncCamerasToSupabase(camerasList) {
     if (checkSupabaseRes(res)) return;
 
     if (res.ok) {
-      console.log('[SUPABASE] 6 ta kamera yo\'nalishlari Supabase bulutiga saqlandi.');
+      console.log(`[SUPABASE] Maktab (${schoolId}) kameralari Supabase bulutiga saqlandi.`);
     }
   } catch (err) {}
 }
 
-async function loadCamerasFromSupabase() {
+async function loadCamerasFromSupabase(schoolId = 'sch-1') {
   if (isSupabaseDisabled) return;
+  const cfg = getSupabaseConfigForSchool(schoolId);
+  if (!cfg) return;
   try {
-    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/camera_settings?select=*`, {
+    const res = await fetch(`${cfg.URL}/rest/v1/camera_settings?select=*`, {
       headers: {
-        'apikey': SUPABASE_CONFIG.KEY,
-        'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`
+        'apikey': cfg.KEY,
+        'Authorization': `Bearer ${cfg.KEY}`
       }
     });
     if (checkSupabaseRes(res)) return;
@@ -330,20 +355,37 @@ async function loadCamerasFromSupabase() {
   } catch (err) {}
 }
 
-async function syncModuleToSupabase(key, data) {
+async function syncModuleToSupabase(key, data, targetSchoolId = null) {
   if (isSupabaseDisabled) return;
   try {
-    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/school_data`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_CONFIG.KEY,
-        'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates'
-      },
-      body: JSON.stringify({ key, data, updated_at: new Date().toISOString() })
-    });
-    checkSupabaseRes(res);
+    const targetSchools = targetSchoolId 
+      ? [targetSchoolId] 
+      : ((schoolDB && Array.isArray(schoolDB.schools)) ? schoolDB.schools.map(s => s.id) : ['sch-1']);
+
+    for (const sId of targetSchools) {
+      const cfg = getSupabaseConfigForSchool(sId);
+      if (!cfg || !cfg.URL || !cfg.KEY) continue;
+
+      let payloadData = data;
+      if (!targetSchoolId && schoolDB && Array.isArray(schoolDB.schools)) {
+        const sch = schoolDB.schools.find(s => s.id === sId);
+        if (sch && sch[key] !== undefined) {
+          payloadData = sch[key];
+        }
+      }
+
+      const res = await fetch(`${cfg.URL}/rest/v1/school_data`, {
+        method: 'POST',
+        headers: {
+          'apikey': cfg.KEY,
+          'Authorization': `Bearer ${cfg.KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({ key, data: payloadData, updated_at: new Date().toISOString() })
+      });
+      checkSupabaseRes(res);
+    }
   } catch (err) {}
 }
 
@@ -624,13 +666,15 @@ function detectAndSyncStudentDifferences(oldStudents, newStudents) {
   }
 }
 
-async function loadSchoolDataFromSupabase() {
+async function loadSchoolDataFromSupabase(schoolId = 'sch-1') {
   if (isSupabaseDisabled) return;
+  const cfg = getSupabaseConfigForSchool(schoolId);
+  if (!cfg) return;
   try {
-    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/school_data?select=*`, {
+    const res = await fetch(`${cfg.URL}/rest/v1/school_data?select=*`, {
       headers: {
-        'apikey': SUPABASE_CONFIG.KEY,
-        'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`
+        'apikey': cfg.KEY,
+        'Authorization': `Bearer ${cfg.KEY}`
       }
     });
     if (checkSupabaseRes(res)) return;
@@ -685,11 +729,28 @@ async function loadSchoolDataFromSupabase() {
 async function logScanToSupabase(scan) {
   if (isSupabaseDisabled) return;
   try {
-    const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/face_scans`, {
+    // 1. Scan qaysi maktabga tegishli ekanligini aniqlash
+    let targetSchoolId = 'sch-1';
+    if (schoolDB && Array.isArray(schoolDB.schools)) {
+      for (const sch of schoolDB.schools) {
+        if (Array.isArray(sch.turnstiles) && sch.turnstiles.some(t => t.ip === scan.cameraIp || t.name === scan.cameraName)) {
+          targetSchoolId = sch.id;
+          break;
+        }
+      }
+    }
+
+    const cfg = getSupabaseConfigForSchool(targetSchoolId);
+    if (!cfg || !cfg.URL || !cfg.KEY) {
+      // Bu maktabga hali Supabase ulanmagan bo'lsa o'tkazib yuboriladi
+      return;
+    }
+
+    const res = await fetch(`${cfg.URL}/rest/v1/face_scans`, {
       method: 'POST',
       headers: {
-        'apikey': SUPABASE_CONFIG.KEY,
-        'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`,
+        'apikey': cfg.KEY,
+        'Authorization': `Bearer ${cfg.KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -1941,6 +2002,44 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({
           success: true,
           message: 'Maktab o\'chirildi!',
+          schools: schoolDB.schools
+        }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 4b. Maktab Supabase sozlamalarini yangilash (BigAdmin)
+  if (pathname === '/api/schools/supabase/update' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        ensureSchoolsInDB();
+        const school = (schoolDB.schools || []).find(s => s.id === payload.id);
+        if (!school) {
+          res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: 'Maktab topilmadi!' }));
+          return;
+        }
+
+        if (payload.supabaseUrl !== undefined) school.supabaseUrl = payload.supabaseUrl.trim();
+        if (payload.supabaseKey !== undefined) school.supabaseKey = payload.supabaseKey.trim();
+
+        saveSchoolDB(schoolDB);
+        broadcastSSE('schools_updated', schoolDB.schools);
+
+        console.log(`[SUPABASE CONFIG] Maktab (${school.name}) uchun yangi Supabase sozlamalari saqlandi: ${school.supabaseUrl || "O'chirildi"}`);
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: true,
+          message: 'Maktab Supabase sozlamalari muvaffaqiyatli yangilandi!',
+          school,
           schools: schoolDB.schools
         }));
       } catch (err) {

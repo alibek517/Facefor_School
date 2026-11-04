@@ -16,6 +16,11 @@ import {
 } from '../mockData';
 import {
   supabase,
+  bigAdminSupabase,
+  getSupabaseForSchool,
+  setActiveSupabaseClient,
+  getActiveSupabaseClient,
+  testSupabaseConnection,
   checkSupabaseConnection,
   loadAllSchoolDataFromSupabase,
   saveModuleToSupabase,
@@ -200,6 +205,15 @@ export const SchoolProvider = ({ children }) => {
 
     const found = schools.find(s => s.id === schoolId);
     if (found) {
+      // 1b. Tanlangan maktab uchun tegishli Supabase klientini faollashtirish
+      if (found.supabaseUrl && found.supabaseKey) {
+        setActiveSupabaseClient(getSupabaseForSchool(found));
+      } else if (found.id === 'sch-1') {
+        setActiveSupabaseClient(supabase);
+      } else {
+        setActiveSupabaseClient(null);
+      }
+
       const isFirstSchool = found.id === 'sch-1';
       // 2. Yangi maktab ma'lumotlarini yuklash (hech bir maktab boshqasi bilan aralashmaydi!)
       setClasses(Array.isArray(found.classes) ? found.classes : (isFirstSchool ? INITIAL_CLASSES : []));
@@ -1585,6 +1599,43 @@ export const SchoolProvider = ({ children }) => {
     showToast('Yangilandi', 'Maktab ma\'lumotlari yangilandi.', 'success');
   };
 
+  const updateSchoolSupabase = async (schoolId, { supabaseUrl, supabaseKey }) => {
+    const url = (supabaseUrl || '').trim();
+    const key = (supabaseKey || '').trim();
+
+    setSchools(prev => {
+      const updated = prev.map(s => {
+        if (s.id === schoolId) {
+          return { ...s, supabaseUrl: url, supabaseKey: key };
+        }
+        return s;
+      });
+      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+
+    if (selectedSchoolId === schoolId) {
+      if (url && key) {
+        const client = getSupabaseForSchool({ supabaseUrl: url, supabaseKey: key });
+        setActiveSupabaseClient(client);
+      } else if (schoolId === 'sch-1') {
+        setActiveSupabaseClient(supabase);
+      }
+    }
+
+    try {
+      const bridgeHost = localBridgeInfo?.ip || 'localhost';
+      const bridgePort = localBridgeInfo?.port || 5001;
+      await fetch(`http://${bridgeHost}:${bridgePort}/api/schools/supabase/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: schoolId, supabaseUrl: url, supabaseKey: key })
+      });
+    } catch (e) {}
+
+    showToast('Muvaffaqiyatli', 'Supabase sozlamalari yangilandi!', 'success');
+  };
+
   const deleteSchool = async (schoolId) => {
     if (schools.length <= 1) {
       showToast('Rad etildi', 'Kamida bitta maktab qolishi shart!', 'error');
@@ -2562,6 +2613,9 @@ export const SchoolProvider = ({ children }) => {
     selectSchool,
     createSchool,
     updateSchool,
+    updateSchoolSupabase,
+    testSupabaseConnection,
+    bigAdminSupabase,
     deleteSchool,
     addTurnstileToSchool,
     updateTurnstile,
