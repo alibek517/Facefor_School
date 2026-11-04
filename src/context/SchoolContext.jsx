@@ -78,20 +78,32 @@ export const SchoolProvider = ({ children }) => {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Autentifikatsiya (Login holati)
+  // Autentifikatsiya (Login holati) - kompyuter yonganda srazi avtomatik login bo'lib turadi!
   const [currentUser, setCurrentUser] = useState(() => {
+    const directorUser = USERS_AUTH.find(u => u.role === 'director') || USERS_AUTH[1] || USERS_AUTH[0];
     try {
       const saved = localStorage.getItem('school_user');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.teacherId === 't-urazmetov' || (parsed.name && (parsed.name.includes('Yaxshimuratov') || parsed.name.includes("O'razmetov")))) {
-          localStorage.removeItem('school_user');
-          return USERS_AUTH[0];
+        const isLocal = typeof window !== 'undefined' && (
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1' ||
+          window.location.hostname.startsWith('192.168.') ||
+          window.location.hostname.startsWith('10.')
+        );
+        if (isLocal && (parsed.role === 'bigadmin' || parsed.login === 'bigadmin')) {
+          localStorage.setItem('school_user', JSON.stringify(directorUser));
+          return directorUser;
         }
-        return parsed;
+        if (parsed && parsed.login) return parsed;
       }
     } catch (e) {}
-    return USERS_AUTH[0];
+
+    // Dastlabki avtologin: Maktab Direktori (hech qachon login ekranda to'xtab qolmaydi)
+    try {
+      localStorage.setItem('school_user', JSON.stringify(directorUser));
+    } catch (e) {}
+    return directorUser;
   });
 
   const [selectedTeacherId, setSelectedTeacherId] = useState(() => {
