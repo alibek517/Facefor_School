@@ -126,11 +126,7 @@ const MainLayout = () => {
           </div>
 
           <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium shrink-0 hidden sm:flex items-center gap-2">
-            {currentSchool && (
-              <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700">
-                Maktab: {currentSchool.name}
-              </span>
-            )}
+            
             <span>Jonli Maktab Tizimi</span>
           </div>
         </div>

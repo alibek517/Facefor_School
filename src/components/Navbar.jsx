@@ -103,15 +103,7 @@ export const Navbar = () => {
             </div>
           </div>
 
-          {/* Maktab indikatori (Alohida izolyatsiyalangan maktab - maktablar bir-biri bilan bog'lanib ketmaydi) */}
-          {currentSchool && (
-            <div className="hidden lg:flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700">
-              <Building className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-100 max-w-[200px] truncate">
-                {currentSchool.name}
-              </span>
-            </div>
-          )}
+          
 
           {/* Joriy faol rol va kabinet indikatori (alohida login bilan kirilgani uchun tezkor almashtirish olib tashlandi) */}
           <div className="hidden md:flex items-center gap-2">
