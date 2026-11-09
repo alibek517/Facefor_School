@@ -42,7 +42,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  ZoomIn
+  ZoomIn,
+  GraduationCap,
+  Briefcase,
+  BookOpen
 } from 'lucide-react';
 import CameraPlaybackView from './CameraPlaybackView';
 import { StudentAvatar } from './StudentAvatar';
@@ -579,9 +582,12 @@ const ArchiveCard = ({ scan, effectiveBaseUrl, cameras, onSelect }) => {
 };
 
 export const DirectorDashboard = () => {
-  const { 
-    classes, 
-    students, 
+  const {
+    classes,
+    students,
+    teachers,
+    teacherAttendance,
+    toggleTeacherPresence,
     attendanceList, 
     cameras, 
     updateCameraType, 
@@ -645,6 +651,15 @@ export const DirectorDashboard = () => {
   }, [globalStreamUrl]);
 
   // Bugungi davomatni saralash: 'entered' (kirganlar) | 'absent' (kirmaganlar) | 'exited' (chiqqanlar) | 'all' (barchasi)
+  // Asosiy davomat ko'rinishi: 'students' (o'quvchilar) | 'teachers' (o'qituvchilar)
+  const [mainAttendanceType, setMainAttendanceType] = useState('students');
+
+  // O'qituvchilar davomati bo'limi filtrlari
+  const [teacherAttendanceTab, setTeacherAttendanceTab] = useState('entered');
+  const [teacherSearch, setTeacherSearch] = useState('');
+  const [selectedTeacherSubject, setSelectedTeacherSubject] = useState('all');
+  const [teacherVisibleCount, setTeacherVisibleCount] = useState(50);
+
   const [attendanceTab, setAttendanceTab] = useState('entered');
   const [studentSearch, setStudentSearch] = useState('');
   const [visibleCount, setVisibleCount] = useState(50);
@@ -804,6 +819,107 @@ export const DirectorDashboard = () => {
 
     return list;
   }, [enrichedStudents, enteredStudents, absentStudents, exitedStudents, attendanceTab, selectedClass, studentSearch]);
+
+
+  // Tanlangan sana bo'yicha barcha o'qituvchilarning aniq holati
+  const enrichedTeachers = useMemo(() => {
+    return (teachers || []).map(teacher => {
+      const normId = String(teacher.employeeNo || teacher.faceId || teacher.id || '')
+        .replace(/^t-/, '')
+        .replace(/^0+/, '');
+
+      // Face-ID o'tishlaridan qidirish (shu sanadagi)
+      const scans = selectedDateScans.filter(s => {
+        const sEmp = String(s.employeeNo || '').replace(/^0+/, '');
+        const sName = (s.name || '').toLowerCase().trim();
+        const tName = (teacher.fullName || teacher.name || '').toLowerCase().trim();
+        return (sEmp && normId && sEmp === normId) || 
+               (sName && tName && (sName === tName || sName.includes(tName) || tName.includes(sName)));
+      });
+
+      const inScans = scans.filter(s => s.direction === 'in');
+      const outScans = scans.filter(s => s.direction === 'out');
+      const firstInScan = inScans[inScans.length - 1] || inScans[0];
+      const lastScan = scans[0];
+
+      // teacherAttendance dan yozuvni topish
+      const tRecord = (teacherAttendance || []).find(t => 
+        t.teacherId === teacher.id && (t.date === selectedDate || !t.date)
+      );
+
+      const hasAnyScan = scans.length > 0;
+      const hasEntered = hasAnyScan || !!firstInScan || (tRecord && (tRecord.status === 'present' || tRecord.inTime));
+      
+      const hasExited = hasEntered && (
+        (lastScan && lastScan.direction === 'out') ||
+        (tRecord && (tRecord.lastDirection === 'out' || (tRecord.status === 'absent' && tRecord.inTime)))
+      );
+      const isInside = hasEntered && !hasExited;
+
+      const entryTime = (firstInScan ? formatScanTime(firstInScan) : null) || 
+                        (scans[scans.length - 1] ? formatScanTime(scans[scans.length - 1]) : null) || 
+                        tRecord?.inTime || 
+                        (hasEntered ? '08:00' : null);
+      const exitTime = hasExited ? (formatScanTime(lastScan) || tRecord?.outTime) : null;
+      const gateName = firstInScan?.cameraName || lastScan?.cameraName || (tRecord?.inTime ? 'Qayd etilgan' : 'Turniket');
+
+      const cl = (classes || []).find(c => c.id === teacher.classId);
+
+      return {
+        ...teacher,
+        className: cl?.name || null,
+        hasEntered,
+        isInside,
+        hasExited,
+        entryTime,
+        exitTime,
+        gateName,
+        lastScan,
+        tRecord,
+        statusType: hasEntered ? (hasExited ? 'exited' : 'inside') : 'absent'
+      };
+    });
+  }, [teachers, selectedDateScans, teacherAttendance, selectedDate, classes]);
+
+  const enteredTeachers = useMemo(() => enrichedTeachers.filter(t => t.hasEntered), [enrichedTeachers]);
+  const insideTeachers = useMemo(() => enrichedTeachers.filter(t => t.isInside), [enrichedTeachers]);
+  const exitedTeachers = useMemo(() => enrichedTeachers.filter(t => t.hasExited), [enrichedTeachers]);
+  const absentTeachers = useMemo(() => enrichedTeachers.filter(t => !t.hasEntered), [enrichedTeachers]);
+
+  const totalTeachersCount = enrichedTeachers.length || 1;
+  const enteredTeachersPercent = Math.round((enteredTeachers.length / totalTeachersCount) * 100);
+  const absentTeachersPercent = Math.round((absentTeachers.length / totalTeachersCount) * 100);
+
+  const teacherSubjects = useMemo(() => {
+    const set = new Set();
+    (teachers || []).forEach(t => {
+      if (t.subject) set.add(t.subject.trim());
+    });
+    return Array.from(set);
+  }, [teachers]);
+
+  const displayedTeachers = useMemo(() => {
+    let list = enrichedTeachers;
+    if (teacherAttendanceTab === 'entered') list = enteredTeachers;
+    else if (teacherAttendanceTab === 'absent') list = absentTeachers;
+    else if (teacherAttendanceTab === 'exited') list = exitedTeachers;
+
+    if (selectedTeacherSubject !== 'all') {
+      list = list.filter(t => t.subject === selectedTeacherSubject);
+    }
+
+    if (teacherSearch.trim()) {
+      const q = teacherSearch.toLowerCase().trim();
+      list = list.filter(t => 
+        (t.fullName || t.name || '').toLowerCase().includes(q) ||
+        (t.subject || '').toLowerCase().includes(q) ||
+        (t.phone || '').includes(q) ||
+        String(t.employeeNo || t.faceId || t.id || '').includes(q)
+      );
+    }
+
+    return list;
+  }, [enrichedTeachers, enteredTeachers, absentTeachers, exitedTeachers, teacherAttendanceTab, selectedTeacherSubject, teacherSearch]);
 
   const gradesList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 

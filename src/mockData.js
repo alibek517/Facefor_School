@@ -213,7 +213,196 @@ export const INITIAL_CLASSES = [
   { id: 'c-11b', grade: 11, name: '11-B', room: '407-xona' }
 ];
 
-export const INITIAL_TEACHERS = [];
+export const INITIAL_TEACHERS = [
+  {
+    "id": "t-1791520951199",
+    "name": "Davletova Gulasal",
+    "role": "Sinf rahbari",
+    "phone": "+998-94-114-17-68",
+    "classId": "c-10a",
+    "subject": "Tarix"
+  },
+  {
+    "id": "t-00000545",
+    "name": "Xudoyberganova Dilnoza Maqsudovna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-634-84-48",
+    "faceId": "00000545",
+    "classId": "c-2d",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000533.jpg@WEB000000001696",
+    "subject": "Boshlang'ich ta'lim"
+  },
+  {
+    "id": "t-00000546",
+    "name": "Xo'jamuratova Shoira Xolboyevna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-635-85-55",
+    "faceId": "00000546",
+    "classId": "c-3a",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000534.jpg@WEB000000001697",
+    "subject": "Boshlang'ich ta'lim"
+  },
+  {
+    "id": "t-00000547",
+    "name": "Xalillayeva Saboxat Xolboyevna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-636-86-62",
+    "faceId": "00000547",
+    "classId": "c-3b",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000535.jpg@WEB000000001698",
+    "subject": "Boshlang'ich ta'lim"
+  },
+  {
+    "id": "t-00000551",
+    "name": "Otaxonova Nasiba Yakupbayevna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-640-00-00",
+    "faceId": "00000551",
+    "classId": "c-4a",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000539.jpg@WEB000000001702",
+    "subject": "Boshlang'ich ta'lim"
+  },
+  {
+    "id": "t-00000558",
+    "name": "Mamashev Viktor Aleksandrovich",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-647-07-49",
+    "faceId": "00000558",
+    "classId": "c-1a",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000546.jpg@WEB000000001709",
+    "subject": "Jismoniy tarbiya"
+  },
+  {
+    "id": "t-00000603",
+    "name": "Davletova Zamira Urolovna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-692-52-04",
+    "faceId": "00000603",
+    "classId": "c-3b",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000591.jpg@WEB000000001754",
+    "subject": "Boshlang'ich ta'lim"
+  },
+  {
+    "id": "t-00000604",
+    "name": "Urazmetova Dilafruz Madrimovna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-693-53-11",
+    "faceId": "00000604",
+    "classId": "c-3d",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000592.jpg@WEB000000001755",
+    "subject": "Boshlang'ich ta'lim"
+  },
+  {
+    "id": "t-00000605",
+    "name": "Yuldasheva Muqaddas Baxtiyarovna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-694-54-18",
+    "faceId": "00000605",
+    "classId": "c-4a",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000593.jpg@WEB000000001756",
+    "subject": "Boshlang'ich ta'lim"
+  },
+  {
+    "id": "t-00000606",
+    "name": "Sabirova Sharofat Saliyevna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-695-55-25",
+    "faceId": "00000606",
+    "classId": "c-4b",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000594.jpg@WEB000000001757",
+    "subject": "Boshlang'ich ta'lim"
+  },
+  {
+    "id": "t-00000607",
+    "name": "Qurbonniyozova Mashhura Zafarovna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-696-56-32",
+    "faceId": "00000607",
+    "classId": "c-4a",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000595.jpg@WEB000000001758",
+    "subject": "Boshlang'ich ta'lim"
+  },
+  {
+    "id": "t-00000609",
+    "name": "Karimova Zevarjon Xamidovna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-698-58-46",
+    "faceId": "00000609",
+    "classId": "c-1a",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000597.jpg@WEB000000001760",
+    "subject": "Boshlang'ich ta'lim"
+  },
+  {
+    "id": "t-00000610",
+    "name": "Raxmatullayeva Umida Sadullayevna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-699-59-53",
+    "faceId": "00000610",
+    "classId": "c-1a",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000598.jpg@WEB000000001761",
+    "subject": "Boshlang'ich ta'lim"
+  },
+  {
+    "id": "t-00000611",
+    "name": "Karimova Aziza Kurolbayevna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-700-60-60",
+    "faceId": "00000611",
+    "classId": "c-1a",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000599.jpg@WEB000000001762",
+    "subject": "Boshlang'ich ta'lim"
+  },
+  {
+    "id": "t-00000612",
+    "name": "Seydabullayeva Feruza Azimjanovna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-701-61-67",
+    "faceId": "00000612",
+    "classId": "c-1a",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000600.jpg@WEB000000001763",
+    "subject": "Boshlang'ich ta'lim"
+  },
+  {
+    "id": "t-00000613",
+    "name": "Yangibayeva Zuhra Rajabovna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-702-62-74",
+    "faceId": "00000613",
+    "classId": "c-1a",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000601.jpg@WEB000000001764",
+    "subject": "Boshlang'ich ta'lim"
+  },
+  {
+    "id": "t-00000616",
+    "name": "Turg‘anbayeva Indira Janabayevna",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-705-65-05",
+    "faceId": "00000616",
+    "classId": "c-1a",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000604.jpg@WEB000000001767",
+    "subject": "Ingliz tili"
+  },
+  {
+    "id": "t-00000617",
+    "name": "Saidova Dilfuza",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-706-66-12",
+    "faceId": "00000617",
+    "classId": "c-1a",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000605.jpg@WEB000000001768",
+    "subject": "Musiqa"
+  },
+  {
+    "id": "t-00000706",
+    "name": "Maxmudjanov Elbek Husanovich",
+    "role": "Sinf rahbari",
+    "phone": "+998-90-794-64-88",
+    "faceId": "00000706",
+    "classId": "c-1a",
+    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000693.jpg@WEB000000001856",
+    "subject": "Informatika"
+  }
+];
 
 import { ALL_FACE_STUDENTS } from './studentsFromFace';
 
