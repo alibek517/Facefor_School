@@ -80,6 +80,21 @@ function startCloudflareTunnel() {
   }
 }
 
+// Har 25 soniyada faol tunnel jonliligini tekshirish
+setInterval(async () => {
+  if (currentTunnelUrl) {
+    try {
+      const res = await fetch(`${currentTunnelUrl}/api/device/status`, { signal: AbortSignal.timeout(5000) });
+      if (!res.ok) throw new Error(`HTTP status: ${res.status}`);
+    } catch (err) {
+      console.warn(`[TUNNEL HEALTH] Faol tunnel javob bermayapti (${err.message}). Qayta yangilanmoqda...`);
+      if (cloudflareProcess) {
+        try { cloudflareProcess.kill(); } catch (e) {}
+      }
+    }
+  }
+}, 25000);
+
 process.on('exit', () => {
   if (cloudflareProcess) {
     try { cloudflareProcess.kill(); } catch (e) {}

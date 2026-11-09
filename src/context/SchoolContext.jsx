@@ -53,6 +53,42 @@ const getSafeStorage = (key, fallback, validator) => {
   }
 };
 
+// Yaroqsiz yoki o'chib ketgan Cloudflare quick-tunnel manzillarini eslab qolish va chetlatish
+const deadTunnelsSet = new Set([
+  'https://preparation-arkansas-roof-stored.trycloudflare.com',
+  'https://district-tel-rabbit-passport.trycloudflare.com',
+  'https://genuine-starting-bare-episodes.trycloudflare.com'
+]);
+const tunnelFailureMap = new Map();
+
+const markTunnelFailure = (url, clearCallback) => {
+  if (!url || typeof url !== 'string') return;
+  const clean = url.trim().replace(/\/+$/, '');
+  const count = (tunnelFailureMap.get(clean) || 0) + 1;
+  tunnelFailureMap.set(clean, count);
+  if (count >= 2) {
+    deadTunnelsSet.add(clean);
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('saved_bridge_url');
+        if (saved && saved.trim().replace(/\/+$/, '') === clean) {
+          localStorage.removeItem('saved_bridge_url');
+        }
+      } catch (e) {}
+    }
+    if (typeof clearCallback === 'function') {
+      clearCallback(clean);
+    }
+  }
+};
+
+const markTunnelSuccess = (url) => {
+  if (!url || typeof url !== 'string') return;
+  const clean = url.trim().replace(/\/+$/, '');
+  tunnelFailureMap.set(clean, 0);
+  deadTunnelsSet.delete(clean);
+};
+
 export const SchoolProvider = ({ children }) => {
   // Mavzu (Dark / Light)
   const [theme, setTheme] = useState(() => {
@@ -313,24 +349,44 @@ export const SchoolProvider = ({ children }) => {
       const urlParams = new URLSearchParams(window.location.search);
       const queryBridge = urlParams.get('bridge') || urlParams.get('tunnel');
       if (queryBridge) {
-        try { localStorage.setItem('saved_bridge_url', queryBridge.trim()); } catch (e) {}
-        return queryBridge.trim();
+        const clean = queryBridge.trim().replace(/\/+$/, '');
+        if (!deadTunnelsSet.has(clean)) {
+          try { localStorage.setItem('saved_bridge_url', clean); } catch (e) {}
+          return clean;
+        }
       }
       try {
         const saved = localStorage.getItem('saved_bridge_url');
-        if (saved) return saved;
+        if (saved) {
+          const cleanSaved = saved.trim().replace(/\/+$/, '');
+          if (deadTunnelsSet.has(cleanSaved) || cleanSaved.includes('preparation-arkansas-roof-stored') || cleanSaved.includes('district-tel-rabbit-passport')) {
+            localStorage.removeItem('saved_bridge_url');
+            return '';
+          }
+          return cleanSaved;
+        }
       } catch (e) {}
     }
-    return 'https://district-tel-rabbit-passport.trycloudflare.com';
+    return '';
   });
   const globalStreamUrlRef = useRef(globalStreamUrl);
 
+  const handleDeadTunnelEviction = (deadUrl) => {
+    if (globalStreamUrlRef.current && globalStreamUrlRef.current.replace(/\/+$/, '') === deadUrl) {
+      globalStreamUrlRef.current = '';
+      setGlobalStreamUrl('');
+      setIsSchoolLocalOnline(false);
+    }
+  };
+
   const syncFromBridge = async (targetUrl) => {
     if (!targetUrl || !targetUrl.startsWith('http')) return;
+    const cleanUrl = targetUrl.replace(/\/+$/, '');
+    if (deadTunnelsSet.has(cleanUrl)) return;
     try {
-      const cleanUrl = targetUrl.replace(/\/+$/, '');
-      const sRes = await fetch(`${cleanUrl}/api/school/data`).catch(() => null);
+      const sRes = await fetch(`${cleanUrl}/api/school/data`, { signal: AbortSignal.timeout(3000) }).catch(() => null);
       if (sRes && sRes.ok) {
+        markTunnelSuccess(cleanUrl);
         const sJson = await sRes.json().catch(() => null);
         if (sJson && sJson.data) {
           if (sJson.data.students && sJson.data.students.length > 0) setStudents(sJson.data.students);
@@ -342,20 +398,34 @@ export const SchoolProvider = ({ children }) => {
           if (sJson.data.teacherAttendance) setTeacherAttendance(sJson.data.teacherAttendance);
           if (sJson.data.hourlyAttendance) setHourlyAttendance(sJson.data.hourlyAttendance);
         }
+      } else {
+        markTunnelFailure(cleanUrl, handleDeadTunnelEviction);
       }
-      const evRes = await fetch(`${cleanUrl}/api/device/events`).catch(() => null);
+
+      if (deadTunnelsSet.has(cleanUrl)) return;
+
+      const evRes = await fetch(`${cleanUrl}/api/device/events`, { signal: AbortSignal.timeout(3000) }).catch(() => null);
       if (evRes && evRes.ok) {
+        markTunnelSuccess(cleanUrl);
         const evJson = await evRes.json().catch(() => null);
         if (evJson && Array.isArray(evJson.data) && evJson.data.length > 0) {
           setRecentFaceScans(evJson.data);
         }
       }
       setIsSchoolLocalOnline(true);
-    } catch (e) {}
+    } catch (e) {
+      markTunnelFailure(cleanUrl, handleDeadTunnelEviction);
+    }
   };
 
   const updateGlobalStreamUrl = (url, syncToCloud = false) => {
-    const clean = (url || '').trim();
+    const clean = (url || '').trim().replace(/\/+$/, '');
+    if (!clean) {
+      globalStreamUrlRef.current = '';
+      setGlobalStreamUrl('');
+      return;
+    }
+    if (deadTunnelsSet.has(clean)) return;
     if (globalStreamUrlRef.current === clean && !syncToCloud) return;
     globalStreamUrlRef.current = clean;
     setGlobalStreamUrl(clean);
@@ -378,16 +448,19 @@ export const SchoolProvider = ({ children }) => {
     if (isLocalHostEnv) return;
     const fetchLatestBridge = async () => {
       try {
-        const res = await fetch('https://ntfy.sh/maktab_bridge_alibek517/json?poll=1');
-        if (res.ok) {
-          const text = await res.text();
+        const res = await fetch('https://ntfy.sh/maktab_bridge_alibek517/json?poll=1', { signal: AbortSignal.timeout(4000) }).catch(() => null);
+        if (res && res.ok) {
+          const text = await res.text().catch(() => '');
           const lines = text.trim().split('\n');
           for (let i = lines.length - 1; i >= 0; i--) {
             try {
               const parsed = JSON.parse(lines[i]);
               if (parsed.message && parsed.message.startsWith('http') && parsed.message.includes('trycloudflare.com')) {
-                updateGlobalStreamUrl(parsed.message.trim());
-                break;
+                const candidate = parsed.message.trim().replace(/\/+$/, '');
+                if (!deadTunnelsSet.has(candidate)) {
+                  updateGlobalStreamUrl(candidate);
+                  break;
+                }
               }
             } catch (e) {}
           }
@@ -784,13 +857,14 @@ export const SchoolProvider = ({ children }) => {
   const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
   const bridgeHost = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost';
   const isCloudflareTunnel = typeof window !== 'undefined' && window.location.hostname.includes('trycloudflare.com');
+  const validGlobalStream = (globalStreamUrl && globalStreamUrl.startsWith('http') && !deadTunnelsSet.has(globalStreamUrl.replace(/\/+$/, ''))) ? globalStreamUrl : '';
   const BRIDGE_API = (isLocalHostEnv && !isHttps) 
     ? `http://${bridgeHost}:5001` 
-    : (isCloudflareTunnel ? (typeof window !== 'undefined' ? window.location.origin : '') : (globalStreamUrl && globalStreamUrl.startsWith('http') ? globalStreamUrl : ''));
+    : (isCloudflareTunnel ? (typeof window !== 'undefined' ? window.location.origin : '') : validGlobalStream);
 
   const getActiveBridgeUrl = () => {
-    if (BRIDGE_API) return BRIDGE_API;
-    if (globalStreamUrl && globalStreamUrl.startsWith('http')) return globalStreamUrl;
+    if (BRIDGE_API && !deadTunnelsSet.has(BRIDGE_API.replace(/\/+$/, ''))) return BRIDGE_API;
+    if (validGlobalStream) return validGlobalStream;
     return '';
   };
 
@@ -1175,16 +1249,15 @@ export const SchoolProvider = ({ children }) => {
 
     const pollDevice = async () => {
       let localReachable = false;
-      const shouldProbeLocal = Boolean(BRIDGE_API) && (localFailuresCount.current === 0 || manualRetryLocal.current || (localFailuresCount.current % 3 === 0));
+      const activeBridge = (BRIDGE_API && !deadTunnelsSet.has(BRIDGE_API.replace(/\/+$/, ''))) ? BRIDGE_API : '';
+      const shouldProbeLocal = Boolean(activeBridge) && (localFailuresCount.current === 0 || manualRetryLocal.current || (localFailuresCount.current % 3 === 0));
       manualRetryLocal.current = false;
 
       if (shouldProbeLocal) {
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 6000);
-          const res = await fetch(`${BRIDGE_API}/api/device/status`, { signal: controller.signal }).catch(() => null);
-          clearTimeout(timeoutId);
+          const res = await fetch(`${activeBridge}/api/device/status`, { signal: AbortSignal.timeout(3000) }).catch(() => null);
           if (res && res.ok) {
+            markTunnelSuccess(activeBridge);
             const json = await res.json().catch(() => null);
             if (json) {
               if (json.data) setFaceDevice(json.data);
@@ -1196,8 +1269,12 @@ export const SchoolProvider = ({ children }) => {
               setIsSchoolLocalOnline(true);
               setNetworkMode('local');
             }
+          } else {
+            markTunnelFailure(activeBridge, handleDeadTunnelEviction);
           }
-        } catch (err) {}
+        } catch (err) {
+          markTunnelFailure(activeBridge, handleDeadTunnelEviction);
+        }
 
         if (!localReachable) {
           localFailuresCount.current += 1;
@@ -1225,7 +1302,7 @@ export const SchoolProvider = ({ children }) => {
         }
 
         try {
-          const evRes = await fetch(`${BRIDGE_API}/api/device/events`).catch(() => null);
+          const evRes = await fetch(`${activeBridge}/api/device/events`, { signal: AbortSignal.timeout(3000) }).catch(() => null);
           if (evRes && evRes.ok) {
             const evJson = await evRes.json().catch(() => null);
             if (evJson && evJson.data) setRecentFaceScans(evJson.data);
@@ -1243,18 +1320,23 @@ export const SchoolProvider = ({ children }) => {
         // Agar Cloudflare global stream tunnel faol bo'lsa, voqealarni tunnel orqali to'liq yuklaymiz
         let tunnelReachable = false;
         const activeTunnel = getActiveBridgeUrl();
-        if (activeTunnel) {
+        if (activeTunnel && !deadTunnelsSet.has(activeTunnel.replace(/\/+$/, ''))) {
           try {
-            const evRes = await fetch(`${activeTunnel}/api/device/events`).catch(() => null);
+            const evRes = await fetch(`${activeTunnel}/api/device/events`, { signal: AbortSignal.timeout(3000) }).catch(() => null);
             if (evRes && evRes.ok) {
+              markTunnelSuccess(activeTunnel);
               const evJson = await evRes.json().catch(() => null);
               if (evJson && Array.isArray(evJson.data) && evJson.data.length > 0) {
                 setRecentFaceScans(evJson.data);
               }
               setIsSchoolLocalOnline(true);
               tunnelReachable = true;
+            } else {
+              markTunnelFailure(activeTunnel, handleDeadTunnelEviction);
             }
-          } catch (e) {}
+          } catch (e) {
+            markTunnelFailure(activeTunnel, handleDeadTunnelEviction);
+          }
         }
 
         // Agar tunnel orqali aloqa bo'lmasa, Supabase dan "local_status" heartbeat ni tekshiramiz
