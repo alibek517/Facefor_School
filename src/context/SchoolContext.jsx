@@ -401,10 +401,13 @@ export const SchoolProvider = ({ children }) => {
 
   // URL Routing tizimi: path va mos rol/tab tahlili
   const parsePath = (rawPath) => {
-    let p = (rawPath || '/director').toLowerCase().trim();
+    let p = (rawPath || '/login').toLowerCase().trim();
     if (!p.startsWith('/')) p = '/' + p;
     if (p.length > 1 && p.endsWith('/')) p = p.slice(0, -1);
 
+    if (p === '/login' || p === '/kirish' || p === '/auth') {
+      return { path: '/login', role: null, tab: 'login' };
+    }
     if (p === '/bigadmin' || p === '/schools' || p === '/superadmin') {
       return { path: '/bigadmin', role: 'bigadmin', tab: 'bigadmin' };
     }
@@ -426,7 +429,10 @@ export const SchoolProvider = ({ children }) => {
     if (p === '/monitor' || p === '/foye' || p === '/tablo') {
       return { path: '/monitor', role: 'monitor', tab: 'main' };
     }
-    return { path: '/director', role: 'director', tab: 'main' };
+    if (p === '/director' || p === '/boshqaruv' || p === '/dashboard') {
+      return { path: '/director', role: 'director', tab: 'main' };
+    }
+    return { path: '/login', role: null, tab: 'login' };
   };
 
   const [currentPath, setCurrentPath] = useState(() => {
@@ -434,7 +440,7 @@ export const SchoolProvider = ({ children }) => {
       const init = parsePath(window.location.pathname);
       return init.path;
     }
-    return '/director';
+    return '/login';
   });
 
   const [activeTab, setActiveTab] = useState(() => {
@@ -454,7 +460,7 @@ export const SchoolProvider = ({ children }) => {
       window.history.pushState({ path: route.path }, '', route.path);
     }
 
-    if (currentUser?.role !== route.role) {
+    if (route.role && currentUser?.role !== route.role) {
       quickSwitchRole(route.role, false, true);
     }
   };
@@ -493,13 +499,20 @@ export const SchoolProvider = ({ children }) => {
     window.addEventListener('popstate', handlePopState);
 
     // Dastlabki yuklanganda mavjud URL ga moslash
-    const initialRoute = parsePath(window.location.pathname);
+    const rawP = window.location.pathname;
+    let targetP = rawP;
+    if (!currentUserRef.current) {
+      targetP = '/login';
+    } else if (rawP === '/' || rawP === '/login') {
+      targetP = currentUserRef.current.role === 'bigadmin' ? '/bigadmin' : '/director';
+    }
+    const initialRoute = parsePath(targetP);
     if (window.location.pathname !== initialRoute.path) {
       window.history.replaceState({ path: initialRoute.path }, '', initialRoute.path);
     }
     setCurrentPath(initialRoute.path);
     setActiveTab(initialRoute.tab);
-    if (initialRoute.role !== 'director') {
+    if (initialRoute.role && initialRoute.role !== 'director') {
       quickSwitchRole(initialRoute.role, false, true);
     }
 
@@ -1512,7 +1525,7 @@ export const SchoolProvider = ({ children }) => {
       localStorage.removeItem('school_user');
     } catch (e) {}
     setCurrentUser(null);
-    navigateTo('/director');
+    navigateTo('/login');
     showToast('Chiqildi', 'Tizimdan muvaffaqiyatli chiqildi.', 'info');
   };
 

@@ -18,6 +18,9 @@ const MainLayout = () => {
   const { currentUser, hasPermission, activeTab, navigateTo, currentPath, isBigAdmin, currentSchool } = useSchool();
 
   if (!currentUser) {
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      window.history.replaceState({ path: '/login' }, '', '/login');
+    }
     return <LoginModal />;
   }
 
@@ -31,6 +34,21 @@ const MainLayout = () => {
 
   const canSeeStudents = isDirectorUser && (hasPermission('students') || isBigAdmin);
   const canSeeSettings = isDirectorUser && (hasPermission('teachers') || hasPermission('schedules') || hasPermission('classes') || hasPermission('leadership') || isBigAdmin);
+
+  // Tizimga kirilganda /login yoki / dan mos sahifaga yo'naltirish
+  React.useEffect(() => {
+    if (currentUser) {
+      if (currentPath === '/login' || (typeof window !== 'undefined' && window.location.pathname === '/login')) {
+        let p = '/director';
+        if (currentUser.role === 'bigadmin') p = '/bigadmin';
+        else if (currentUser.role === 'inspector') p = '/duty';
+        else if (currentUser.role === 'class_teacher') p = '/class-teacher';
+        else if (currentUser.role === 'subject_teacher') p = '/subject-teacher';
+        else if (currentUser.role === 'monitor') p = '/monitor';
+        navigateTo(p);
+      }
+    }
+  }, [currentUser, currentPath]);
 
   // Direktor bo'lmagan foydalanuvchilar (masalan, sinf rahbari) uchun faqat o'z kabinetini ochish
   React.useEffect(() => {
