@@ -1447,30 +1447,11 @@ export const SchoolProvider = ({ children }) => {
   const login = (loginText, passwordText) => {
     const cleanLogin = loginText.trim().toLowerCase();
 
-    // XAVFSIZLIK CHEKLOVI: Lokal maktab tarmog'idan (Wi-Fi, localhost, ko'prik) BigAdmin akkauntiga kirish taqiqlangan!
-    // BigAdmin login va paroli lokal serverda saqlanmaydi va lokal orqali tekshirilmaydi!
-    const isLocalAccess = Boolean(isLocalHostEnv || networkMode === 'local' || isLocalConnected);
-    if (cleanLogin === 'bigadmin') {
-      if (isLocalAccess) {
-        showToast('Xavfsizlik cheklovi', "BigAdmin hisobiga lokal maktab tarmog'idan kirish taqiqlangan! Faqat markaziy global portal orqali kiring.", 'error');
-        return { 
-          success: false, 
-          error: "Xavfsizlik cheklovi: BigAdmin hisobiga lokal maktab tarmog'idan kirish taqiqlangan! BigAdmin login/paroli lokal serverda saqlanmaydi. Faqat markaziy global bulutli portal orqali kiring." 
-        };
-      }
-    }
-
     const found = USERS_AUTH.find(
       u => u.login.toLowerCase() === cleanLogin && u.password === passwordText.trim()
     );
 
     if (found) {
-      if (found.role === 'bigadmin' && isLocalAccess) {
-        return { 
-          success: false, 
-          error: "Xavfsizlik cheklovi: BigAdmin hisobiga lokal maktab tarmog'idan kirish taqiqlangan! Faqat markaziy global portal orqali kiring." 
-        };
-      }
 
       // Agar oddiy maktab foydalanuvchisi bo'lsa, uning maktabi muzlatilgan yoki obuna muddati tugaganligini tekshirish!
       if (found.role !== 'bigadmin') {
