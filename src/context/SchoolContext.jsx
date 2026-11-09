@@ -83,32 +83,63 @@ export const SchoolProvider = ({ children }) => {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Autentifikatsiya (Login holati) - kompyuter yonganda srazi avtomatik login bo'lib turadi!
-  const [currentUser, setCurrentUser] = useState(() => {
-    const directorUser = USERS_AUTH.find(u => u.role === 'director') || USERS_AUTH[1] || USERS_AUTH[0];
+  // Autentifikatsiya tokeni generatori va tekshiruvchi
+  const generateAuthToken = (user) => {
     try {
-      const saved = localStorage.getItem('school_user');
-      if (saved) {
+      const payload = {
+        id: user.id,
+        login: user.login,
+        role: user.role,
+        schoolId: user.schoolId || 'sch-1',
+        createdAt: Date.now()
+      };
+      return 'authtok_' + btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    } catch (e) {
+      return 'authtok_' + Date.now();
+    }
+  };
+
+  const verifyAuthToken = (token) => {
+    if (!token || typeof token !== 'string' || !token.startsWith('authtok_')) return null;
+    try {
+      const raw = decodeURIComponent(escape(atob(token.replace('authtok_', ''))));
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.login && parsed.id) {
+        return parsed;
+      }
+    } catch (e) {}
+    return null;
+  };
+
+  // Autentifikatsiya (Login holati) - Saytga kirganda token bilan tekshiradi, bo'lmasa login page ochiladi!
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('school_user') : null;
+      if (token && saved) {
+        const verified = verifyAuthToken(token);
         const parsed = JSON.parse(saved);
-        const isLocal = typeof window !== 'undefined' && (
-          window.location.hostname === 'localhost' ||
-          window.location.hostname === '127.0.0.1' ||
-          window.location.hostname.startsWith('192.168.') ||
-          window.location.hostname.startsWith('10.')
-        );
-        if (isLocal && (parsed.role === 'bigadmin' || parsed.login === 'bigadmin')) {
-          localStorage.setItem('school_user', JSON.stringify(directorUser));
-          return directorUser;
+        if (verified && parsed && verified.login === parsed.login) {
+          const isLocal = typeof window !== 'undefined' && (
+            window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1' ||
+            window.location.hostname.startsWith('192.168.') ||
+            window.location.hostname.startsWith('10.')
+          );
+          if (isLocal && (parsed.role === 'bigadmin' || parsed.login === 'bigadmin')) {
+            try {
+              localStorage.removeItem('auth_token');
+              localStorage.removeItem('school_user');
+            } catch (e) {}
+            return null;
+          }
+          return parsed;
         }
-        if (parsed && parsed.login) return parsed;
       }
     } catch (e) {}
 
-    // Dastlabki avtologin: Maktab Direktori (hech qachon login ekranda to'xtab qolmaydi)
-    try {
-      localStorage.setItem('school_user', JSON.stringify(directorUser));
-    } catch (e) {}
-    return directorUser;
+    // Token bo'lmasa yoki yaroqsiz bo'lsa, login sahifasi ochiladi
+    return null;
   });
 
   const [selectedTeacherId, setSelectedTeacherId] = useState(() => {
@@ -493,8 +524,12 @@ export const SchoolProvider = ({ children }) => {
     try {
       if (currentUser) {
         localStorage.setItem('school_user', JSON.stringify(currentUser));
+        if (!localStorage.getItem('auth_token')) {
+          localStorage.setItem('auth_token', generateAuthToken(currentUser));
+        }
       } else {
         localStorage.removeItem('school_user');
+        localStorage.removeItem('auth_token');
       }
       localStorage.setItem('school_teacher_id', selectedTeacherId);
       localStorage.setItem('school_inspector_name', inspectorName);
@@ -1403,7 +1438,17 @@ export const SchoolProvider = ({ children }) => {
         };
       }
 
+      // Auth tokenni yaratish va saqlash
+      const token = generateAuthToken(found);
+      try {
+        localStorage.setItem('auth_token', token);
+        localStorage.setItem('school_user', JSON.stringify(found));
+      } catch (e) {}
+
       setCurrentUser(found);
+      if (found.schoolId && found.role !== 'bigadmin') {
+        selectSchool(found.schoolId);
+      }
       if (found.teacherId) {
         setSelectedTeacherId(found.teacherId);
       }
@@ -1425,9 +1470,13 @@ export const SchoolProvider = ({ children }) => {
 
   // Chiqish
   const logout = () => {
+    try {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('school_user');
+    } catch (e) {}
     setCurrentUser(null);
     navigateTo('/director');
-    showToast('Chiqildi', 'Tizimdan chiqildi.', 'info');
+    showToast('Chiqildi', 'Tizimdan muvaffaqiyatli chiqildi.', 'info');
   };
 
   // Tezkor almashtirish

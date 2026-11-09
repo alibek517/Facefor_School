@@ -103,22 +103,13 @@ export const Navbar = () => {
             </div>
           </div>
 
-          {/* Maktab Selektori (Ayniqsa bir nechta maktab bo'lganda yoki BigAdmin uchun) */}
-          {(isBigAdmin || (schools && schools.length > 1)) && (
+          {/* Maktab indikatori (Alohida izolyatsiyalangan maktab - maktablar bir-biri bilan bog'lanib ketmaydi) */}
+          {currentSchool && (
             <div className="hidden lg:flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700">
               <Building className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-              <select
-                value={selectedSchoolId}
-                onChange={(e) => selectSchool(e.target.value)}
-                className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 outline-none cursor-pointer max-w-[200px] truncate"
-                title="Maktabni almashtirish"
-              >
-                {schools.map(s => (
-                  <option key={s.id} value={s.id} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
-                    {s.name} ({s.turnstiles?.length || 0} turniket)
-                  </option>
-                ))}
-              </select>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-100 max-w-[200px] truncate">
+                {currentSchool.name}
+              </span>
             </div>
           )}
 

@@ -162,12 +162,12 @@ export const INITIAL_SCHOOLS = [
 
 export const USERS_AUTH = [
   { id: 'u-bigadmin', login: 'bigadmin', password: '123', role: 'bigadmin', name: 'Bosh Administrator (BigAdmin)', detail: 'Tizim Boshqaruvi & Barcha Maktablar', isBigAdmin: true, isDirector: true, permissions: ['bigadmin', 'schools', 'dashboard', 'cameras', 'playback', 'students', 'teachers', 'leadership', 'classes', 'schedules', 'attendance_control', 'class_attendance', 'notifications', 'settings'] },
-  { id: 'u-dir', login: 'direktor', password: '123', role: 'director', name: 'Maktab Direktori', detail: 'Maktab Rahbariyati', isDirector: true, permissions: ['dashboard', 'cameras', 'playback', 'students', 'teachers', 'leadership', 'classes', 'schedules', 'attendance_control', 'class_attendance', 'notifications', 'settings'] },
-  { id: 'u-zam1', login: 'zamdirektor', password: '123', role: 'director', name: 'Direktor o\'rinbosari', detail: 'O\'quv ishlari', permissions: ['dashboard', 'cameras', 'playback', 'students', 'teachers', 'schedules', 'notifications'] },
-  { id: 'u-nav', login: 'navbatchi', password: '123', role: 'inspector', name: 'Navbatchi xodim', detail: 'Davomat nazorati', permissions: ['dashboard', 'attendance_control'] },
-  { id: 'u-cl-10a', login: 'sinfraxbari', password: '123', role: 'class_teacher', name: 'Davletova Gulasal', detail: '10-A sinf rahbari', teacherId: 't-1791520951199', classId: 'c-10a', permissions: ['class_attendance', 'notifications'] },
-  { id: 'u-sub-t1', login: 'oqituvchi', password: '123', role: 'subject_teacher', name: 'Davletova Gulasal', detail: 'Tarix fani o\'qituvchisi', teacherId: 't-1791520951199', permissions: ['grades_journal'] },
-  { id: 'u-mon', login: 'monitor', password: '123', role: 'monitor', name: 'Foye Ekrani (Monitor)', detail: 'Eshik oldidagi katta tablo', permissions: ['cameras'] },
+  { id: 'u-dir', login: 'direktor', password: '123', role: 'director', schoolId: 'sch-1', name: 'Maktab Direktori', detail: 'Maktab Rahbariyati', isDirector: true, permissions: ['dashboard', 'cameras', 'playback', 'students', 'teachers', 'leadership', 'classes', 'schedules', 'attendance_control', 'class_attendance', 'notifications', 'settings'] },
+  { id: 'u-zam1', login: 'zamdirektor', password: '123', role: 'director', schoolId: 'sch-1', name: 'Direktor o\'rinbosari', detail: 'O\'quv ishlari', permissions: ['dashboard', 'cameras', 'playback', 'students', 'teachers', 'schedules', 'notifications'] },
+  { id: 'u-nav', login: 'navbatchi', password: '123', role: 'inspector', schoolId: 'sch-1', name: 'Navbatchi xodim', detail: 'Davomat nazorati', permissions: ['dashboard', 'attendance_control'] },
+  { id: 'u-cl-10a', login: 'sinfraxbari', password: '123', role: 'class_teacher', schoolId: 'sch-1', name: 'Davletova Gulasal', detail: '10-A sinf rahbari', teacherId: 't-1791520951199', classId: 'c-10a', permissions: ['class_attendance', 'notifications'] },
+  { id: 'u-sub-t1', login: 'oqituvchi', password: '123', role: 'subject_teacher', schoolId: 'sch-1', name: 'Davletova Gulasal', detail: 'Tarix fani o\'qituvchisi', teacherId: 't-1791520951199', permissions: ['grades_journal'] },
+  { id: 'u-mon', login: 'monitor', password: '123', role: 'monitor', schoolId: 'sch-1', name: 'Foye Ekrani (Monitor)', detail: 'Eshik oldidagi katta tablo', permissions: ['cameras'] },
 ];
 
 export const INITIAL_TEACHER_ATTENDANCE = [];

@@ -1,21 +1,12 @@
 import React, { useState } from 'react';
 import { useSchool } from '../context/SchoolContext';
-import { USERS_AUTH } from '../mockData';
-import { LogIn, Key, User, Lock, Shield, Check, Sun, Moon } from 'lucide-react';
+import { LogIn, User, Lock, Shield, Sun, Moon } from 'lucide-react';
 
 export const LoginModal = () => {
-  const { login, theme, toggleTheme, isLocalHostEnv, isLocalConnected, networkMode } = useSchool();
+  const { login, theme, toggleTheme } = useSchool();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-
-  const isLocalAccess = Boolean(isLocalHostEnv || networkMode === 'local' || isLocalConnected);
-
-  // Lokal tarmoqda BigAdmin akkaunti ko'rsatilmaydi va saqlanmaydi!
-  const visibleAuthUsers = USERS_AUTH.filter(u => {
-    if (u.role === 'bigadmin' && isLocalAccess) return false;
-    return true;
-  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -24,12 +15,6 @@ export const LoginModal = () => {
     if (!res.success) {
       setError(res.error);
     }
-  };
-
-  const handleQuickSelect = (user) => {
-    setUsername(user.login);
-    setPassword(user.password);
-    login(user.login, user.password);
   };
 
   return (
@@ -78,6 +63,7 @@ export const LoginModal = () => {
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Loginni kiriting"
                 required
+                autoFocus
                 className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
               />
             </div>
@@ -100,32 +86,12 @@ export const LoginModal = () => {
 
           <button
             type="submit"
-            className="w-full py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+            className="w-full py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mt-4"
           >
             <LogIn className="w-4 h-4" />
             Kirish
           </button>
         </form>
-
-        {/* Tezkor kirish hisoblari (Demo uchun juda qulay) */}
-        <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 text-center">
-            Tezkor kirish (Login / Parol: 123)
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {visibleAuthUsers.map(u => (
-              <button
-                key={u.id}
-                type="button"
-                onClick={() => handleQuickSelect(u)}
-                className="p-2 text-left border border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 bg-slate-50/50 dark:bg-slate-800/50 hover:bg-blue-50/50 dark:hover:bg-slate-800 rounded-xl transition-all"
-              >
-                <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">{u.name}</div>
-                <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{u.login}</div>
-              </button>
-            ))}
-          </div>
-        </div>
 
       </div>
     </div>
