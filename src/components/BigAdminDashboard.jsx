@@ -27,7 +27,12 @@ import {
   Cloud,
   Key,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Calendar,
+  Snowflake,
+  Clock,
+  PauseCircle,
+  PlayCircle
 } from 'lucide-react';
 
 export const BigAdminDashboard = () => {
@@ -38,6 +43,8 @@ export const BigAdminDashboard = () => {
     createSchool,
     updateSchool,
     updateSchoolSupabase,
+    updateSchoolSubscription,
+    getSchoolSubscriptionInfo,
     testSupabaseConnection,
     deleteSchool,
     addTurnstileToSchool,
@@ -85,6 +92,16 @@ export const BigAdminDashboard = () => {
   });
   const [testingSupabase, setTestingSupabase] = useState(false);
   const [testResult, setTestResult] = useState(null);
+
+  // Maktab Obunachilik va Muzlatish modali holati
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [managingSchool, setManagingSchool] = useState(null);
+  const [subscriptionFormData, setSubscriptionFormData] = useState({
+    isFrozen: false,
+    subscriptionStart: '',
+    subscriptionEnd: '',
+    freezeReason: ''
+  });
 
   // Barcha turniketlar yig'indisi
   const allTurnstilesWithSchool = useMemo(() => {
@@ -273,6 +290,57 @@ export const BigAdminDashboard = () => {
       supabaseKey: supabaseFormData.supabaseKey.trim()
     });
     setShowSupabaseModal(false);
+  };
+
+  // Obuna va Muzlatish boshqaruvi
+  const handleOpenSubscriptionModal = (school) => {
+    setManagingSchool(school);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const defaultEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    setSubscriptionFormData({
+      isFrozen: Boolean(school.isFrozen),
+      subscriptionStart: school.subscriptionStart || todayStr,
+      subscriptionEnd: school.subscriptionEnd || defaultEnd,
+      freezeReason: school.freezeReason || ''
+    });
+    setShowSubscriptionModal(true);
+  };
+
+  const handleSaveSubscription = async (e) => {
+    if (e) e.preventDefault();
+    if (!managingSchool) return;
+    await updateSchoolSubscription(managingSchool.id, subscriptionFormData);
+    setShowSubscriptionModal(false);
+  };
+
+  const handleToggleFreezeNow = async () => {
+    if (!managingSchool) return;
+    const nextFrozen = !subscriptionFormData.isFrozen;
+    const updated = {
+      ...subscriptionFormData,
+      isFrozen: nextFrozen
+    };
+    setSubscriptionFormData(updated);
+    await updateSchoolSubscription(managingSchool.id, updated);
+  };
+
+  const handleQuickAddMonths = (months) => {
+    const base = subscriptionFormData.subscriptionEnd ? new Date(subscriptionFormData.subscriptionEnd) : new Date();
+    const targetTime = Math.max(base.getTime(), Date.now());
+    const d = new Date(targetTime);
+    d.setMonth(d.getMonth() + months);
+    setSubscriptionFormData(prev => ({
+      ...prev,
+      subscriptionEnd: d.toISOString().split('T')[0],
+      isFrozen: false
+    }));
+  };
+
+  const handleEnterSchoolFromModal = () => {
+    if (!managingSchool) return;
+    selectSchool(managingSchool.id);
+    setShowSubscriptionModal(false);
+    navigateTo('/director');
   };
 
   return (
@@ -583,14 +651,42 @@ export const BigAdminDashboard = () => {
                     </div>
                   )}
 
-                  {/* Pastki boshqaruvga o'tish tugmasi */}
-                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800">
-                    <span className="text-[11px] text-slate-400">
-                      ID: {school.id}
-                    </span>
+                  {/* Pastki boshqaruv va obuna tugmasi */}
+                  <div className="pt-2.5 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        {school.code || school.id}
+                      </span>
+                      {(() => {
+                        const sub = getSchoolSubscriptionInfo(school);
+                        if (sub.isFrozen) {
+                          return (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800 text-[10px] font-bold">
+                              <Snowflake className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                              Muzlatilgan
+                            </span>
+                          );
+                        }
+                        if (sub.isExpired) {
+                          return (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 text-[10px] font-bold">
+                              <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                              Muddati o'tgan
+                            </span>
+                          );
+                        }
+                        return (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                            {sub.text}
+                          </span>
+                        );
+                      })()}
+                    </div>
+
                     <button
-                      onClick={() => handleSwitchToSchoolManagement(school.id)}
-                      className="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5"
+                      onClick={() => handleOpenSubscriptionModal(school)}
+                      className="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98]"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                       <span>Ushbu Maktabni Boshqarish</span>
@@ -1154,6 +1250,241 @@ export const BigAdminDashboard = () => {
                   <span>Saqlash va Biriktirish</span>
                 </button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== 8. MAKTABNI BOSHQARISH VA OBUNACHILIK (ABONENT) MODALI ==================== */}
+      {showSubscriptionModal && managingSchool && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md ${
+                  subscriptionFormData.isFrozen
+                    ? 'bg-rose-600 shadow-rose-600/30'
+                    : 'bg-blue-700 shadow-blue-700/30'
+                }`}>
+                  {subscriptionFormData.isFrozen ? (
+                    <Snowflake className="w-5 h-5 animate-pulse" />
+                  ) : (
+                    <Building className="w-5 h-5" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>{managingSchool.name}</span>
+                    <span className="px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 font-mono text-[11px] font-bold">
+                      {managingSchool.code || 'SCH'}
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Maktab boshqaruvi, abonent to'lovi (obuna) muddati va kirish huquqini nazorat qilish
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSubscriptionModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold p-1 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSubscription} className="p-4 sm:p-5 space-y-4 max-h-[82vh] overflow-y-auto">
+              
+              {/* 1. Katta Muzlatish / Faollashtirish holati bloki */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                subscriptionFormData.isFrozen
+                  ? 'bg-rose-50/80 dark:bg-rose-950/40 border-rose-300 dark:border-rose-900/60'
+                  : 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-900/60'
+              }`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Joriy Maktab Holati:
+                    </div>
+                    <div className={`text-base font-black flex items-center gap-2 ${
+                      subscriptionFormData.isFrozen
+                        ? 'text-rose-700 dark:text-rose-300'
+                        : 'text-emerald-700 dark:text-emerald-300'
+                    }`}>
+                      {subscriptionFormData.isFrozen ? (
+                        <>
+                          <Snowflake className="w-5 h-5 text-rose-600 animate-spin" />
+                          <span>MUZLATILGAN (KIRISH CHEKLANGAN)</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                          <span>FAOL REJIMDA (ISHLAMOQDA)</span>
+                        </>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      {subscriptionFormData.isFrozen
+                        ? "Muzlatilgan holatda ushbu maktab xodimlari tizimga kira olmaydi, kiringan xodimlar esa zudlik bilan chiqarib yuboriladi."
+                        : "Maktab xodimlari (Direktor, O'qituvchilar, Monitor) belgilangan muddatgacha tizimdan to'liq foydalana oladilar."}
+                    </p>
+                  </div>
+
+                  {/* Zudlik bilan Muzlatish / Muzdan chiqarish tugmasi */}
+                  <button
+                    type="button"
+                    onClick={handleToggleFreezeNow}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-extrabold shadow-md transition-all flex items-center justify-center gap-2 shrink-0 ${
+                      subscriptionFormData.isFrozen
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/30'
+                        : 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/30'
+                    }`}
+                  >
+                    {subscriptionFormData.isFrozen ? (
+                      <>
+                        <PlayCircle className="w-4 h-4" />
+                        <span>Muzdan Chiqarish (Faollashtirish)</span>
+                      </>
+                    ) : (
+                      <>
+                        <PauseCircle className="w-4 h-4" />
+                        <span>Zudlik bilan Muzlatish</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. Obunachilik (Abonent) sanalari */}
+              <div className="space-y-3 p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-blue-600" />
+                    <span>Obuna Davri (Qachondan - Qachongacha)</span>
+                  </label>
+                  {subscriptionFormData.subscriptionEnd && (
+                    <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                      {(() => {
+                        const today = new Date().setHours(0,0,0,0);
+                        const end = new Date(subscriptionFormData.subscriptionEnd).setHours(0,0,0,0);
+                        const diff = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+                        if (diff < 0) return `⚠️ Muddati o'tgan (${Math.abs(diff)} kun oldin)`;
+                        return `⏳ ${diff} kun qoldi`;
+                      })()}
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                      Boshlanish sanasi (Qachondan):
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={subscriptionFormData.subscriptionStart}
+                      onChange={(e) => setSubscriptionFormData({ ...subscriptionFormData, subscriptionStart: e.target.value })}
+                      className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 font-mono text-slate-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                      Tugash sanasi (Qachongacha):
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={subscriptionFormData.subscriptionEnd}
+                      onChange={(e) => setSubscriptionFormData({ ...subscriptionFormData, subscriptionEnd: e.target.value })}
+                      className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 font-mono text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Tezkor muddat qo'shish tugmalari */}
+                <div>
+                  <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                    Tezkor muddat belgilash:
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => handleQuickAddMonths(1)}
+                      className="px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-100 hover:bg-blue-200 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-colors"
+                    >
+                      +1 Oy Qo'shish
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickAddMonths(3)}
+                      className="px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-100 hover:bg-blue-200 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-colors"
+                    >
+                      +3 Oy Qo'shish
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickAddMonths(6)}
+                      className="px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-100 hover:bg-blue-200 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-colors"
+                    >
+                      +6 Oy Qo'shish
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickAddMonths(12)}
+                      className="px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-100 hover:bg-blue-200 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-colors"
+                    >
+                      +1 Yil Qo'shish
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Muzlatish sababi yoki izoh */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Muzlatish Sababi / Izoh (Ixtiyoriy)
+                </label>
+                <input
+                  type="text"
+                  value={subscriptionFormData.freezeReason}
+                  onChange={(e) => setSubscriptionFormData({ ...subscriptionFormData, freezeReason: e.target.value })}
+                  placeholder="Masalan: Oylik to'lov amalga oshirilmagan yoki profilaktika davri"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              {/* 4. Pastki amallar: Kabinetga o'tish va Saqlash */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleEnterSchoolFromModal}
+                  className="w-full sm:w-auto px-4 py-2 text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl transition-all flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Ushbu Maktab Kabinetiga Kirish</span>
+                </button>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowSubscriptionModal(false)}
+                    className="px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  >
+                    Bekor Qilish
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white rounded-xl shadow-lg shadow-blue-700/30 transition-all flex items-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Saqlash va Qo'llash</span>
+                  </button>
+                </div>
+              </div>
+
             </form>
           </div>
         </div>

@@ -301,6 +301,13 @@ export const SchoolProvider = ({ children }) => {
   const lastSavedFramesTime = useRef(0);
   const localFailuresCount = useRef(0);
   const manualRetryLocal = useRef(false);
+
+  const currentUserRef = useRef(currentUser);
+  useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
+
+  const selectedSchoolIdRef = useRef(selectedSchoolId);
+  useEffect(() => { selectedSchoolIdRef.current = selectedSchoolId; }, [selectedSchoolId]);
+
   const [globalStreamUrl, setGlobalStreamUrl] = useState(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
@@ -1117,6 +1124,33 @@ export const SchoolProvider = ({ children }) => {
             }
           } catch (err) {}
         });
+        es.addEventListener('school_subscription_updated', (e) => {
+          try {
+            const payload = JSON.parse(e.data);
+            if (Array.isArray(payload.schools)) {
+              setSchools(payload.schools);
+              try { localStorage.setItem('school_list', JSON.stringify(payload.schools)); } catch (err) {}
+            }
+            // Agar joriy kirib turgan foydalanuvchi muzlatilgan maktabga tegishli bo'lsa, zudlik bilan chiqarish!
+            if (currentUserRef.current && currentUserRef.current.role !== 'bigadmin') {
+              const mySchId = currentUserRef.current.schoolId || selectedSchoolIdRef.current;
+              if (payload.schoolId === mySchId) {
+                const isNowFrozen = Boolean(payload.isFrozen);
+                const isExpired = payload.subscriptionEnd && (new Date(payload.subscriptionEnd).getTime() < new Date().setHours(0,0,0,0));
+                if (isNowFrozen || isExpired) {
+                  logout();
+                  showToast(
+                    'Faoliyat to\'xtatildi',
+                    isNowFrozen 
+                      ? `Maktab bosh administrator tomonidan muzlatildi (${payload.freezeReason || "To'xtatilgan"}). Tizimdan chiqarildingiz.`
+                      : "Ushbu maktab uchun obuna muddati tugaganligi sababli tizimdan chiqarildingiz.",
+                    'error'
+                  );
+                }
+              }
+            }
+          } catch (err) {}
+        });
         es.onerror = () => {
           if (es) {
             try { es.close(); } catch (err) {}
@@ -1438,6 +1472,28 @@ export const SchoolProvider = ({ children }) => {
         };
       }
 
+      // Agar oddiy maktab foydalanuvchisi bo'lsa, uning maktabi muzlatilgan yoki obuna muddati tugaganligini tekshirish!
+      if (found.role !== 'bigadmin') {
+        const userSchId = found.schoolId || selectedSchoolId || 'sch-1';
+        const userSchool = schools.find(s => s.id === userSchId);
+        if (userSchool) {
+          const isNowFrozen = Boolean(userSchool.isFrozen);
+          const isExpired = userSchool.subscriptionEnd && (new Date(userSchool.subscriptionEnd).getTime() < new Date().setHours(0,0,0,0));
+          if (isNowFrozen) {
+            return {
+              success: false,
+              error: `Kirish rad etildi: "${userSchool.name}" maktabi faoliyati bosh administrator tomonidan muzlatilgan! ${userSchool.freezeReason ? `(Sabab: ${userSchool.freezeReason})` : ''}`
+            };
+          }
+          if (isExpired) {
+            return {
+              success: false,
+              error: `Kirish rad etildi: "${userSchool.name}" maktabi uchun obuna muddati tugagan (${userSchool.subscriptionEnd})! Iltimos, bosh administrator bilan bog'laning.`
+            };
+          }
+        }
+      }
+
       // Auth tokenni yaratish va saqlash
       const token = generateAuthToken(found);
       try {
@@ -1684,6 +1740,153 @@ export const SchoolProvider = ({ children }) => {
 
     showToast('Muvaffaqiyatli', 'Supabase sozlamalari yangilandi!', 'success');
   };
+
+  // Maktab obunasi holati va qolgan kunlarni hisoblash
+  const getSchoolSubscriptionInfo = (school) => {
+    if (!school) return { status: 'unknown', text: "Noma'lum", badge: "Noma'lum", daysLeft: 0, isFrozen: false, isExpired: false, color: 'slate' };
+    const isFrozen = Boolean(school.isFrozen);
+    const subEnd = school.subscriptionEnd;
+    
+    if (isFrozen) {
+      return {
+        status: 'frozen',
+        text: 'Muzlatilgan',
+        badge: 'Muzlatilgan (To\'xtatilgan)',
+        reason: school.freezeReason || 'Administrator tomonidan muzlatilgan',
+        isFrozen: true,
+        isExpired: false,
+        daysLeft: 0,
+        color: 'rose'
+      };
+    }
+
+    if (!subEnd) {
+      return {
+        status: 'active',
+        text: 'Cheksiz Faol',
+        badge: 'Obuna Faol',
+        isFrozen: false,
+        isExpired: false,
+        daysLeft: 999,
+        color: 'emerald'
+      };
+    }
+
+    const today = new Date().setHours(0,0,0,0);
+    const end = new Date(subEnd).setHours(0,0,0,0);
+    const diffDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return {
+        status: 'expired',
+        text: 'Muddati tugagan',
+        badge: `Muddati o'tgan (${Math.abs(diffDays)} kun oldin)`,
+        daysLeft: diffDays,
+        isFrozen: false,
+        isExpired: true,
+        color: 'amber'
+      };
+    }
+
+    return {
+      status: 'active',
+      text: `${diffDays} kun qoldi`,
+      badge: `Obuna Faol (${diffDays} kun)`,
+      daysLeft: diffDays,
+      isFrozen: false,
+      isExpired: false,
+      color: diffDays <= 7 ? 'amber' : 'emerald'
+    };
+  };
+
+  // Maktab obunasi va muzlatish parametrlarini yangilash (BigAdmin)
+  const updateSchoolSubscription = async (schoolId, subscriptionData) => {
+    const isFrozen = Boolean(subscriptionData.isFrozen);
+    const subStart = subscriptionData.subscriptionStart || new Date().toISOString().split('T')[0];
+    const subEnd = subscriptionData.subscriptionEnd || '';
+    const reason = subscriptionData.freezeReason || '';
+
+    setSchools(prev => {
+      const updated = prev.map(s => {
+        if (s.id === schoolId) {
+          return {
+            ...s,
+            isFrozen,
+            subscriptionStart: subStart,
+            subscriptionEnd: subEnd,
+            freezeReason: reason
+          };
+        }
+        return s;
+      });
+      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+
+    // Agar kirib turgan oddiy xodim shu muzlatilgan maktabga tegishli bo'lsa, zudlik bilan chiqarib yuborish!
+    if (currentUser && currentUser.role !== 'bigadmin') {
+      const mySchoolId = currentUser.schoolId || selectedSchoolId;
+      if (schoolId === mySchoolId) {
+        const isExpired = subEnd && (new Date(subEnd).getTime() < new Date().setHours(0,0,0,0));
+        if (isFrozen || isExpired) {
+          logout();
+          showToast(
+            'Maktab faoliyati to\'xtatildi',
+            isFrozen
+              ? `Ushbu maktab faoliyati bosh administrator tomonidan muzlatildi (${reason || "Muzlatilgan"}). Tizimdan chiqarildingiz.`
+              : "Ushbu maktab uchun obuna muddati tugaganligi sababli tizimdan chiqarildingiz.",
+            'error'
+          );
+        }
+      }
+    }
+
+    try {
+      const bridgeHost = localBridgeInfo?.ip || 'localhost';
+      const bridgePort = localBridgeInfo?.port || 5001;
+      await fetch(`http://${bridgeHost}:${bridgePort}/api/schools/subscription/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: schoolId,
+          isFrozen,
+          subscriptionStart: subStart,
+          subscriptionEnd: subEnd,
+          freezeReason: reason
+        })
+      });
+    } catch (e) {}
+
+    showToast(
+      'Muvaffaqiyatli',
+      isFrozen
+        ? 'Maktab faoliyati muzlatildi va xodimlar tizimdan chiqarildi.'
+        : 'Maktab obunasi va faollik muddati yangilandi!',
+      isFrozen ? 'warning' : 'success'
+    );
+  };
+
+  // Agar maktab muzlatilsa yoki muddati tugasa, kirib turgan xodimlarni darhol tizimdan chiqarish!
+  useEffect(() => {
+    if (currentUser && currentUser.role !== 'bigadmin') {
+      const mySchoolId = currentUser.schoolId || selectedSchoolId;
+      const mySchool = schools.find(s => s.id === mySchoolId);
+      if (mySchool) {
+        const isNowFrozen = Boolean(mySchool.isFrozen);
+        const isExpired = mySchool.subscriptionEnd && (new Date(mySchool.subscriptionEnd).getTime() < new Date().setHours(0,0,0,0));
+        if (isNowFrozen || isExpired) {
+          logout();
+          showToast(
+            'Obuna to\'xtatilgan',
+            isNowFrozen
+              ? `Ushbu maktab faoliyati muzlatilganligi sababli tizimdan chiqarildingiz! ${mySchool.freezeReason ? `(${mySchool.freezeReason})` : ''}`
+              : "Ushbu maktab uchun obuna muddati tugaganligi sababli tizimdan chiqarildingiz.",
+            'error'
+          );
+        }
+      }
+    }
+  }, [schools, currentUser?.id, selectedSchoolId]);
 
   const deleteSchool = async (schoolId) => {
     if (schools.length <= 1) {
@@ -2663,6 +2866,8 @@ export const SchoolProvider = ({ children }) => {
     createSchool,
     updateSchool,
     updateSchoolSupabase,
+    updateSchoolSubscription,
+    getSchoolSubscriptionInfo,
     testSupabaseConnection,
     bigAdminSupabase,
     deleteSchool,

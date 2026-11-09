@@ -849,6 +849,10 @@ function ensureSchoolsInDB() {
       if (!Array.isArray(sch.attendanceList)) sch.attendanceList = idx === 0 ? (schoolDB.attendanceList || []) : [];
       if (!Array.isArray(sch.teacherAttendance)) sch.teacherAttendance = idx === 0 ? (schoolDB.teacherAttendance || []) : [];
       if (!sch.hourlyAttendance) sch.hourlyAttendance = idx === 0 ? (schoolDB.hourlyAttendance || {}) : {};
+      if (sch.isFrozen === undefined) sch.isFrozen = false;
+      if (!sch.subscriptionStart) sch.subscriptionStart = '2026-11-01';
+      if (!sch.subscriptionEnd) sch.subscriptionEnd = '2027-11-01';
+      if (sch.freezeReason === undefined) sch.freezeReason = '';
     });
   }
 
@@ -2039,6 +2043,57 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({
           success: true,
           message: 'Maktab Supabase sozlamalari muvaffaqiyatli yangilandi!',
+          school,
+          schools: schoolDB.schools
+        }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 4c. Maktab Obuna / Abonent sozlamalari va Muzlatish (BigAdmin)
+  if (pathname === '/api/schools/subscription/update' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        ensureSchoolsInDB();
+        const school = (schoolDB.schools || []).find(s => s.id === payload.id);
+        if (!school) {
+          res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: 'Maktab topilmadi!' }));
+          return;
+        }
+
+        if (payload.isFrozen !== undefined) school.isFrozen = Boolean(payload.isFrozen);
+        if (payload.subscriptionStart !== undefined) school.subscriptionStart = payload.subscriptionStart;
+        if (payload.subscriptionEnd !== undefined) school.subscriptionEnd = payload.subscriptionEnd;
+        if (payload.freezeReason !== undefined) school.freezeReason = payload.freezeReason;
+        if (payload.subscriptionPlan !== undefined) school.subscriptionPlan = payload.subscriptionPlan;
+
+        saveSchoolDB(schoolDB);
+
+        // SSE orqali barcha ulangan kompyuter va brauzerlarga xabar berish
+        broadcastSSE('school_subscription_updated', {
+          schoolId: school.id,
+          isFrozen: school.isFrozen,
+          subscriptionStart: school.subscriptionStart,
+          subscriptionEnd: school.subscriptionEnd,
+          freezeReason: school.freezeReason,
+          schools: schoolDB.schools
+        });
+        broadcastSSE('schools_updated', schoolDB.schools);
+
+        console.log(`[SUBSCRIPTION] Maktab (${school.name}) obunasi yangilandi. Holat: ${school.isFrozen ? "MUZLATILGAN (BLOKLANGAN)" : "FAOL"}, Muddat: ${school.subscriptionStart || ''} -> ${school.subscriptionEnd || ''}`);
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: true,
+          message: 'Maktab obunasi va holati muvaffaqiyatli yangilandi!',
           school,
           schools: schoolDB.schools
         }));
