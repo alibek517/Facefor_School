@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSchool } from '../context/SchoolContext';
 import { 
-  Building, 
+  Building,
+  LogIn,
+  LogOut,
+  ArrowDown,
+  ArrowUp, 
   Users, 
   UserCheck, 
   UserX, 
@@ -229,6 +233,70 @@ export const SchoolMonitor = () => {
     return false;
   };
 
+  
+  // Oxirgi kirganlar ro'yxati (eng so'nggi kirish o'tishlari)
+  const recentInScans = useMemo(() => {
+    const list = (recentFaceScans || []).filter(s => {
+      const dir = (s.direction || '').toLowerCase();
+      const cam = (s.cameraName || '').toLowerCase();
+      return dir === 'in' || dir === 'entry' || dir === 'kirish' || cam.includes('kirish');
+    });
+    return list.slice(0, 30);
+  }, [recentFaceScans]);
+
+  // Oxirgi chiqqanlar ro'yxati (eng so'nggi chiqish o'tishlari)
+  const recentOutScans = useMemo(() => {
+    const list = (recentFaceScans || []).filter(s => {
+      const dir = (s.direction || '').toLowerCase();
+      const cam = (s.cameraName || '').toLowerCase();
+      return dir === 'out' || dir === 'exit' || dir === 'chiqish' || cam.includes('chiqish');
+    });
+    return list.slice(0, 30);
+  }, [recentFaceScans]);
+
+  // Skan qilgan shaxsning to'liq ma'lumoti va sinfini aniqlash
+  const getScanPersonInfo = (scan) => {
+    if (!scan) return { name: "Noma'lum", roleInfo: '', isTeacher: false };
+    const sEmp = String(scan.employeeNo || '').replace(/^0+/, '');
+    const sName = (scan.name || '').toLowerCase().trim();
+
+    // 1. O'quvchilardan qidirish
+    const matchedStudent = (students || []).find(st => {
+      const normId = String(st.studentId || st.faceId || st.id || '').replace(/^s-/, '').replace(/^0+/, '');
+      const stName = (st.fullName || st.name || '').toLowerCase().trim();
+      return (normId && sEmp && normId === sEmp) || (stName && sName && (stName === sName || stName.includes(sName) || sName.includes(stName)));
+    });
+
+    if (matchedStudent) {
+      const cls = (classes || []).find(c => c.id === matchedStudent.classId);
+      return {
+        name: matchedStudent.fullName || matchedStudent.name || scan.name,
+        roleInfo: cls ? `${cls.name} sinf` : (matchedStudent.className ? `${matchedStudent.className} sinf` : 'O\'quvchi'),
+        isTeacher: false
+      };
+    }
+
+    // 2. O'qituvchilardan qidirish
+    const matchedTeacher = (teachers || []).find(t => {
+      const tName = (t.name || '').toLowerCase().trim();
+      return tName && sName && (tName === sName || tName.includes(sName) || sName.includes(tName));
+    });
+
+    if (matchedTeacher) {
+      return {
+        name: matchedTeacher.name || scan.name,
+        roleInfo: matchedTeacher.subject ? `${matchedTeacher.subject}` : 'O\'qituvchi',
+        isTeacher: true
+      };
+    }
+
+    return {
+      name: scan.name || `ID: ${scan.employeeNo || 'Turniket'}`,
+      roleInfo: scan.userType === 'teacher' ? 'O\'qituvchi' : 'O\'quvchi',
+      isTeacher: scan.userType === 'teacher'
+    };
+  };
+
   // 2. O'quvchining bugun umuman yuzi tushganmi (kamida 1 marta kelganmi)
   const hasStudentAttendedToday = (st) => {
     const normId = String(st.studentId || st.faceId || st.id || '').replace(/^s-/, '').replace(/^0+/, '');
@@ -443,14 +511,14 @@ export const SchoolMonitor = () => {
         {/* 1-BO'LIM: MAKTAB ICHIDAGILAR (Hozir ayni vaqtda binoda bo'lganlar) */}
         {/* ========================================================================= */}
         {activeTab === 'inside' && (
-          <div className="flex flex-col xl:flex-row gap-3.5 items-start w-full">
+          <div className="flex flex-col xl:flex-row gap-3.5 items-stretch w-full">
             
-            {/* CHAP CHET: 2 ta Asosiy Metrika Karti */}
-            <div className="w-full xl:w-72 2xl:w-80 shrink-0 space-y-3">
+            {/* CHAP CHET: Metrikalar + OXIRGI KIRGANLAR (Bo'sh joyni oxirigacha to'ldiradi) */}
+            <div className="w-full xl:w-72 2xl:w-80 shrink-0 flex flex-col gap-3">
               {/* 1. Hozir maktab ichidagi o'quvchilar */}
               <div 
                 onClick={() => setClassFilter('all')}
-                className={`p-4 rounded-2xl relative overflow-hidden shadow-sm cursor-pointer transition-all border ${
+                className={`p-4 rounded-2xl relative overflow-hidden shadow-sm cursor-pointer transition-all border shrink-0 ${
                   classFilter === 'all' 
                     ? 'border-blue-500 ring-2 ring-blue-500/40 bg-blue-50/80 dark:bg-blue-950/40 shadow-md' 
                     : 'bg-gradient-to-br from-blue-50 to-indigo-50/60 dark:from-blue-900/60 dark:to-slate-800/90 border-blue-200 dark:border-blue-500/30 hover:border-blue-400'
@@ -483,7 +551,7 @@ export const SchoolMonitor = () => {
               {/* 2. Darsdagi o'quvchilar */}
               <div 
                 onClick={() => setClassFilter(classFilter === 'high' ? 'all' : 'high')}
-                className={`p-4 rounded-2xl shadow-sm cursor-pointer transition-all border ${
+                className={`p-4 rounded-2xl shadow-sm cursor-pointer transition-all border shrink-0 ${
                   classFilter === 'high' 
                     ? 'border-emerald-500 ring-2 ring-emerald-500/40 bg-emerald-50/80 dark:bg-emerald-950/40 shadow-md' 
                     : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-emerald-400'
@@ -512,167 +580,235 @@ export const SchoolMonitor = () => {
                   <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Faol darsda</span>
                 </div>
               </div>
+
+              {/* 3. JONLI OQIM: OXIRGI KIRGANLAR (DAKANSA TO'LDIRIB TURADI) */}
+              <div className="flex-1 flex flex-col p-3.5 bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm min-h-[360px] overflow-hidden">
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-700/80 mb-2 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-500/10 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                      <LogIn className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                        Oxirgi Kirganlar
+                      </h4>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Jonli Face-ID</span>
+                    </div>
+                  </div>
+                  <span className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Kirish
+                  </span>
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-1.5 pr-0.5 max-h-[460px]">
+                  {recentInScans.length === 0 ? (
+                    <div className="h-full min-h-[220px] flex flex-col items-center justify-center py-6 text-center text-slate-400">
+                      <LogIn className="w-7 h-7 opacity-25 mb-2 text-emerald-500 animate-pulse" />
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Turniket kutish rejimida</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 max-w-[190px]">
+                        O'quvchi kirganda bu yerda avtomatik paydo bo'ladi
+                      </span>
+                    </div>
+                  ) : (
+                    recentInScans.map((scan, idx) => {
+                      const person = getScanPersonInfo(scan);
+                      return (
+                        <div 
+                          key={scan.id || scan.serialNo || idx}
+                          className="p-2 rounded-xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2 transition-all hover:border-emerald-400/50"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-xs shrink-0">
+                              ↓
+                            </div>
+                            <div className="min-w-0">
+                              <span className="block text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                                {person.name}
+                              </span>
+                              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                {person.roleInfo}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="block text-xs font-mono font-bold text-slate-700 dark:text-slate-300">
+                              {formatScanTime(scan)}
+                            </span>
+                            <span className="text-[9px] text-slate-400 dark:text-slate-500">
+                              {scan.cameraName ? scan.cameraName.replace(/turniket/i, 'T.').slice(0, 12) : 'Kirish'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
             </div>
 
             {/* O'RTA QISM: BARCHA SINFLAR DAVOMAT KARTALARI (1 QATORDA 4 TADAN!) */}
-            <div className="flex-1 min-w-0 w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 p-3.5 sm:p-4 rounded-2xl shadow-sm space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-700/80">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 rounded-lg">
-                    <Layers className="w-4 h-4" />
+            <div className="flex-1 min-w-0 w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 p-3.5 sm:p-4 rounded-2xl shadow-sm space-y-3 flex flex-col justify-between">
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-700/80">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 rounded-lg">
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                        <span>Sinflar Bo'yicha O'quvchilar Davomati</span>
+                        <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+                          ({filteredClassStats.length} ta ko'rsatilmoqda)
+                        </span>
+                      </h3>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        O'quvchilarning to'liq ro'yxati va holatini ko'rish uchun sinf ustiga bosing
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                      <span>Sinflar Bo'yicha O'quvchilar Davomati</span>
-                      <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
-                        ({filteredClassStats.length} ta ko'rsatilmoqda)
-                      </span>
-                    </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      O'quvchilarning to'liq ro'yxati va holatini ko'rish uchun sinf ustiga bosing
-                    </p>
-                  </div>
-                </div>
 
-                {/* Foiz bo'yicha tezkor filter tugmalari */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <button
-                    onClick={() => setClassFilter('all')}
-                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
-                      classFilter === 'all'
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    Barchasi ({classStats.length})
-                  </button>
-
-                  <button
-                    onClick={() => setClassFilter('low')}
-                    className={`px-2.5 py-1 text-xs font-black rounded-lg transition-all flex items-center gap-1.5 ${
-                      classFilter === 'low'
-                        ? 'bg-red-600 text-white shadow-md ring-2 ring-red-400 animate-pulse'
-                        : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/60 hover:bg-red-100'
-                    }`}
-                    title="Davomati juda past bo'lgan sinflar"
-                  >
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
-                    </span>
-                    Past (&lt;50%) ({lowCount})
-                  </button>
-
-                  <button
-                    onClick={() => setClassFilter('medium')}
-                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
-                      classFilter === 'medium'
-                        ? 'bg-amber-500 text-white shadow-xs'
-                        : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 hover:bg-amber-100'
-                    }`}
-                  >
-                    O'rtacha (50-89%) ({mediumCount})
-                  </button>
-
-                  <button
-                    onClick={() => setClassFilter('high')}
-                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
-                      classFilter === 'high'
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60 hover:bg-emerald-100'
-                    }`}
-                  >
-                    A'lo (≥90%) ({highCount})
-                  </button>
-                </div>
-              </div>
-
-              {/* Sinflar Gridi - 1 QATORDA AYNAN 4 TADAN */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-2.5">
-                {filteredClassStats.map(cs => {
-                  const status = getClassStatusConfig(cs.percent, cs.totalCount);
-                  return (
-                    <div
-                      key={cs.id}
-                      onClick={() => { setDrawerTarget(cs); setDrawerSearch(''); }}
-                      className={`p-3 rounded-xl cursor-pointer transition-all flex flex-col justify-between group ${status.cardBg}`}
+                  {/* Foiz bo'yicha tezkor filter tugmalari */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <button
+                      onClick={() => setClassFilter('all')}
+                      className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                        classFilter === 'all'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                      }`}
                     >
-                      <div>
-                        <div className="flex items-center justify-between gap-1 mb-1.5">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            {status.isCritical && (
-                              <span className="relative flex h-2 w-2 shrink-0">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                      Barchasi ({classStats.length})
+                    </button>
+
+                    <button
+                      onClick={() => setClassFilter('low')}
+                      className={`px-2.5 py-1 text-xs font-black rounded-lg transition-all flex items-center gap-1.5 ${
+                        classFilter === 'low'
+                          ? 'bg-red-600 text-white shadow-md ring-2 ring-red-400 animate-pulse'
+                          : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/60 hover:bg-red-100'
+                      }`}
+                      title="Davomati juda past bo'lgan sinflar"
+                    >
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                      </span>
+                      Past (&lt;50%) ({lowCount})
+                    </button>
+
+                    <button
+                      onClick={() => setClassFilter('medium')}
+                      className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                        classFilter === 'medium'
+                          ? 'bg-amber-500 text-white shadow-xs'
+                          : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 hover:bg-amber-100'
+                      }`}
+                    >
+                      O'rtacha (50-89%) ({mediumCount})
+                    </button>
+
+                    <button
+                      onClick={() => setClassFilter('high')}
+                      className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                        classFilter === 'high'
+                          ? 'bg-emerald-600 text-white shadow-xs'
+                          : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60 hover:bg-emerald-100'
+                      }`}
+                    >
+                      A'lo (≥90%) ({highCount})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Sinflar Gridi - 1 QATORDA AYNAN 4 TADAN */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-2.5 mt-3">
+                  {filteredClassStats.map(cs => {
+                    const status = getClassStatusConfig(cs.percent, cs.totalCount);
+                    return (
+                      <div
+                        key={cs.id}
+                        onClick={() => { setDrawerTarget(cs); setDrawerSearch(''); }}
+                        className={`p-3 rounded-xl cursor-pointer transition-all flex flex-col justify-between group ${status.cardBg}`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-1 mb-1.5">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              {status.isCritical && (
+                                <span className="relative flex h-2 w-2 shrink-0">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                                </span>
+                              )}
+                              <span className={`text-sm font-black truncate ${
+                                status.isCritical ? 'text-red-950 dark:text-red-100' : 'text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                              }`}>
+                                {cs.name}
                               </span>
-                            )}
-                            <span className={`text-sm font-black truncate ${
-                              status.isCritical ? 'text-red-950 dark:text-red-100' : 'text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400'
-                            }`}>
-                              {cs.name}
+                            </div>
+
+                            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${status.badgeBg}`}>
+                              {status.isCritical && <AlertTriangle className="w-2.5 h-2.5" />}
+                              {cs.percent}%
                             </span>
                           </div>
 
-                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${status.badgeBg}`}>
-                            {status.isCritical && <AlertTriangle className="w-2.5 h-2.5" />}
-                            {cs.percent}%
-                          </span>
+                          {/* O'quvchilar soni */}
+                          <div className="space-y-1 text-[11px]">
+                            <div className="text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                              <span>Jami:</span>
+                              <span className="font-bold text-slate-700 dark:text-slate-300">{cs.totalCount} ta</span>
+                            </div>
+                            <div className="text-emerald-600 dark:text-emerald-400 flex items-center justify-between font-bold">
+                              <span>✓ Kelgan:</span>
+                              <span>{cs.arrivedCount || cs.presentCount} ta</span>
+                            </div>
+                            <div className={`flex items-center justify-between font-bold ${
+                              status.isCritical ? 'text-red-700 dark:text-red-300 font-black' : 'text-rose-600 dark:text-rose-400'
+                            }`}>
+                              <span>✗ Kelmagan:</span>
+                              <span>{cs.absentCount} ta</span>
+                            </div>
+                          </div>
+
+                          {/* Progress bar */}
+                          <div className="w-full bg-slate-200/80 dark:bg-slate-700/80 h-1.5 rounded-full overflow-hidden mt-2">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${status.progressBg}`}
+                              style={{ width: `${cs.percent}%` }}
+                            ></div>
+                          </div>
                         </div>
 
-                        {/* O'quvchilar soni */}
-                        <div className="space-y-1 text-[11px]">
-                          <div className="text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                            <span>Jami:</span>
-                            <span className="font-bold text-slate-700 dark:text-slate-300">{cs.totalCount} ta</span>
-                          </div>
-                          <div className="text-emerald-600 dark:text-emerald-400 flex items-center justify-between font-bold">
-                            <span>✓ Kelgan:</span>
-                            <span>{cs.arrivedCount || cs.presentCount} ta</span>
-                          </div>
-                          <div className={`flex items-center justify-between font-bold ${
-                            status.isCritical ? 'text-red-700 dark:text-red-300 font-black' : 'text-rose-600 dark:text-rose-400'
-                          }`}>
-                            <span>✗ Kelmagan:</span>
-                            <span>{cs.absentCount} ta</span>
-                          </div>
-                        </div>
-
-                        {/* Progress bar */}
-                        <div className="w-full bg-slate-200/80 dark:bg-slate-700/80 h-1.5 rounded-full overflow-hidden mt-2">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${status.progressBg}`}
-                            style={{ width: `${cs.percent}%` }}
-                          ></div>
+                        <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-bold group-hover:translate-x-0.5 transition-transform ${
+                          status.isCritical 
+                            ? 'border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 font-black' 
+                            : 'border-slate-100 dark:border-slate-800 text-blue-600 dark:text-blue-400'
+                        }`}>
+                          <span>{status.isCritical ? "Diqqat: Ko'rish" : "Ko'rish"}</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
                         </div>
                       </div>
-
-                      <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-bold group-hover:translate-x-0.5 transition-transform ${
-                        status.isCritical 
-                          ? 'border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 font-black' 
-                          : 'border-slate-100 dark:border-slate-800 text-blue-600 dark:text-blue-400'
-                      }`}>
-                        <span>{status.isCritical ? "Diqqat: Ko'rish" : "Ko'rish"}</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
-            {/* O'NG CHET: 2 ta Asosiy Metrika Karti */}
-            <div className="w-full xl:w-72 2xl:w-80 shrink-0 space-y-3">
+            {/* O'NG CHET: Metrikalar + OXIRGI CHIQGANLAR (Bo'sh joyni oxirigacha to'ldiradi) */}
+            <div className="w-full xl:w-72 2xl:w-80 shrink-0 flex flex-col gap-3">
               {/* 3. Bugun kelmaganlar (Past davomatli sinflarni filtr qiladi) */}
               <div 
                 onClick={() => setClassFilter(classFilter === 'low' ? 'all' : 'low')}
-                className={`p-4 rounded-2xl shadow-sm cursor-pointer transition-all border ${
+                className={`p-4 rounded-2xl shadow-sm cursor-pointer transition-all border shrink-0 ${
                   classFilter === 'low' 
                     ? 'border-red-500 ring-2 ring-red-500/60 bg-red-100/90 dark:bg-red-950/70 shadow-lg shadow-red-500/30 animate-pulse' 
                     : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-rose-400'
                 }`}
                 title="Davomati past (<50%) bo'lgan sinflarni saralash"
               >
-                <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 pb-2 border-b border-rose-100 dark:border-rose-900/40">
                   <span className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
@@ -695,7 +831,7 @@ export const SchoolMonitor = () => {
               </div>
 
               {/* 4. Maktab Davomati & Sinflar Xulosasi */}
-              <div className="p-4 bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+              <div className="p-4 bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3 shrink-0">
                 <div className="flex items-center justify-between text-slate-700 dark:text-slate-200 pb-2 border-b border-slate-100 dark:border-slate-700">
                   <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
                     <Activity className="w-4 h-4 text-blue-500" />
@@ -747,6 +883,71 @@ export const SchoolMonitor = () => {
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     6 ta Turniket Faol
                   </span>
+                </div>
+              </div>
+
+              {/* 5. JONLI OQIM: OXIRGI CHIQGANLAR (DAKANSA TO'LDIRIB TURADI) */}
+              <div className="flex-1 flex flex-col p-3.5 bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm min-h-[360px] overflow-hidden">
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-700/80 mb-2 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-rose-500/10 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold">
+                      <LogOut className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                        Oxirgi Chiqqanlar
+                      </h4>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Jonli Face-ID</span>
+                    </div>
+                  </div>
+                  <span className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                    Chiqish
+                  </span>
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-1.5 pr-0.5 max-h-[460px]">
+                  {recentOutScans.length === 0 ? (
+                    <div className="h-full min-h-[220px] flex flex-col items-center justify-center py-6 text-center text-slate-400">
+                      <LogOut className="w-7 h-7 opacity-25 mb-2 text-rose-500 animate-pulse" />
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Turniket kutish rejimida</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 max-w-[190px]">
+                        O'quvchi chiqqanda bu yerda avtomatik paydo bo'ladi
+                      </span>
+                    </div>
+                  ) : (
+                    recentOutScans.map((scan, idx) => {
+                      const person = getScanPersonInfo(scan);
+                      return (
+                        <div 
+                          key={scan.id || scan.serialNo || idx}
+                          className="p-2 rounded-xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2 transition-all hover:border-rose-400/50"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center font-black text-xs shrink-0">
+                              ↑
+                            </div>
+                            <div className="min-w-0">
+                              <span className="block text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                                {person.name}
+                              </span>
+                              <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                                {person.roleInfo}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="block text-xs font-mono font-bold text-slate-700 dark:text-slate-300">
+                              {formatScanTime(scan)}
+                            </span>
+                            <span className="text-[9px] text-slate-400 dark:text-slate-500">
+                              {scan.cameraName ? scan.cameraName.replace(/turniket/i, 'T.').slice(0, 12) : 'Chiqish'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
 
