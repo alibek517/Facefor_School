@@ -1541,10 +1541,64 @@ export const SchoolProvider = ({ children }) => {
   // Login
   const login = (loginText, passwordText) => {
     const cleanLogin = loginText.trim().toLowerCase();
+    const cleanPass = passwordText.trim();
 
-    const found = USERS_AUTH.find(
-      u => u.login.toLowerCase() === cleanLogin && u.password === passwordText.trim()
-    );
+    // 1. Har bir maktabning foye monitori login va parolini tekshirish (Direktor o'zgartirgan bo'lishi mumkin)
+    const matchedSchoolByMonitor = schools.find(s => {
+      const mLogin = (s.monitorLogin || (s.id === 'sch-1' ? 'monitor' : `monitor_${s.id}`)).toLowerCase().trim();
+      const mPass = String(s.monitorPassword || '123').trim();
+      return mLogin === cleanLogin && mPass === cleanPass;
+    });
+
+    let found = null;
+    if (matchedSchoolByMonitor) {
+      found = {
+        id: `u-mon-${matchedSchoolByMonitor.id}`,
+        login: matchedSchoolByMonitor.monitorLogin || cleanLogin,
+        password: cleanPass,
+        role: 'monitor',
+        schoolId: matchedSchoolByMonitor.id,
+        name: `${matchedSchoolByMonitor.name} - Foye Ekrani (Monitor)`,
+        detail: 'Eshik oldidagi katta tablo',
+        permissions: ['cameras']
+      };
+    } else {
+      // 2. Maktab direktori hisoblari
+      const matchedSchoolByDirector = schools.find(s => {
+        if (!s.directorLogin) return false;
+        const dLogin = s.directorLogin.toLowerCase().trim();
+        const dPass = String(s.directorPassword || '123').trim();
+        return dLogin === cleanLogin && dPass === cleanPass;
+      });
+
+      if (matchedSchoolByDirector) {
+        found = {
+          id: `u-dir-${matchedSchoolByDirector.id}`,
+          login: matchedSchoolByDirector.directorLogin,
+          password: cleanPass,
+          role: 'director',
+          schoolId: matchedSchoolByDirector.id,
+          name: `${matchedSchoolByDirector.name} Direktori`,
+          detail: matchedSchoolByDirector.director || 'Maktab Rahbariyati',
+          isDirector: true,
+          permissions: ['dashboard', 'cameras', 'playback', 'students', 'teachers', 'leadership', 'classes', 'schedules', 'attendance_control', 'class_attendance', 'notifications', 'settings']
+        };
+      } else {
+        // 3. Standart USERS_AUTH ro'yxatini tekshirish
+        found = USERS_AUTH.find(
+          u => {
+            // Agar u-mon bo'lsa, lekin joriy maktab paroli almashtirilgan bo'lsa, eski USERS_AUTH monitor paroli o'tmasin
+            if (u.role === 'monitor') {
+              const sch = schools.find(s => s.id === (u.schoolId || 'sch-1'));
+              if (sch && sch.monitorPassword && sch.monitorPassword !== u.password) {
+                return false;
+              }
+            }
+            return u.login.toLowerCase() === cleanLogin && u.password === cleanPass;
+          }
+        );
+      }
+    }
 
     if (found) {
 
@@ -1815,6 +1869,61 @@ export const SchoolProvider = ({ children }) => {
     } catch (e) {}
 
     showToast('Muvaffaqiyatli', 'Supabase sozlamalari yangilandi!', 'success');
+  };
+
+  // Har bir maktab direktori o'z foye monitorining login va parolini erkin o'zgartira oladi
+  const updateSchoolMonitorCredentials = async (schoolId, { monitorLogin, monitorPassword }) => {
+    const cleanLogin = (monitorLogin || '').trim();
+    const cleanPassword = (monitorPassword || '').trim();
+
+    if (!cleanLogin) {
+      showToast('Xatolik', 'Monitor logini bo\'sh bo\'lishi mumkin emas!', 'warning');
+      return { success: false, error: 'Login bo\'sh bo\'lmasligi kerak' };
+    }
+    if (!cleanPassword) {
+      showToast('Xatolik', 'Monitor paroli bo\'sh bo\'lishi mumkin emas!', 'warning');
+      return { success: false, error: 'Parol bo\'sh bo\'lmasligi kerak' };
+    }
+
+    let updatedSchool = null;
+    setSchools(prev => {
+      const updated = prev.map(s => {
+        if (s.id === schoolId) {
+          updatedSchool = { ...s, monitorLogin: cleanLogin, monitorPassword: cleanPassword };
+          return updatedSchool;
+        }
+        return s;
+      });
+      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+
+    // 1. Supabase bulut bazasiga saqlash
+    try {
+      if (updatedSchool) {
+        saveModuleToSupabase('monitor_credentials', {
+          schoolId,
+          monitorLogin: cleanLogin,
+          monitorPassword: cleanPassword,
+          updatedAt: new Date().toISOString()
+        }).catch(() => {});
+      }
+    } catch (e) {}
+
+    // 2. Lokal ko'prik serveriga uzatish
+    try {
+      const bridgeHost = localBridgeInfo?.ip || 'localhost';
+      const bridgePort = localBridgeInfo?.port || 5001;
+      await fetch(`http://${bridgeHost}:${bridgePort}/api/schools/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: schoolId, monitorLogin: cleanLogin, monitorPassword: cleanPassword }),
+        signal: AbortSignal.timeout(3000)
+      }).catch(() => {});
+    } catch (e) {}
+
+    showToast('Muvaffaqiyatli', `Foye monitori uchun yangi login: "${cleanLogin}" muvaffaqiyatli o'rnatildi!`, 'success');
+    return { success: true };
   };
 
   // Maktab obunasi holati va qolgan kunlarni hisoblash
@@ -2943,6 +3052,7 @@ export const SchoolProvider = ({ children }) => {
     updateSchool,
     updateSchoolSupabase,
     updateSchoolSubscription,
+    updateSchoolMonitorCredentials,
     getSchoolSubscriptionInfo,
     testSupabaseConnection,
     bigAdminSupabase,
