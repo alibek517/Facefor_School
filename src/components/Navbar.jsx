@@ -1,7 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useSchool } from '../context/SchoolContext';
 import { 
-  Building, 
+  Building,
+  Home,
+  Users,
+  Settings, 
   ClipboardList, 
   GraduationCap, 
   BookOpen, 
@@ -24,6 +27,8 @@ import {
 export const Navbar = () => {
   const {
     currentUser,
+    hasPermission,
+    activeTab,
     logout,
     quickSwitchRole,
     switchStaffMember,
@@ -78,11 +83,23 @@ export const Navbar = () => {
     return [];
   }, [notifications, isDirector, isClassTeacher, myClassId, myClassObj]);
 
+  
+  const isDirectorUser = Boolean(
+    currentUser?.isDirector || 
+    currentUser?.role === 'director' || 
+    currentUser?.role === 'bigadmin' ||
+    (currentUser?.category === 'leadership' && (hasPermission?.('teachers') || hasPermission?.('leadership'))) ||
+    (currentUser?.category === 'administrator' && (hasPermission?.('teachers') || hasPermission?.('leadership')))
+  );
+
+  const canSeeStudents = isDirectorUser && (hasPermission?.('students') || isBigAdmin);
+  const canSeeSettings = isDirectorUser && (hasPermission?.('teachers') || hasPermission?.('schedules') || hasPermission?.('classes') || hasPermission?.('leadership') || isBigAdmin);
+
   const unreadCount = visibleNotifications.filter(n => !n.isRead).length;
 
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 transition-colors">
-      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+      <div className={`w-full ${currentUser?.role === 'monitor' ? 'max-w-none px-4 sm:px-6' : 'max-w-7xl mx-auto px-2 sm:px-4 lg:px-6'}`}>
         
         {/* Asosiy qator: Logo, Rollar, Foydalanuvchi */}
         <div className="flex items-center justify-between h-14 gap-2">
@@ -105,35 +122,85 @@ export const Navbar = () => {
 
           
 
-          {/* Joriy faol rol va kabinet indikatori (alohida login bilan kirilgani uchun tezkor almashtirish olib tashlandi) */}
-          <div className="hidden md:flex items-center gap-2">
+          {/* O'rta: Yagona 1 Qatorlik Navigatsiya Paneli */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+            {/* BigAdmin Paneli */}
             {isBigAdmin && (
               <button
                 onClick={() => navigateTo('/bigadmin')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  (currentUser?.role === 'bigadmin' || currentPath === '/bigadmin')
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                  (activeTab === 'bigadmin' || currentPath === '/bigadmin')
                     ? 'bg-indigo-600 text-white shadow-sm'
                     : 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
                 }`}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
-                BigAdmin Paneli
+                <span className="hidden sm:inline">BigAdmin</span>
               </button>
             )}
 
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-              <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-              <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100">
-                {currentUser?.role === 'bigadmin' && 'Boshqaruv: Super Administrator'}
-                {currentUser?.role === 'director' && 'Direktor Kabineti'}
-                {currentUser?.role === 'inspector' && 'Navbatchi Xodim Kabineti'}
-                {currentUser?.role === 'class_teacher' && (myClassObj ? `${myClassObj.name} Sinf Rahbari` : 'Sinf Rahbari')}
-                {currentUser?.role === 'subject_teacher' && 'Fan O\'qituvchisi Kabineti'}
-                {currentUser?.role === 'monitor' && 'Foye Tablosi (Monitor)'}
-                {currentUser?.category === 'leadership' && currentUser?.role !== 'director' && (currentUser?.detail || currentUser?.role || 'Rahbariyat')}
-                {currentUser?.category === 'administrator' && (currentUser?.detail || 'Administrator')}
-              </span>
-            </div>
+            {/* Asosiy rol / Foye tablosi */}
+            {currentUser?.role === 'monitor' ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded-xl border border-blue-200 dark:border-blue-900/60 text-xs font-black shadow-xs shrink-0">
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                <span>Foye Tablosi (Monitor)</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  if (currentUser?.role === 'inspector') navigateTo('/duty');
+                  else if (currentUser?.role === 'class_teacher') navigateTo('/class-teacher');
+                  else if (currentUser?.role === 'subject_teacher') navigateTo('/subject-teacher');
+                  else navigateTo('/director');
+                }}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                  (activeTab === 'main' && (!isBigAdmin || currentPath === '/director'))
+                    ? 'bg-blue-700 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Home className="w-3.5 h-3.5" />
+                <span>
+                  {currentUser?.role === 'bigadmin' && 'Direktor Paneli'}
+                  {currentUser?.role === 'director' && 'Direktor'}
+                  {currentUser?.role === 'inspector' && 'Navbatchi'}
+                  {currentUser?.role === 'class_teacher' && (myClassObj ? `${myClassObj.name} Rahbari` : 'Sinf Rahbari')}
+                  {currentUser?.role === 'subject_teacher' && "Fan O'qituvchisi"}
+                  {currentUser?.category === 'leadership' && currentUser?.role !== 'director' && (currentUser?.detail || currentUser?.role || 'Rahbariyat')}
+                  {currentUser?.category === 'administrator' && (currentUser?.detail || 'Administrator')}
+                </span>
+              </button>
+            )}
+
+            {/* O'quvchilar CRUD */}
+            {canSeeStudents && (
+              <button
+                onClick={() => navigateTo('/students')}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                  activeTab === 'directory'
+                    ? 'bg-blue-700 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>O'quvchilar</span>
+              </button>
+            )}
+
+            {/* O'qituvchilar va Fanlar CRUD */}
+            {canSeeSettings && (
+              <button
+                onClick={() => navigateTo('/teachers')}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                  activeTab === 'settings'
+                    ? 'bg-blue-700 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>O'qituvchilar & Darslar</span>
+              </button>
+            )}
           </div>
 
           {/* O'ng tomon: Mavzu, Bildirishnoma, Foydalanuvchi ismi va Chiqish */}

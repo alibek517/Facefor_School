@@ -333,12 +333,12 @@ export const SchoolMonitor = () => {
   return (
     <div className="w-full min-h-[85vh] bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-2xl p-3 sm:p-5 flex flex-col justify-between shadow-xl border border-slate-200 dark:border-slate-800 transition-colors duration-200">
       
-      {/* 1. YUQORI MONITOR BOSHQARUV PANELI (YAXLIT TOP NAVBAR) */}
-      <div className="pb-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap lg:flex-nowrap items-center justify-between gap-3 w-full">
+      {/* 1. YUQORI MONITOR BOSHQARUV PANELI (YAXLIT VA PREMYUM TOP NAVBAR) */}
+      <div className="p-3 sm:px-4 sm:py-3 bg-slate-50/90 dark:bg-slate-800/70 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-wrap lg:flex-nowrap items-center justify-between gap-3 w-full">
         
         {/* Chap chet: Maktab nomi va Jonli Efir, Sana */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 shrink-0">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 flex items-center justify-center text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-500/20 shrink-0">
             <Building className="w-5 h-5" />
           </div>
           <div>
@@ -346,24 +346,24 @@ export const SchoolMonitor = () => {
               <span className="font-black text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">
                 {currentSchool?.name || "SmartMaktab Tablosi"}
               </span>
-              <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 animate-pulse shrink-0">
+              <span className="flex items-center gap-1.5 text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 animate-pulse shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
                 Jonli Efir
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{dateFormatted}</p>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 capitalize mt-0.5">{dateFormatted}</p>
           </div>
         </div>
 
-        {/* O'rtasi: 3 ta Asosiy Tablar (Aynan markazda joylashgan) */}
+        {/* O'rtasi: 3 ta Asosiy Tablar (Aynan markazda joylashgan premyum pill nav) */}
         <div className="flex items-center justify-center order-last lg:order-none w-full lg:w-auto">
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
+          <div className="flex items-center bg-slate-200/80 dark:bg-slate-900/90 p-1.5 rounded-2xl border border-slate-300/80 dark:border-slate-700/80 shadow-inner gap-1">
             <button
               onClick={() => setActiveTab('inside')}
-              className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 sm:px-4 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
                 activeTab === 'inside'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/35'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/50 dark:hover:bg-slate-800/60'
               }`}
             >
               <Users className="w-3.5 h-3.5" />
@@ -372,10 +372,10 @@ export const SchoolMonitor = () => {
 
             <button
               onClick={() => setActiveTab('arrived')}
-              className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 sm:px-4 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
                 activeTab === 'arrived'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/35'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/50 dark:hover:bg-slate-800/60'
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -384,10 +384,10 @@ export const SchoolMonitor = () => {
 
             <button
               onClick={() => setActiveTab('hourly')}
-              className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 sm:px-4 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
                 activeTab === 'hourly'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/35'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/50 dark:hover:bg-slate-800/60'
               }`}
             >
               <Activity className="w-3.5 h-3.5" />
@@ -398,30 +398,36 @@ export const SchoolMonitor = () => {
 
         {/* O'ng chet: Jonli Soat, Turniket Holati va To'liq Ekran */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="px-3.5 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/80 text-center shadow-inner">
-            <div className="text-xl sm:text-2xl font-black font-mono tracking-wider text-emerald-600 dark:text-emerald-400">
+          {/* Raqamli Tablo Soati */}
+          <div className="px-4 py-1.5 bg-slate-950 dark:bg-black/90 rounded-2xl border border-slate-800 dark:border-slate-700/80 text-center shadow-inner">
+            <div className="text-xl sm:text-2xl font-black font-mono tracking-widest text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.35)]">
               {timeFormatted}
             </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/80 text-xs shadow-sm">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+          {/* Turniket Status Pilli */}
+          <div className="hidden sm:flex items-center gap-2.5 px-3.5 py-1.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700/80 text-xs shadow-xs">
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
             <div>
-              <div className="font-bold text-[11px] text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <div className="font-extrabold text-[11px] text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                 <span>Face-ID: 6 ta Turniket</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded font-black bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+                <span className="text-[9px] px-1.5 py-0.2 rounded font-black bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400">
                   ONLAYN
                 </span>
               </div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono font-medium">
                 3 Kirish / 3 Chiqish • {faceDevice?.totalUsers || 737} ta yuz
               </div>
             </div>
           </div>
 
+          {/* To'liq Ekran Tugmasi */}
           <button
             onClick={toggleFullscreen}
-            className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-xs shrink-0 cursor-pointer"
+            className="p-2.5 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl border border-slate-200 dark:border-slate-700 transition-all shadow-xs shrink-0 cursor-pointer hover:scale-105 active:scale-95"
             title="To'liq ekranga o'tish"
           >
             {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
@@ -437,11 +443,10 @@ export const SchoolMonitor = () => {
         {/* 1-BO'LIM: MAKTAB ICHIDAGILAR (Hozir ayni vaqtda binoda bo'lganlar) */}
         {/* ========================================================================= */}
         {activeTab === 'inside' && (
-          <div className="space-y-4">
+          <div className="flex flex-col xl:flex-row gap-3.5 items-start w-full">
             
-            {/* Yuqori 3 ta Katta Jonli Metrika (Faqat o'quvchilar tahlili) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              
+            {/* CHAP CHET: 2 ta Asosiy Metrika Karti */}
+            <div className="w-full xl:w-72 2xl:w-80 shrink-0 space-y-3">
               {/* 1. Hozir maktab ichidagi o'quvchilar */}
               <div 
                 onClick={() => setClassFilter('all')}
@@ -452,7 +457,7 @@ export const SchoolMonitor = () => {
                 }`}
                 title="Barcha sinflarni ko'rish"
               >
-                <div className="flex items-center justify-between text-blue-700 dark:text-blue-300">
+                <div className="flex items-center justify-between text-blue-700 dark:text-blue-300 pb-2 border-b border-blue-100 dark:border-blue-900/40">
                   <span className="text-xs font-bold uppercase tracking-wider">Hozir Maktab Ichida</span>
                   <Building className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
@@ -462,13 +467,16 @@ export const SchoolMonitor = () => {
                     nafar o'quvchi
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-600 dark:text-slate-400 mt-1 flex items-center justify-between">
+                <div className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 flex items-center justify-between">
                   <span>Jami maktab: <strong className="text-slate-900 dark:text-white">{totalStudents} nafar</strong></span>
                   {classFilter === 'all' && (
                     <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/60 px-1.5 py-0.5 rounded">
                       Barchasi
                     </span>
                   )}
+                </div>
+                <div className="mt-2 text-[11px] text-blue-700 dark:text-blue-300 font-semibold bg-blue-100/50 dark:bg-blue-900/30 px-2 py-1 rounded-lg">
+                  Maktab to'ldirilishi: {totalStudents > 0 ? Math.round((totalStudentsInside / totalStudents) * 100) : 0}%
                 </div>
               </div>
 
@@ -482,7 +490,7 @@ export const SchoolMonitor = () => {
                 }`}
                 title="A'lo (≥90%) sinflarni saralash"
               >
-                <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400 pb-2 border-b border-emerald-100 dark:border-emerald-900/40">
                   <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Darsdagi O'quvchilar (A'lo)</span>
                   <UserCheck className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
                 </div>
@@ -499,45 +507,16 @@ export const SchoolMonitor = () => {
                   </div>
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{totalStudentsPercent}%</span>
                 </div>
-              </div>
-
-              {/* 3. Bugun kelmaganlar (Past davomatli sinflarni filtr qiladi) */}
-              <div 
-                onClick={() => setClassFilter(classFilter === 'low' ? 'all' : 'low')}
-                className={`p-4 rounded-2xl shadow-sm cursor-pointer transition-all border ${
-                  classFilter === 'low' 
-                    ? 'border-red-500 ring-2 ring-red-500/60 bg-red-100/90 dark:bg-red-950/70 shadow-lg shadow-red-500/30 animate-pulse' 
-                    : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-rose-400'
-                }`}
-                title="Davomati past (<50%) bo'lgan sinflarni saralash"
-              >
-                <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                  <span className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
-                    </span>
-                    Bugun Kelmaganlar (Past)
-                  </span>
-                  <UserX className="w-5 h-5 text-rose-500 dark:text-rose-400" />
-                </div>
-                <div className="mt-2 text-3xl sm:text-4xl font-black text-rose-600 dark:text-rose-400">
-                  {totalStudentsAbsent}
-                  <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 ml-2">nafar o'quvchi</span>
-                </div>
-                <div className="flex items-center justify-between mt-2 text-xs text-slate-500 dark:text-slate-400">
-                  <span>Davomat: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{totalStudentsPercent}%</strong></span>
-                  <span className="font-bold text-rose-600 dark:text-rose-400">
-                    Past sinflar: {lowCount} ta {classFilter === 'low' ? '(Filtrlangan)' : ''}
-                  </span>
+                <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                  <span>A'lo sinflar: <strong className="text-emerald-600 dark:text-emerald-400">{highCount} ta</strong></span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Faol darsda</span>
                 </div>
               </div>
-
             </div>
 
-            {/* BARCHA SINFLAR VA XODIMLAR DAVOMAT KARTALARI (FOYE TABLOSI) */}
-            <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 p-4 rounded-2xl shadow-sm space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-200 dark:border-slate-700">
+            {/* O'RTA QISM: BARCHA SINFLAR DAVOMAT KARTALARI (1 QATORDA 4 TADAN!) */}
+            <div className="flex-1 min-w-0 w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 p-3.5 sm:p-4 rounded-2xl shadow-sm space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-700/80">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 rounded-lg">
                     <Layers className="w-4 h-4" />
@@ -608,8 +587,8 @@ export const SchoolMonitor = () => {
                 </div>
               </div>
 
-              {/* Sinflar Gridi - 28 ta sinf 4 ta to'liq 7 talik qator bo'lib ikkala chetga chiroyli yoyiladi */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 xl:grid-cols-7 gap-2.5">
+              {/* Sinflar Gridi - 1 QATORDA AYNAN 4 TADAN */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-2.5">
                 {filteredClassStats.map(cs => {
                   const status = getClassStatusConfig(cs.percent, cs.totalCount);
                   return (
@@ -679,6 +658,98 @@ export const SchoolMonitor = () => {
                   );
                 })}
               </div>
+            </div>
+
+            {/* O'NG CHET: 2 ta Asosiy Metrika Karti */}
+            <div className="w-full xl:w-72 2xl:w-80 shrink-0 space-y-3">
+              {/* 3. Bugun kelmaganlar (Past davomatli sinflarni filtr qiladi) */}
+              <div 
+                onClick={() => setClassFilter(classFilter === 'low' ? 'all' : 'low')}
+                className={`p-4 rounded-2xl shadow-sm cursor-pointer transition-all border ${
+                  classFilter === 'low' 
+                    ? 'border-red-500 ring-2 ring-red-500/60 bg-red-100/90 dark:bg-red-950/70 shadow-lg shadow-red-500/30 animate-pulse' 
+                    : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-rose-400'
+                }`}
+                title="Davomati past (<50%) bo'lgan sinflarni saralash"
+              >
+                <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                  <span className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
+                    </span>
+                    Bugun Kelmaganlar (Past)
+                  </span>
+                  <UserX className="w-5 h-5 text-rose-500 dark:text-rose-400" />
+                </div>
+                <div className="mt-2 text-3xl sm:text-4xl font-black text-rose-600 dark:text-rose-400">
+                  {totalStudentsAbsent}
+                  <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 ml-2">nafar o'quvchi</span>
+                </div>
+                <div className="flex items-center justify-between mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  <span>Davomat: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{totalStudentsPercent}%</strong></span>
+                  <span className="font-bold text-rose-600 dark:text-rose-400">
+                    Past: {lowCount} ta sinf
+                  </span>
+                </div>
+              </div>
+
+              {/* 4. Maktab Davomati & Sinflar Xulosasi */}
+              <div className="p-4 bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+                <div className="flex items-center justify-between text-slate-700 dark:text-slate-200 pb-2 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <Activity className="w-4 h-4 text-blue-500" />
+                    Davomat Tahlili
+                  </span>
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                    {classes.length} ta sinf
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <div 
+                    onClick={() => setClassFilter('high')}
+                    className="flex items-center justify-between text-xs p-2 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors"
+                  >
+                    <span className="font-semibold flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      A'lo (≥90%)
+                    </span>
+                    <strong className="text-sm font-black">{highCount} ta</strong>
+                  </div>
+
+                  <div 
+                    onClick={() => setClassFilter('medium')}
+                    className="flex items-center justify-between text-xs p-2 rounded-lg bg-amber-50/70 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors"
+                  >
+                    <span className="font-semibold flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                      O'rtacha (50-89%)
+                    </span>
+                    <strong className="text-sm font-black">{mediumCount} ta</strong>
+                  </div>
+
+                  <div 
+                    onClick={() => setClassFilter('low')}
+                    className="flex items-center justify-between text-xs p-2 rounded-lg bg-rose-50/70 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors"
+                  >
+                    <span className="font-semibold flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                      Past (&lt;50%)
+                    </span>
+                    <strong className="text-sm font-black">{lowCount} ta</strong>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-700/80 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                  <span>Turniket holati:</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    6 ta Turniket Faol
+                  </span>
+                </div>
+              </div>
+
             </div>
 
           </div>
