@@ -151,7 +151,7 @@ const MainLayout = () => {
       </div>
 
       {/* Asosiy qism */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
+      <main className={`flex-1 w-full mx-auto ${currentUser?.role === 'monitor' ? 'max-w-none px-2 sm:px-6 py-2 sm:py-3' : 'max-w-7xl px-2 sm:px-4 py-3 sm:py-4'}`}>
         {activeTab === 'bigadmin' && <BigAdminDashboard />}
         {activeTab === 'directory' && canSeeStudents && <StudentDirectory />}
         {activeTab === 'settings' && canSeeSettings && <SchoolSettings />}

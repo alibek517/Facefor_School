@@ -125,7 +125,8 @@ export const SchoolMonitor = () => {
     cameras,
     bridgeUrl,
     isLocalConnected,
-    globalStreamUrl
+    globalStreamUrl,
+    currentSchool
   } = useSchool();
 
   const effectiveBaseUrl = isLocalConnected ? (bridgeUrl || 'http://localhost:5001') : (globalStreamUrl || bridgeUrl || 'http://localhost:5001');
@@ -332,58 +333,69 @@ export const SchoolMonitor = () => {
   return (
     <div className="w-full min-h-[85vh] bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-2xl p-3 sm:p-5 flex flex-col justify-between shadow-xl border border-slate-200 dark:border-slate-800 transition-colors duration-200">
       
-      {/* 1. YUQORI MONITOR BOSHQARUV PANELI (TABLO HEADER) */}
-      <div className="pb-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+      {/* 1. YUQORI MONITOR BOSHQARUV PANELI (TABLO HEADER) - IKKALA CHETGA CHROYLI JOYLASHGAN */}
+      <div className="pb-3 border-b border-slate-200 dark:border-slate-800 space-y-2.5">
         
-        {/* Chap tomon: Maktab nomi va Jonli rejim indikatori */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
-            <Building className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-black text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">
-                SmartMaktab Tablosi
-              </span>
-              <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
-                Jonli Efir
-              </span>
+        {/* 1-Qator: Chap chetda Maktab nomi va Jonli Efir, O'ng chetda Soat, Turniket Holati va To'liq Ekran */}
+        <div className="flex flex-wrap items-center justify-between gap-3 w-full">
+          {/* Chap tomon: Maktab nomi va Jonli rejim indikatori */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 shrink-0">
+              <Building className="w-5 h-5" />
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{dateFormatted}</p>
-          </div>
-        </div>
-
-        {/* O'rta: Jonli Raqamli Soat va Face-ID Holati */}
-        <div className="flex items-center gap-2">
-          <div className="px-3.5 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/80 text-center shadow-inner">
-            <div className="text-xl sm:text-2xl font-black font-mono tracking-wider text-emerald-600 dark:text-emerald-400">
-              {timeFormatted}
-            </div>
-          </div>
-
-          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/80 text-xs shadow-sm">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <div>
-              <div className="font-bold text-[11px] text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <span>Face-ID: 6 ta Turniket</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded font-black bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
-                  ONLAYN
+              <div className="flex items-center gap-2">
+                <span className="font-black text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">
+                  {currentSchool?.name || "SmartMaktab Tablosi"}
+                </span>
+                <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 animate-pulse shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
+                  Jonli Efir
                 </span>
               </div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                3 Kirish / 3 Chiqish • {faceDevice?.totalUsers || 737} ta yuz
+              <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{dateFormatted}</p>
+            </div>
+          </div>
+
+          {/* O'ng tomon: Jonli Raqamli Soat, Face-ID Holati va To'liq Ekran */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="px-3.5 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/80 text-center shadow-inner">
+              <div className="text-xl sm:text-2xl font-black font-mono tracking-wider text-emerald-600 dark:text-emerald-400">
+                {timeFormatted}
               </div>
             </div>
+
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/80 text-xs shadow-sm">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+              <div>
+                <div className="font-bold text-[11px] text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <span>Face-ID: 6 ta Turniket</span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded font-black bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+                    ONLAYN
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                  3 Kirish / 3 Chiqish • {faceDevice?.totalUsers || 737} ta yuz
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={toggleFullscreen}
+              className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-xs shrink-0 cursor-pointer"
+              title="To'liq ekranga o'tish"
+            >
+              {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 
-        {/* O'ng tomon: 3 ta Asosiy Bo'lim Tablari va To'liq Ekran */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+        {/* 2-Qator: Ikkala chetga to'liq yoyilgan Tablar va Qo'shimcha Holat */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 w-full">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
             <button
               onClick={() => setActiveTab('inside')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'inside'
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -395,7 +407,7 @@ export const SchoolMonitor = () => {
 
             <button
               onClick={() => setActiveTab('arrived')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'arrived'
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -407,7 +419,7 @@ export const SchoolMonitor = () => {
 
             <button
               onClick={() => setActiveTab('hourly')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'hourly'
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -418,13 +430,15 @@ export const SchoolMonitor = () => {
             </button>
           </div>
 
-          <button
-            onClick={toggleFullscreen}
-            className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors"
-            title="To'liq ekranga o'tish"
-          >
-            {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">
+              Foye Katta Ekrani
+            </span>
+            <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+              Face-ID Jonli Monitoring
+            </span>
+          </div>
         </div>
 
       </div>
@@ -607,8 +621,8 @@ export const SchoolMonitor = () => {
                 </div>
               </div>
 
-              {/* Sinflar Gridi */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+              {/* Sinflar Gridi - 28 ta sinf 4 ta to'liq 7 talik qator bo'lib ikkala chetga chiroyli yoyiladi */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 xl:grid-cols-7 gap-2.5">
                 {filteredClassStats.map(cs => {
                   const status = getClassStatusConfig(cs.percent, cs.totalCount);
                   return (
@@ -725,8 +739,8 @@ export const SchoolMonitor = () => {
               </div>
             </div>
 
-            {/* Barcha Sinf Kartalari Grid ko'rinishida */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+            {/* Barcha Sinf Kartalari Grid ko'rinishida - Ikkala chetga to'liq yoyilgan 7 talik qatorlar */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 xl:grid-cols-7 gap-2.5">
               {filteredClassStats.map(c => {
                 const status = getClassStatusConfig(c.percent, c.totalCount);
 
