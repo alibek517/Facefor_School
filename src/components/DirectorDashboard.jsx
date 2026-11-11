@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSchool } from '../context/SchoolContext';
 import { 
   Building, 
@@ -389,114 +389,6 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
         </span>
       </div>
 
-      {/* 📺 FOYE MONITORI (KATTA TABLO) LOGIN VA PAROLINI O'ZGARTIRISH MODALI */}
-      {showMonitorModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 animate-fadeIn">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-            
-            {/* Modal Sarlavhasi */}
-            <div className="p-4 sm:p-5 bg-gradient-to-r from-indigo-900 via-blue-900 to-slate-900 text-white flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-xs">
-                  <Tv className="w-5 h-5 text-indigo-300" />
-                </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-black">Foye Monitori Kirish Sozlamasi</h3>
-                  <p className="text-[11px] text-indigo-200 font-medium truncate max-w-[240px] sm:max-w-xs">
-                    {activeSchool?.name || "Maktab Tablosi"}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowMonitorModal(false)}
-                className="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Tanasi */}
-            <form onSubmit={handleSaveMonitor} className="p-4 sm:p-5 space-y-4">
-              <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 text-xs flex items-start gap-2.5">
-                <Tv className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <span className="font-bold block">Foye tablosi uchun maxsus hisob</span>
-                  <p className="text-[11px] text-blue-700/80 dark:text-blue-300/80 leading-relaxed">
-                    Ushbu login va parol maktab foyesidagi katta televizor yoki monitor brauzerida kiritiladi. Monitor orqali barcha kirish-chiqishlar katta ekranda jonli ko'rsatiladi.
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Monitor Logini
-                </label>
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                    <LogIn className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="text"
-                    value={monitorLoginForm}
-                    onChange={(e) => setMonitorLoginForm(e.target.value)}
-                    placeholder="Masalan: monitor yoki monitor24"
-                    required
-                    className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold"
-                  />
-                </div>
-                <p className="text-[10px] text-slate-400 mt-1">Maktabingiz monitori uchun xohlagan login nomini tanlang</p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Monitor Paroli
-                </label>
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                    <Lock className="w-4 h-4" />
-                  </div>
-                  <input
-                    type={showMonitorPassword ? "text" : "password"}
-                    value={monitorPasswordForm}
-                    onChange={(e) => setMonitorPasswordForm(e.target.value)}
-                    placeholder="Yangi parol kiriting"
-                    required
-                    className="w-full pl-9 pr-10 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowMonitorPassword(!showMonitorPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                  >
-                    {showMonitorPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-1">Standart boshlang'ich parol: 123</p>
-              </div>
-
-              {/* Tugmalar */}
-              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowMonitorModal(false)}
-                  className="px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
-                >
-                  Bekor qilish
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingMonitor || !monitorLoginForm.trim() || !monitorPasswordForm.trim()}
-                  className="px-4 py-2 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>{isSavingMonitor ? 'Saqlanmoqda...' : 'Saqlash'}</span>
-                </button>
-              </div>
-            </form>
-
-          </div>
-        </div>
-      )}
 
     </div>
   );
@@ -2382,6 +2274,63 @@ export const DirectorDashboard = () => {
         )}
 
       </div>
+
+      {/* Monitor Login/Parol o'zgartirish Modali */}
+      {showMonitorModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 animate-fadeIn">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-indigo-900 via-blue-900 to-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-xs">
+                  <Tv className="w-5 h-5 text-indigo-300" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black">Foye Monitori Kirish Sozlamasi</h3>
+                  <p className="text-[11px] text-indigo-200 font-medium truncate max-w-[240px] sm:max-w-xs">
+                    {activeSchool?.name || "Maktab Tablosi"}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setShowMonitorModal(false)} className="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveMonitor} className="p-4 sm:p-5 space-y-4">
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 text-xs flex items-start gap-2.5">
+                <Tv className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <span className="font-bold block">Foye tablosi uchun maxsus hisob</span>
+                  <p className="text-[11px] text-blue-700/80 dark:text-blue-300/80 leading-relaxed">Ushbu login va parol maktab foyesidagi katta televizor yoki monitor brauzerida kiritiladi.</p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Monitor Logini</label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><LogIn className="w-4 h-4" /></div>
+                  <input type="text" value={monitorLoginForm} onChange={(e) => setMonitorLoginForm(e.target.value)} placeholder="Masalan: monitor yoki monitor24" required className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Monitor Paroli</label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><Lock className="w-4 h-4" /></div>
+                  <input type={showMonitorPassword ? "text" : "password"} value={monitorPasswordForm} onChange={(e) => setMonitorPasswordForm(e.target.value)} placeholder="Yangi parol kiriting" required className="w-full pl-9 pr-10 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold" />
+                  <button type="button" onClick={() => setShowMonitorPassword(!showMonitorPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
+                    {showMonitorPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onClick={() => setShowMonitorModal(false)} className="px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer">Bekor qilish</button>
+                <button type="submit" disabled={isSavingMonitor || !monitorLoginForm.trim() || !monitorPasswordForm.trim()} className="px-4 py-2 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
+                  <Save className="w-4 h-4" />
+                  <span>{isSavingMonitor ? 'Saqlanmoqda...' : 'Saqlash'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
