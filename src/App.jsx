@@ -25,22 +25,23 @@ const MainLayout = () => {
   }
 
   const isDirectorUser = Boolean(
-    currentUser?.isDirector || 
-    currentUser?.role === 'director' || 
-    currentUser?.role === 'bigadmin' ||
-    (currentUser?.category === 'leadership' && (hasPermission('teachers') || hasPermission('leadership'))) ||
-    (currentUser?.category === 'administrator' && (hasPermission('teachers') || hasPermission('leadership')))
+    !isBigAdmin && (
+      currentUser?.isDirector || 
+      currentUser?.role === 'director' || 
+      (currentUser?.category === 'leadership' && (hasPermission('teachers') || hasPermission('leadership'))) ||
+      (currentUser?.category === 'administrator' && (hasPermission('teachers') || hasPermission('leadership')))
+    )
   );
 
-  const canSeeStudents = isDirectorUser && (hasPermission('students') || isBigAdmin);
-  const canSeeSettings = isDirectorUser && (hasPermission('teachers') || hasPermission('schedules') || hasPermission('classes') || hasPermission('leadership') || isBigAdmin);
+  const canSeeStudents = !isBigAdmin && isDirectorUser && hasPermission('students');
+  const canSeeSettings = !isBigAdmin && isDirectorUser && (hasPermission('teachers') || hasPermission('schedules') || hasPermission('classes') || hasPermission('leadership'));
 
   // Tizimga kirilganda /login yoki / dan mos sahifaga yo'naltirish
   React.useEffect(() => {
     if (currentUser) {
       if (currentPath === '/login' || (typeof window !== 'undefined' && window.location.pathname === '/login')) {
         let p = '/director';
-        if (currentUser.role === 'bigadmin') p = '/bigadmin';
+        if (currentUser.role === 'bigadmin' || isBigAdmin) p = '/bigadmin';
         else if (currentUser.role === 'inspector') p = '/duty';
         else if (currentUser.role === 'class_teacher') p = '/class-teacher';
         else if (currentUser.role === 'subject_teacher') p = '/subject-teacher';
@@ -48,14 +49,21 @@ const MainLayout = () => {
         navigateTo(p);
       }
     }
-  }, [currentUser, currentPath]);
+  }, [currentUser, currentPath, isBigAdmin]);
+
+  // BigAdmin faqat /bigadmin sahifasida bo'ladi, boshqa ichki maktab sahifalariga o'ta olmaydi
+  React.useEffect(() => {
+    if (isBigAdmin && (activeTab !== 'bigadmin' || currentPath !== '/bigadmin')) {
+      navigateTo('/bigadmin');
+    }
+  }, [isBigAdmin, activeTab, currentPath, navigateTo]);
 
   // Direktor bo'lmagan foydalanuvchilar (masalan, sinf rahbari) uchun faqat o'z kabinetini ochish
   React.useEffect(() => {
-    if (!isDirectorUser && activeTab !== 'main') {
+    if (!isBigAdmin && !isDirectorUser && activeTab !== 'main') {
       navigateTo(currentPath || '/director');
     }
-  }, [currentUser?.id, currentUser?.role, isDirectorUser]);
+  }, [currentUser?.id, currentUser?.role, isDirectorUser, isBigAdmin]);
 
   return (
     <div className="min-h-screen min-w-[250px] flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased overflow-x-hidden transition-colors">
@@ -64,16 +72,21 @@ const MainLayout = () => {
 
       {/* Asosiy qism */}
       <main className={`flex-1 w-full mx-auto ${currentUser?.role === 'monitor' ? 'max-w-none px-2 sm:px-6 py-2 sm:py-3' : 'max-w-7xl px-2 sm:px-4 py-3 sm:py-4'}`}>
-        {activeTab === 'bigadmin' && <BigAdminDashboard />}
-        {activeTab === 'directory' && canSeeStudents && <StudentDirectory />}
-        {activeTab === 'settings' && canSeeSettings && <SchoolSettings />}
-        {(activeTab === 'main' || (!canSeeStudents && activeTab === 'directory') || (!canSeeSettings && activeTab === 'settings')) && activeTab !== 'bigadmin' && (
+        {isBigAdmin ? (
+          <BigAdminDashboard />
+        ) : (
           <>
-            {(currentUser?.role === 'director' || currentUser?.role === 'bigadmin' || currentUser?.isDirector || currentUser?.category === 'leadership' || currentUser?.category === 'administrator') && <DirectorDashboard />}
-            {currentUser?.role === 'inspector' && <InspectorAttendance />}
-            {currentUser?.role === 'class_teacher' && <ClassTeacherView />}
-            {currentUser?.role === 'subject_teacher' && <TeacherJournal />}
-            {currentUser?.role === 'monitor' && <SchoolMonitor />}
+            {activeTab === 'directory' && canSeeStudents && <StudentDirectory />}
+            {activeTab === 'settings' && canSeeSettings && <SchoolSettings />}
+            {(activeTab === 'main' || (!canSeeStudents && activeTab === 'directory') || (!canSeeSettings && activeTab === 'settings')) && (
+              <>
+                {(currentUser?.role === 'director' || currentUser?.isDirector || currentUser?.category === 'leadership' || currentUser?.category === 'administrator') && <DirectorDashboard />}
+                {currentUser?.role === 'inspector' && <InspectorAttendance />}
+                {currentUser?.role === 'class_teacher' && <ClassTeacherView />}
+                {currentUser?.role === 'subject_teacher' && <TeacherJournal />}
+                {currentUser?.role === 'monitor' && <SchoolMonitor />}
+              </>
+            )}
           </>
         )}
       </main>

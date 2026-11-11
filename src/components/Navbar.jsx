@@ -85,15 +85,16 @@ export const Navbar = () => {
 
   
   const isDirectorUser = Boolean(
-    currentUser?.isDirector || 
-    currentUser?.role === 'director' || 
-    currentUser?.role === 'bigadmin' ||
-    (currentUser?.category === 'leadership' && (hasPermission?.('teachers') || hasPermission?.('leadership'))) ||
-    (currentUser?.category === 'administrator' && (hasPermission?.('teachers') || hasPermission?.('leadership')))
+    !isBigAdmin && (
+      currentUser?.isDirector || 
+      currentUser?.role === 'director' || 
+      (currentUser?.category === 'leadership' && (hasPermission?.('teachers') || hasPermission?.('leadership'))) ||
+      (currentUser?.category === 'administrator' && (hasPermission?.('teachers') || hasPermission?.('leadership')))
+    )
   );
 
-  const canSeeStudents = isDirectorUser && (hasPermission?.('students') || isBigAdmin);
-  const canSeeSettings = isDirectorUser && (hasPermission?.('teachers') || hasPermission?.('schedules') || hasPermission?.('classes') || hasPermission?.('leadership') || isBigAdmin);
+  const canSeeStudents = !isBigAdmin && isDirectorUser && hasPermission?.('students');
+  const canSeeSettings = !isBigAdmin && isDirectorUser && (hasPermission?.('teachers') || hasPermission?.('schedules') || hasPermission?.('classes') || hasPermission?.('leadership'));
 
   const unreadCount = visibleNotifications.filter(n => !n.isRead).length;
 
@@ -106,9 +107,9 @@ export const Navbar = () => {
           
           {/* Logo */}
           <div 
-            onClick={() => navigateTo('/director')}
+            onClick={() => navigateTo(isBigAdmin ? '/bigadmin' : '/director')}
             className="flex items-center gap-2 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
-            title="Bosh sahifa (Direktor)"
+            title={isBigAdmin ? "Bosh sahifa (BigAdmin)" : "Bosh sahifa (Direktor)"}
           >
             <div className="w-8 h-8 rounded-lg bg-blue-700 flex items-center justify-center text-white shadow-sm">
               <Building className="w-4 h-4" />
@@ -128,52 +129,49 @@ export const Navbar = () => {
             {isBigAdmin && (
               <button
                 onClick={() => navigateTo('/bigadmin')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                  (activeTab === 'bigadmin' || currentPath === '/bigadmin')
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
-                }`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 bg-indigo-600 text-white shadow-sm"
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">BigAdmin</span>
+                <span>BigAdmin</span>
               </button>
             )}
 
-            {/* Asosiy rol / Foye tablosi */}
-            {currentUser?.role === 'monitor' ? (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded-xl border border-blue-200 dark:border-blue-900/60 text-xs font-black shadow-xs shrink-0">
-                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-                <span>Foye Tablosi (Monitor)</span>
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  if (currentUser?.role === 'inspector') navigateTo('/duty');
-                  else if (currentUser?.role === 'class_teacher') navigateTo('/class-teacher');
-                  else if (currentUser?.role === 'subject_teacher') navigateTo('/subject-teacher');
-                  else navigateTo('/director');
-                }}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
-                  (activeTab === 'main' && (!isBigAdmin || currentPath === '/director'))
-                    ? 'bg-blue-700 text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Home className="w-3.5 h-3.5" />
-                <span>
-                  {currentUser?.role === 'bigadmin' && 'Direktor Paneli'}
-                  {currentUser?.role === 'director' && 'Direktor'}
-                  {currentUser?.role === 'inspector' && 'Navbatchi'}
-                  {currentUser?.role === 'class_teacher' && (myClassObj ? `${myClassObj.name} Rahbari` : 'Sinf Rahbari')}
-                  {currentUser?.role === 'subject_teacher' && "Fan O'qituvchisi"}
-                  {currentUser?.category === 'leadership' && currentUser?.role !== 'director' && (currentUser?.detail || currentUser?.role || 'Rahbariyat')}
-                  {currentUser?.category === 'administrator' && (currentUser?.detail || 'Administrator')}
-                </span>
-              </button>
+            {/* Asosiy rol / Foye tablosi (BigAdmin uchun ko'rinmaydi) */}
+            {!isBigAdmin && (
+              currentUser?.role === 'monitor' ? (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded-xl border border-blue-200 dark:border-blue-900/60 text-xs font-black shadow-xs shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                  <span>Foye Tablosi (Monitor)</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (currentUser?.role === 'inspector') navigateTo('/duty');
+                    else if (currentUser?.role === 'class_teacher') navigateTo('/class-teacher');
+                    else if (currentUser?.role === 'subject_teacher') navigateTo('/subject-teacher');
+                    else navigateTo('/director');
+                  }}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                    activeTab === 'main'
+                      ? 'bg-blue-700 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <Home className="w-3.5 h-3.5" />
+                  <span>
+                    {currentUser?.role === 'director' && 'Direktor'}
+                    {currentUser?.role === 'inspector' && 'Navbatchi'}
+                    {currentUser?.role === 'class_teacher' && (myClassObj ? `${myClassObj.name} Rahbari` : 'Sinf Rahbari')}
+                    {currentUser?.role === 'subject_teacher' && "Fan O'qituvchisi"}
+                    {currentUser?.category === 'leadership' && currentUser?.role !== 'director' && (currentUser?.detail || currentUser?.role || 'Rahbariyat')}
+                    {currentUser?.category === 'administrator' && (currentUser?.detail || 'Administrator')}
+                  </span>
+                </button>
+              )
             )}
 
-            {/* O'quvchilar CRUD */}
-            {canSeeStudents && (
+            {/* O'quvchilar CRUD (BigAdmin uchun ko'rinmaydi) */}
+            {!isBigAdmin && canSeeStudents && (
               <button
                 onClick={() => navigateTo('/students')}
                 className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
@@ -187,8 +185,8 @@ export const Navbar = () => {
               </button>
             )}
 
-            {/* O'qituvchilar va Fanlar CRUD */}
-            {canSeeSettings && (
+            {/* O'qituvchilar va Fanlar CRUD (BigAdmin uchun ko'rinmaydi) */}
+            {!isBigAdmin && canSeeSettings && (
               <button
                 onClick={() => navigateTo('/teachers')}
                 className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${

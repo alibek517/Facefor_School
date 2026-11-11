@@ -525,6 +525,10 @@ export const SchoolProvider = ({ children }) => {
   });
 
   const navigateTo = (targetPath) => {
+    // Agar BigAdmin tizimda bo'lsa, boshqa sahifalarga o'tish taqiqlanadi
+    if (currentUserRef.current?.role === 'bigadmin' || currentUserRef.current?.isBigAdmin) {
+      targetPath = '/bigadmin';
+    }
     const route = parsePath(targetPath);
     setActiveTab(route.tab);
     setCurrentPath(route.path);
@@ -533,7 +537,7 @@ export const SchoolProvider = ({ children }) => {
       window.history.pushState({ path: route.path }, '', route.path);
     }
 
-    if (route.role && currentUser?.role !== route.role) {
+    if (currentUserRef.current?.role !== 'bigadmin' && route.role && currentUser?.role !== route.role) {
       quickSwitchRole(route.role, false, true);
     }
   };
@@ -1667,6 +1671,10 @@ export const SchoolProvider = ({ children }) => {
 
   // Tezkor almashtirish
   const quickSwitchRole = (role, updateUrl = true, silent = false) => {
+    // Agar BigAdmin tizimda bo'lsa, boshqa rollarga o'tish bloklanadi
+    if (currentUserRef.current?.role === 'bigadmin' && role !== 'bigadmin') {
+      return;
+    }
     let match = USERS_AUTH.find(u => u.role === role);
     if (!match && role === 'class_teacher') {
       const classTeacher = teachers.find(t => t.classId) || teachers[0];

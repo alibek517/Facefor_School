@@ -697,7 +697,7 @@ export const BigAdminDashboard = () => {
                       className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Ushbu Maktabni Boshqarish</span>
+                      <span>Obuna & Muzlatish Holati</span>
                     </button>
                   </div>
                 </div>
@@ -1464,17 +1464,8 @@ export const BigAdminDashboard = () => {
                 />
               </div>
 
-              {/* 4. Pastki amallar: Kabinetga o'tish va Saqlash */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-                <button
-                  type="button"
-                  onClick={handleEnterSchoolFromModal}
-                  className="w-full sm:w-auto px-4 py-2 text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl transition-all flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700"
-                >
-                  <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Ushbu Maktab Kabinetiga Kirish</span>
-                </button>
-
+              {/* 4. Pastki amallar: Saqlash */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                   <button
                     type="button"
