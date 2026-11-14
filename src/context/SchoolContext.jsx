@@ -209,14 +209,33 @@ export const SchoolProvider = ({ children }) => {
       !String(t.name || '').toLowerCase().includes('mamashev viktor') &&
       !String(t.name || '').toLowerCase().includes('maxmudjanov elbek')
     );
+    const hasIzzat = filtered.some(t => t.id === 't-00000784' || String(t.name || '').toLowerCase().includes('urazmetov izzat'));
+    if (!hasIzzat) {
+      const izzatObj = INITIAL_TEACHERS.find(t => t.id === 't-00000784');
+      if (izzatObj) return [izzatObj, ...filtered];
+    }
     return filtered.length > 0 ? filtered : INITIAL_TEACHERS;
+  };
+
+  const filterRealStudents = (list) => {
+    if (!Array.isArray(list)) return [];
+    return list.filter(s => {
+      if (!s) return false;
+      const sId = String(s.studentId || s.id || s.employeeNo || '').replace(/^s-/, '').replace(/^0+/, '');
+      const sName = String(s.fullName || s.name || '').toLowerCase().trim();
+      // Urazmetov Izzat o'qituvchi, o'quvchilar ro'yxatida bo'lmasligi shart!
+      if (sId === '784' || s.id === 's-00000784' || s.studentId === '00000784' || s.employeeNo === '00000784') return false;
+      if (sName.includes('urazmetov izzat') || sName.includes("o'razmetov izzat") || sName.includes("o‘razmetov izzat")) return false;
+      return true;
+    });
   };
 
   // Asosiy ma'lumotlar - 100% DINAMIK: LocalStorage'da saqlanmaydi, doimo Supabase bulutidan olinadi
   const [classes, setClasses] = useState(INITIAL_CLASSES);
   const [teachers, setTeachersRaw] = useState(() => filterRealTeachers(INITIAL_TEACHERS));
   const setTeachers = (val) => setTeachersRaw(prev => filterRealTeachers(typeof val === 'function' ? val(prev) : val));
-  const [students, setStudents] = useState(INITIAL_STUDENTS);
+  const [students, setStudentsRaw] = useState(() => filterRealStudents(INITIAL_STUDENTS));
+  const setStudents = (val) => setStudentsRaw(prev => filterRealStudents(typeof val === 'function' ? val(prev) : val));
   const [schedules, setSchedules] = useState(INITIAL_SCHEDULE);
   const [attendanceList, setAttendanceList] = useState(INITIAL_ATTENDANCE);
   const [teacherAttendance, setTeacherAttendance] = useState(INITIAL_TEACHER_ATTENDANCE);
@@ -979,9 +998,21 @@ export const SchoolProvider = ({ children }) => {
         // A. Supabase bulutidan yuklash
         const cloudData = await loadAllSchoolDataFromSupabase();
         if (cloudData) {
-          if (cloudData.students && cloudData.students.length > 0) setStudents(cloudData.students);
+          if (cloudData.students && cloudData.students.length > 0) {
+            const cleanStudents = filterRealStudents(cloudData.students);
+            setStudents(cleanStudents);
+            if (cleanStudents.length !== cloudData.students.length) {
+              saveModuleToSupabase('students', cleanStudents).catch(() => {});
+            }
+          }
           if (cloudData.classes && cloudData.classes.length > 0) setClasses(cloudData.classes);
-          if (cloudData.teachers && cloudData.teachers.length > 0) setTeachers(cloudData.teachers);
+          if (cloudData.teachers && cloudData.teachers.length > 0) {
+            const cleanTeachers = filterRealTeachers(cloudData.teachers);
+            setTeachers(cleanTeachers);
+            if (cleanTeachers.length !== cloudData.teachers.length) {
+              saveModuleToSupabase('teachers', cleanTeachers).catch(() => {});
+            }
+          }
           if (cloudData.leadership && Array.isArray(cloudData.leadership) && cloudData.leadership.length > 0) setLeadership(cloudData.leadership);
           if (cloudData.schedules && cloudData.schedules.length > 0) setSchedules(cloudData.schedules);
           if (cloudData.attendanceList) setAttendanceList(cloudData.attendanceList);

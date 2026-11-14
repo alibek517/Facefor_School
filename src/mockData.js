@@ -219,6 +219,15 @@ export const INITIAL_CLASSES = [
 
 export const INITIAL_TEACHERS = [
   {
+    "id": "t-00000784",
+    "name": "Urazmetov Izzat Artikbayevich",
+    "role": "Fan o'qituvchisi",
+    "phone": "+998-94-678-90-12",
+    "faceId": "00000784",
+    "subject": "Informatika",
+    "photoUrl": "/photos/00000784.jpg"
+  },
+  {
     "id": "t-1791520951199",
     "name": "Davletova Gulasal",
     "role": "Sinf rahbari",
