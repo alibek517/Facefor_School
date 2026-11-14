@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSchool } from '../context/SchoolContext';
 import { DAYS_OF_WEEK } from '../mockData';
-import { formatPhoneNumber, handlePhoneInputChange } from '../utils/phoneFormatter';
+import { formatPhoneNumber, handlePhoneInputChange, generateTeacherLogin } from '../utils/phoneFormatter';
 import { 
   Users, 
   BookOpen, 
@@ -294,6 +294,9 @@ export const SchoolSettings = () => {
   const [tPhone, setTPhone] = useState('');
   const [tClassId, setTClassId] = useState('');
   const [tPhoto, setTPhoto] = useState('');
+  const [tLogin, setTLogin] = useState('');
+  const [tPassword, setTPassword] = useState('123');
+  const [showTPassword, setShowTPassword] = useState(false);
 
   // Schedule modal
   const [schModal, setSchModal] = useState(false);
@@ -320,6 +323,9 @@ export const SchoolSettings = () => {
     setTPhone('');
     setTClassId('');
     setTPhoto('');
+    setTLogin('');
+    setTPassword('123');
+    setShowTPassword(false);
     setTeacherModal(true);
   };
 
@@ -330,6 +336,9 @@ export const SchoolSettings = () => {
     setTPhone(formatPhoneNumber(t.phone || ''));
     setTClassId(t.classId || '');
     setTPhoto(t.photo || t.photoUrl || t.faceURL || '');
+    setTLogin(t.login || generateTeacherLogin(t.name));
+    setTPassword(t.password || '123');
+    setShowTPassword(false);
     setTeacherModal(true);
   };
 
@@ -337,12 +346,15 @@ export const SchoolSettings = () => {
     e.preventDefault();
     if (!tName.trim()) return;
 
+    const finalLogin = (tLogin || generateTeacherLogin(tName)).toLowerCase().trim();
     const data = {
       name: tName,
       subject: tSubject,
       phone: formatPhoneNumber(tPhone),
       classId: tClassId || null,
       role: tClassId ? 'Sinf rahbari' : "Fan o'qituvchisi",
+      login: finalLogin,
+      password: tPassword || '123',
       photo: tPhoto || null,
       photoUrl: tPhoto || null
     };
@@ -876,9 +888,15 @@ export const SchoolSettings = () => {
                         </span>
                       )}
                     </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-3">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex flex-wrap items-center gap-2.5">
                       <span>Fani: <b className="text-slate-700 dark:text-slate-300">{t.subject}</b></span>
                       {t.phone && <span>• Tel: {formatPhoneNumber(t.phone)}</span>}
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-[10px] font-mono text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800">
+                        <Key className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <span>Login: <b>{t.login || generateTeacherLogin(t.name)}</b></span>
+                        <span className="opacity-40">•</span>
+                        <span>Parol: <b>{t.password || '123'}</b></span>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1523,6 +1541,57 @@ export const SchoolSettings = () => {
                     <option key={c.id} value={c.id}>{c.name} sinf rahbari</option>
                   ))}
                 </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 p-2 bg-blue-50/60 dark:bg-blue-950/30 rounded-xl border border-blue-200/80 dark:border-blue-900/40">
+                <div>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-[11px] font-bold text-blue-900 dark:text-blue-300 flex items-center gap-1">
+                      <Key className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                      <span>Login:</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setTLogin(generateTeacherLogin(tName))}
+                      className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-bold cursor-pointer"
+                      title="Ism asosida avto login yaratish"
+                    >
+                      Avto
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={tLogin}
+                    onChange={(e) => setTLogin(e.target.value)}
+                    placeholder="Masalan: rustamov_a"
+                    className="w-full text-xs p-1.5 border border-blue-200 dark:border-slate-700 rounded outline-none bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-[11px] font-bold text-blue-900 dark:text-blue-300 flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                      <span>Parol:</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowTPassword(!showTPassword)}
+                      className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-bold cursor-pointer"
+                    >
+                      {showTPassword ? 'Yashirish' : "Ko'rish"}
+                    </button>
+                  </div>
+                  <input
+                    type={showTPassword ? 'text' : 'password'}
+                    required
+                    value={tPassword}
+                    onChange={(e) => setTPassword(e.target.value)}
+                    placeholder="Parol"
+                    className="w-full text-xs p-1.5 border border-blue-200 dark:border-slate-700 rounded outline-none bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-mono"
+                  />
+                </div>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-1.5 border-t border-slate-100 dark:border-slate-800">

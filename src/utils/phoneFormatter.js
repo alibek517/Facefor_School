@@ -33,3 +33,25 @@ export const handlePhoneInputChange = (rawVal, setter) => {
   }
   setter(formatPhoneNumber(rawVal));
 };
+
+/**
+ * O'qituvchi F.I.Sh asosida avtomatik ixcham login yaratish (masalan: xudoyberganova_d)
+ */
+export const generateTeacherLogin = (fullName) => {
+  if (!fullName) return 'oqituvchi';
+  const clean = fullName
+    .toLowerCase()
+    .replace(/[ʻʼ'`]/g, '')
+    .replace(/oʻ|o'|o‘|o`/g, 'o')
+    .replace(/gʻ|g'|g‘|g`/g, 'g')
+    .replace(/sh/g, 'sh')
+    .replace(/ch/g, 'ch')
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim()
+    .split(/\s+/);
+  if (clean.length >= 2) {
+    return `${clean[0]}_${clean[1].charAt(0)}`;
+  }
+  return clean[0] || 'oqituvchi';
+};
+

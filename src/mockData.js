@@ -225,7 +225,9 @@ export const INITIAL_TEACHERS = [
     "phone": "+998-94-678-90-12",
     "faceId": "00000784",
     "subject": "Informatika",
-    "photoUrl": "/photos/00000784.jpg"
+    "photoUrl": "/photos/00000784.jpg",
+    "login": "urazmetov_i",
+    "password": "123"
   },
   {
     "id": "t-1791520951199",
@@ -233,7 +235,9 @@ export const INITIAL_TEACHERS = [
     "role": "Sinf rahbari",
     "phone": "+998-94-114-17-68",
     "classId": "c-10a",
-    "subject": "Tarix"
+    "subject": "Tarix",
+    "login": "davletova_g",
+    "password": "123"
   },
   {
     "id": "t-00000545",
@@ -243,7 +247,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000545",
     "classId": "c-2d",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000533.jpg@WEB000000001696",
-    "subject": "Boshlang'ich ta'lim"
+    "subject": "Boshlang'ich ta'lim",
+    "login": "xudoyberganova_d",
+    "password": "123"
   },
   {
     "id": "t-00000546",
@@ -253,7 +259,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000546",
     "classId": "c-3a",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000534.jpg@WEB000000001697",
-    "subject": "Boshlang'ich ta'lim"
+    "subject": "Boshlang'ich ta'lim",
+    "login": "xojamuratova_s",
+    "password": "123"
   },
   {
     "id": "t-00000547",
@@ -263,7 +271,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000547",
     "classId": "c-3b",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000535.jpg@WEB000000001698",
-    "subject": "Boshlang'ich ta'lim"
+    "subject": "Boshlang'ich ta'lim",
+    "login": "xalillayeva_s",
+    "password": "123"
   },
   {
     "id": "t-00000551",
@@ -273,7 +283,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000551",
     "classId": "c-4a",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000539.jpg@WEB000000001702",
-    "subject": "Boshlang'ich ta'lim"
+    "subject": "Boshlang'ich ta'lim",
+    "login": "otaxonova_n",
+    "password": "123"
   },
   {
     "id": "t-00000603",
@@ -283,7 +295,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000603",
     "classId": "c-3b",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000591.jpg@WEB000000001754",
-    "subject": "Boshlang'ich ta'lim"
+    "subject": "Boshlang'ich ta'lim",
+    "login": "davletova_z",
+    "password": "123"
   },
   {
     "id": "t-00000604",
@@ -293,7 +307,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000604",
     "classId": "c-3d",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000592.jpg@WEB000000001755",
-    "subject": "Boshlang'ich ta'lim"
+    "subject": "Boshlang'ich ta'lim",
+    "login": "urazmetova_d",
+    "password": "123"
   },
   {
     "id": "t-00000605",
@@ -303,7 +319,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000605",
     "classId": "c-4a",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000593.jpg@WEB000000001756",
-    "subject": "Boshlang'ich ta'lim"
+    "subject": "Boshlang'ich ta'lim",
+    "login": "yuldasheva_m",
+    "password": "123"
   },
   {
     "id": "t-00000606",
@@ -313,7 +331,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000606",
     "classId": "c-4b",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000594.jpg@WEB000000001757",
-    "subject": "Boshlang'ich ta'lim"
+    "subject": "Boshlang'ich ta'lim",
+    "login": "sabirova_s",
+    "password": "123"
   },
   {
     "id": "t-00000607",
@@ -323,7 +343,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000607",
     "classId": "c-4a",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000595.jpg@WEB000000001758",
-    "subject": "Boshlang'ich ta'lim"
+    "subject": "Boshlang'ich ta'lim",
+    "login": "qurbonniyozova_m",
+    "password": "123"
   },
   {
     "id": "t-00000609",
@@ -333,7 +355,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000609",
     "classId": "c-1a",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000597.jpg@WEB000000001760",
-    "subject": "Boshlang'ich ta'lim"
+    "subject": "Boshlang'ich ta'lim",
+    "login": "karimova_z",
+    "password": "123"
   },
   {
     "id": "t-00000610",
@@ -343,7 +367,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000610",
     "classId": "c-1a",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000598.jpg@WEB000000001761",
-    "subject": "Boshlang'ich ta'lim"
+    "subject": "Boshlang'ich ta'lim",
+    "login": "raxmatullayeva_u",
+    "password": "123"
   },
   {
     "id": "t-00000611",
@@ -353,7 +379,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000611",
     "classId": "c-1a",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000599.jpg@WEB000000001762",
-    "subject": "Boshlang'ich ta'lim"
+    "subject": "Boshlang'ich ta'lim",
+    "login": "karimova_a",
+    "password": "123"
   },
   {
     "id": "t-00000612",
@@ -363,7 +391,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000612",
     "classId": "c-1a",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000600.jpg@WEB000000001763",
-    "subject": "Boshlang'ich ta'lim"
+    "subject": "Boshlang'ich ta'lim",
+    "login": "seydabullayeva_f",
+    "password": "123"
   },
   {
     "id": "t-00000613",
@@ -373,7 +403,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000613",
     "classId": "c-1a",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000601.jpg@WEB000000001764",
-    "subject": "Boshlang'ich ta'lim"
+    "subject": "Boshlang'ich ta'lim",
+    "login": "yangibayeva_z",
+    "password": "123"
   },
   {
     "id": "t-00000616",
@@ -383,7 +415,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000616",
     "classId": "c-1a",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000604.jpg@WEB000000001767",
-    "subject": "Ingliz tili"
+    "subject": "Ingliz tili",
+    "login": "turganbayeva_i",
+    "password": "123"
   },
   {
     "id": "t-00000617",
@@ -393,7 +427,9 @@ export const INITIAL_TEACHERS = [
     "faceId": "00000617",
     "classId": "c-1a",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000605.jpg@WEB000000001768",
-    "subject": "Musiqa"
+    "subject": "Musiqa",
+    "login": "saidova_d",
+    "password": "123"
   }
 ];
 

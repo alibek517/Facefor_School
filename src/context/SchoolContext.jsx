@@ -36,7 +36,7 @@ import {
   checkQuota
 } from '../supabase';
 import { promoteAllClasses } from '../utils/excelAndPromotion';
-import { formatPhoneNumber } from '../utils/phoneFormatter';
+import { formatPhoneNumber, generateTeacherLogin } from '../utils/phoneFormatter';
 
 const SchoolContext = createContext(null);
 
@@ -1665,6 +1665,61 @@ export const SchoolProvider = ({ children }) => {
             return u.login.toLowerCase() === cleanLogin && u.password === cleanPass;
           }
         );
+
+        // 4. Barcha O'qituvchilarning Login va Parolini tekshirish (dinamik)
+        if (!found) {
+          const matchedTeacher = (teachers || []).find(t => {
+            const tLogin = (t.login || generateTeacherLogin(t.name)).toLowerCase().trim();
+            const tPass = String(t.password || '123').trim();
+            const cleanPhone = (t.phone || '').replace(/[^0-9]/g, '');
+            const inputPhone = cleanLogin.replace(/[^0-9]/g, '');
+            const matchesPhone = cleanPhone && inputPhone && cleanPhone.endsWith(inputPhone) && inputPhone.length >= 7;
+            return (tLogin === cleanLogin || matchesPhone) && tPass === cleanPass;
+          });
+
+          if (matchedTeacher) {
+            const isClassTeacher = Boolean(matchedTeacher.classId);
+            const tClassObj = (classes || []).find(c => c.id === matchedTeacher.classId);
+            found = {
+              id: `u-${matchedTeacher.id}`,
+              login: matchedTeacher.login || generateTeacherLogin(matchedTeacher.name),
+              password: cleanPass,
+              role: isClassTeacher ? 'class_teacher' : 'subject_teacher',
+              schoolId: selectedSchoolId || 'sch-1',
+              name: matchedTeacher.name,
+              detail: isClassTeacher ? `${tClassObj?.name || ''} sinf rahbari` : `${matchedTeacher.subject || 'Fan'} o'qituvchisi`,
+              teacherId: matchedTeacher.id,
+              classId: matchedTeacher.classId || null,
+              subject: matchedTeacher.subject || '',
+              permissions: isClassTeacher ? ['class_attendance', 'notifications'] : ['grades_journal']
+            };
+          }
+        }
+
+        // 5. Rahbariyat va ma'muriyat a'zolarini tekshirish
+        if (!found) {
+          const matchedStaff = (leadership || []).find(s => {
+            if (!s.login) return false;
+            const sLogin = String(s.login).toLowerCase().trim();
+            const sPass = String(s.password || '123').trim();
+            return sLogin === cleanLogin && sPass === cleanPass;
+          });
+
+          if (matchedStaff) {
+            found = {
+              id: matchedStaff.id || `u-${matchedStaff.login}`,
+              login: matchedStaff.login,
+              password: matchedStaff.password || '123',
+              role: matchedStaff.isDirector ? 'director' : 'director',
+              schoolId: selectedSchoolId || 'sch-1',
+              name: matchedStaff.name,
+              detail: matchedStaff.role || matchedStaff.detail || 'Rahbariyat',
+              category: matchedStaff.category || 'leadership',
+              isDirector: Boolean(matchedStaff.isDirector),
+              permissions: Array.isArray(matchedStaff.permissions) ? matchedStaff.permissions : ['dashboard', 'students', 'cameras', 'teachers']
+            };
+          }
+        }
       }
     }
 
