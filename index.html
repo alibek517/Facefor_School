@@ -20,6 +20,26 @@
           }
         } catch(e) {}
       })();
+
+      // Yangi versiya yuklanganda eski brauzer keshidagi JS skriptlar xatosini avtomatik bartaraf etish
+      window.addEventListener('vite:preloadError', function(event) {
+        if (event) event.preventDefault();
+        window.location.reload();
+      });
+      window.addEventListener('error', function(e) {
+        var msg = (e && (e.message || (e.target && e.target.src))) || '';
+        if (typeof msg === 'string' && (msg.indexOf('Failed to load module script') !== -1 || msg.indexOf('MIME type') !== -1 || msg.indexOf('.js') !== -1)) {
+          if (!sessionStorage.getItem('chunk_reload_lock')) {
+            sessionStorage.setItem('chunk_reload_lock', '1');
+            window.location.reload();
+          }
+        }
+      }, true);
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          try { sessionStorage.removeItem('chunk_reload_lock'); } catch(e) {}
+        }, 3000);
+      });
     </script>
   </head>
   <body class="antialiased font-['Plus_Jakarta_Sans',sans-serif]">
