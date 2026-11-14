@@ -240,6 +240,19 @@ export const SchoolProvider = ({ children }) => {
     );
   };
 
+  // 1 yillik (365 kunlik) to'liq davomat tarixini Supabase bulut bazasida saqlash
+  const retainOneYearAttendance = (list) => {
+    if (!Array.isArray(list)) return [];
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 365);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    return list.filter(item => {
+      const dStr = item.date || (item.timestamp ? String(item.timestamp).slice(0, 10) : null);
+      if (!dStr) return true;
+      return dStr >= cutoffStr;
+    });
+  };
+
   // Asosiy ma'lumotlar - 100% DINAMIK: LocalStorage'da saqlanmaydi, doimo Supabase bulutidan olinadi
   const [classes, setClasses] = useState(INITIAL_CLASSES);
   const [teachers, setTeachersRaw] = useState(() => filterRealTeachers(INITIAL_TEACHERS));
@@ -277,10 +290,8 @@ export const SchoolProvider = ({ children }) => {
 
   const [cameras, setCameras] = useState(DEFAULT_CAMERAS);
 
-  // Maktablar (Schools) ro'yxati va tanlangan maktab (BigAdmin uchun)
-  const [schools, setSchools] = useState(() => {
-    return getSafeStorage('school_list', INITIAL_SCHOOLS);
-  });
+  // Maktablar (Schools) ro'yxati va tanlangan maktab (BigAdmin uchun) - 100% Supabase bulutida saqlanadi
+  const [schools, setSchools] = useState(INITIAL_SCHOOLS);
   const [selectedSchoolId, setSelectedSchoolId] = useState(() => {
     try {
       const saved = localStorage.getItem('school_selected_id');
@@ -646,23 +657,18 @@ export const SchoolProvider = ({ children }) => {
     };
   }, []);
 
-  // LocalStorage keshlarini tozalash va faqat foydalanuvchi sessiyasini saqlash (100% dinamik bulut rejimi)
+  // LocalStorage'ni toza saqlash: FAQAT login tokeni (auth_token) va joriy login foydalanuvchisi (school_user) saqlanadi!
+  // Barcha maktab ma'lumotlari, 1 yillik davomatlar tarixi, o'quvchilar va o'qituvchilar 100% Supabase da saqlanadi.
   useEffect(() => {
-    const keysToPurge = [
-      'school_classes',
-      'school_teachers',
-      'school_students',
-      'school_schedules',
-      'school_attendance',
-      'school_notifications',
-      'school_teacher_attendance',
-      'school_hourly_attendance',
-      'school_leadership',
-      'school_cameras'
-    ];
-    keysToPurge.forEach(k => {
-      try { localStorage.removeItem(k); } catch (e) {}
-    });
+    try {
+      const allowedKeys = new Set(['auth_token', 'school_user', 'school_theme', 'school_selected_id']);
+      const allKeys = Object.keys(localStorage);
+      allKeys.forEach(k => {
+        if (!allowedKeys.has(k)) {
+          localStorage.removeItem(k);
+        }
+      });
+    } catch (e) {}
   }, []);
 
   useEffect(() => {
@@ -844,7 +850,7 @@ export const SchoolProvider = ({ children }) => {
             ...gateInfo
           }];
         }
-        saveModuleToSupabase('teacherAttendance', updated).catch(() => {});
+        saveModuleToSupabase('teacherAttendance', retainOneYearAttendance(updated)).catch(() => {});
         saveToServer('teacherAttendance', updated);
         return updated;
       });
@@ -916,7 +922,7 @@ export const SchoolProvider = ({ children }) => {
             }
           ];
         }
-        saveModuleToSupabase('attendanceList', updated).catch(() => {});
+        saveModuleToSupabase('attendanceList', retainOneYearAttendance(updated)).catch(() => {});
         saveToServer('attendanceList', updated);
         return updated;
       });
@@ -1011,11 +1017,15 @@ export const SchoolProvider = ({ children }) => {
         if (ok) successCount++;
       }
       if (attendanceList) {
-        const ok = await saveModuleToSupabase('attendanceList', attendanceList);
+        const ok = await saveModuleToSupabase('attendanceList', retainOneYearAttendance(attendanceList));
         if (ok) successCount++;
       }
       if (teacherAttendance) {
-        const ok = await saveModuleToSupabase('teacherAttendance', teacherAttendance);
+        const ok = await saveModuleToSupabase('teacherAttendance', retainOneYearAttendance(teacherAttendance));
+        if (ok) successCount++;
+      }
+      if (schools && schools.length > 0) {
+        const ok = await saveModuleToSupabase('school_list', schools);
         if (ok) successCount++;
       }
       if (hourlyAttendance) {
@@ -1069,6 +1079,9 @@ export const SchoolProvider = ({ children }) => {
           if (cloudData.schedules && cloudData.schedules.length > 0) setSchedules(cloudData.schedules);
           if (cloudData.attendanceList) setAttendanceList(cloudData.attendanceList);
           if (cloudData.teacherAttendance) setTeacherAttendance(cloudData.teacherAttendance);
+          if (cloudData.school_list && Array.isArray(cloudData.school_list) && cloudData.school_list.length > 0) {
+            setSchools(cloudData.school_list);
+          }
           if (cloudData.hourlyAttendance) setHourlyAttendance(cloudData.hourlyAttendance);
           if (cloudData.notifications && Array.isArray(cloudData.notifications)) {
             const cleanNotifs = filterValidNotifications(cloudData.notifications);
@@ -1316,7 +1329,7 @@ export const SchoolProvider = ({ children }) => {
             const updatedSchools = JSON.parse(e.data);
             if (Array.isArray(updatedSchools)) {
               setSchools(updatedSchools);
-              try { localStorage.setItem('school_list', JSON.stringify(updatedSchools)); } catch (err) {}
+              saveModuleToSupabase('school_list', updatedSchools).catch(() => {});
             }
           } catch (err) {}
         });
@@ -1325,7 +1338,7 @@ export const SchoolProvider = ({ children }) => {
             const payload = JSON.parse(e.data);
             if (Array.isArray(payload.schools)) {
               setSchools(payload.schools);
-              try { localStorage.setItem('school_list', JSON.stringify(payload.schools)); } catch (err) {}
+              saveModuleToSupabase('school_list', payload.schools).catch(() => {});
             }
             // Agar joriy kirib turgan foydalanuvchi muzlatilgan maktabga tegishli bo'lsa, zudlik bilan chiqarish!
             if (currentUserRef.current && currentUserRef.current.role !== 'bigadmin') {
@@ -1922,7 +1935,7 @@ export const SchoolProvider = ({ children }) => {
         const data = await res.json();
         if (data.success && Array.isArray(data.schools) && data.schools.length > 0) {
           setSchools(data.schools);
-          try { localStorage.setItem('school_list', JSON.stringify(data.schools)); } catch (e) {}
+          saveModuleToSupabase('school_list', data.schools).catch(() => {});
         }
       }
     } catch (e) {}
@@ -1953,7 +1966,7 @@ export const SchoolProvider = ({ children }) => {
 
     setSchools(prev => {
       const updated = [...prev, schoolObj];
-      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      saveModuleToSupabase('school_list', updated).catch(() => {});
       return updated;
     });
 
@@ -1973,7 +1986,7 @@ export const SchoolProvider = ({ children }) => {
         const d = await res.json();
         if (d.success && d.schools) {
           setSchools(d.schools);
-          try { localStorage.setItem('school_list', JSON.stringify(d.schools)); } catch (e) {}
+          saveModuleToSupabase('school_list', d.schools).catch(() => {});
         }
       }
     } catch (err) {}
@@ -1985,7 +1998,7 @@ export const SchoolProvider = ({ children }) => {
   const updateSchool = async (schoolData) => {
     setSchools(prev => {
       const updated = prev.map(s => s.id === schoolData.id ? { ...s, ...schoolData } : s);
-      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      saveModuleToSupabase('school_list', updated).catch(() => {});
       return updated;
     });
 
@@ -2013,7 +2026,7 @@ export const SchoolProvider = ({ children }) => {
         }
         return s;
       });
-      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      saveModuleToSupabase('school_list', updated).catch(() => {});
       return updated;
     });
 
@@ -2062,7 +2075,7 @@ export const SchoolProvider = ({ children }) => {
         }
         return s;
       });
-      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      saveModuleToSupabase('school_list', updated).catch(() => {});
       return updated;
     });
 
@@ -2172,7 +2185,7 @@ export const SchoolProvider = ({ children }) => {
         }
         return s;
       });
-      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      saveModuleToSupabase('school_list', updated).catch(() => {});
       return updated;
     });
 
@@ -2249,7 +2262,7 @@ export const SchoolProvider = ({ children }) => {
 
     setSchools(prev => {
       const updated = prev.filter(s => s.id !== schoolId);
-      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      saveModuleToSupabase('school_list', updated).catch(() => {});
       return updated;
     });
 
@@ -2294,7 +2307,7 @@ export const SchoolProvider = ({ children }) => {
         }
         return s;
       });
-      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      saveModuleToSupabase('school_list', updated).catch(() => {});
       return updated;
     });
 
@@ -2322,7 +2335,7 @@ export const SchoolProvider = ({ children }) => {
         }
         return s;
       });
-      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      saveModuleToSupabase('school_list', updated).catch(() => {});
       return updated;
     });
 
@@ -2350,7 +2363,7 @@ export const SchoolProvider = ({ children }) => {
         }
         return s;
       });
-      try { localStorage.setItem('school_list', JSON.stringify(updated)); } catch (e) {}
+      saveModuleToSupabase('school_list', updated).catch(() => {});
       return updated;
     });
 
@@ -2982,7 +2995,7 @@ export const SchoolProvider = ({ children }) => {
     }
     setAttendanceList(updated);
     saveToServer('attendanceList', updated);
-    saveModuleToSupabase('attendanceList', updated).catch(() => {});
+    saveModuleToSupabase('attendanceList', retainOneYearAttendance(updated)).catch(() => {});
 
     if (!silent) {
       const absents = records.filter(r => r.status === 'absent');
@@ -3029,7 +3042,7 @@ export const SchoolProvider = ({ children }) => {
         };
         const updatedList = [newClassAtt, ...prev];
         saveToServer('attendanceList', updatedList);
-        saveModuleToSupabase('attendanceList', updatedList).catch(() => {});
+        saveModuleToSupabase('attendanceList', retainOneYearAttendance(updatedList)).catch(() => {});
         return updatedList;
       }
 
@@ -3050,7 +3063,7 @@ export const SchoolProvider = ({ children }) => {
       const updatedList = [...prev];
       updatedList[attIndex] = currentClassAtt;
       saveToServer('attendanceList', updatedList);
-      saveModuleToSupabase('attendanceList', updatedList).catch(() => {});
+      saveModuleToSupabase('attendanceList', retainOneYearAttendance(updatedList)).catch(() => {});
       return updatedList;
     });
 
