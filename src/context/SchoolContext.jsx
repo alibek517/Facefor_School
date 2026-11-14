@@ -681,23 +681,47 @@ export const SchoolProvider = ({ children }) => {
     } catch (e) {}
   }, [currentUser, selectedTeacherId, inspectorName]);
 
+  // O'qituvchining Face-ID turniketidan o'tishini qayd etish (jonli apparat yoki test/simulyator)
+  const triggerTeacherTurnstileScan = (teacherId, direction = 'in', customGate = null) => {
+    const teacher = (teachers || []).find(t => t.id === teacherId);
+    if (!teacher) return;
+
+    const d = new Date();
+    const timeFormatted = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const empNo = String(teacher.faceId || teacher.employeeNo || teacher.id || '').replace(/^t-/, '');
+    const isExit = direction === 'out';
+    const gateName = customGate?.name || (isExit ? 'Turniket 6 (Chiqish)' : 'Turniket 3 (Kirish)');
+    const location = customGate?.location || (isExit ? "Chiqish yo'lagi (3)" : "Bosh kirish eshigi (3)");
+
+    const scan = {
+      id: `scan-t-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      serialNo: Date.now(),
+      employeeNo: empNo,
+      name: teacher.name,
+      userType: 'teacher',
+      timestamp: d.toISOString(),
+      timeFormatted,
+      cameraName: gateName,
+      location,
+      direction,
+      pictureURL: teacher.photo || teacher.photoUrl || teacher.faceURL || null,
+      isNew: true
+    };
+
+    handleIncomingFaceScan(scan);
+  };
+
   // O'qituvchi holatini o'zgartirish (maktab ichida / tashqarida)
   const toggleTeacherPresence = (teacherId) => {
-    const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setTeacherAttendance(prev => {
-      const existing = prev.find(t => t.teacherId === teacherId);
-      if (existing) {
-        const newStatus = existing.status === 'present' ? 'absent' : 'present';
-        return prev.map(t => t.teacherId === teacherId ? {
-          ...t,
-          status: newStatus,
-          inTime: newStatus === 'present' ? currentTime : t.inTime,
-          outTime: newStatus === 'absent' ? currentTime : null
-        } : t);
-      } else {
-        return [...prev, { teacherId, status: 'present', inTime: currentTime, outTime: null }];
-      }
-    });
+    const teacher = (teachers || []).find(t => t.id === teacherId);
+    if (!teacher) return;
+
+    const todayDate = new Date().toISOString().slice(0, 10);
+    const existing = (teacherAttendance || []).find(t => t.teacherId === teacherId && (t.date === todayDate || !t.date));
+    const isCurrentlyInside = existing ? (existing.isInside ?? (existing.status === 'present' && existing.lastDirection !== 'out')) : false;
+
+    // Agar hozir ichkarida bo'lsa -> chiqish turniketi, tashqarida bo'lsa -> kirish turniketi
+    triggerTeacherTurnstileScan(teacherId, isCurrentlyInside ? 'out' : 'in');
   };
 
   // Dars soati bo'yicha jonli yo'qlama yangilash
@@ -734,17 +758,17 @@ export const SchoolProvider = ({ children }) => {
 
     const scanName = (scan.name || '').toLowerCase().trim();
     const scanEmpNo = (scan.employeeNo || '').trim();
-    const cleanScanEmp = scanEmpNo.replace(/^s-/, '').replace(/^0+/, '');
+    const cleanScanEmp = scanEmpNo.replace(/^[st]-/, '').replace(/^0+/, '');
     const isExit = scan.direction === 'out';
 
     // 1. O'qituvchilar orasidan qidirish (O'qituvchilar birinchi navbatda tekshiriladi)
     const matchedTeacher = teachers.find(t => {
       const tName = (t.name || '').toLowerCase().trim();
-      const tEmp = String(t.faceId || t.id || '').replace(/^t-/, '').replace(/^0+/, '');
+      const tEmp = String(t.faceId || t.employeeNo || t.id || '').replace(/^[st]-/, '').replace(/^0+/, '');
       return (
         (cleanScanEmp && tEmp && cleanScanEmp === tEmp) ||
         tName === scanName ||
-        (scanEmpNo && (t.id === scanEmpNo || t.id === `t-${scanEmpNo}` || t.faceId === scanEmpNo)) ||
+        (scanEmpNo && (t.id === scanEmpNo || t.id === `t-${scanEmpNo}` || t.faceId === scanEmpNo || t.employeeNo === scanEmpNo)) ||
         (tName.length > 5 && (scanName.includes(tName) || tName.includes(scanName)))
       );
     });
@@ -781,26 +805,43 @@ export const SchoolProvider = ({ children }) => {
         const todayDate = getTodayDateStr();
         const curTime = scan.timeFormatted || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const existing = prev.find(t => t.teacherId === matchedTeacher.id && (t.date === todayDate || !t.date));
+
+        const gateInfo = {
+          gateName: scan.cameraName || (isExit ? 'Turniket 6 (Chiqish)' : 'Turniket 3 (Kirish)'),
+          gateLocation: scan.location || scan.cameraLocation || (isExit ? "Chiqish yo'lagi (3)" : "Bosh kirish eshigi (3)"),
+          cameraIp: scan.cameraIp || null,
+          pictureURL: scan.pictureURL || null,
+          lastScan: resolvedScan
+        };
+
         let updated;
         if (existing) {
           updated = prev.map(t => (t.teacherId === matchedTeacher.id && (t.date === todayDate || !t.date)) ? {
             ...t,
             date: todayDate,
-            status: isExit ? 'absent' : 'present',
-            inTime: isExit ? (t.inTime || curTime) : curTime,
+            status: isExit ? 'exited' : 'present',
+            hasEntered: true,
+            hasExited: isExit,
+            isInside: !isExit,
+            inTime: isExit ? (t.inTime || curTime) : (t.inTime || curTime),
             outTime: isExit ? curTime : t.outTime,
             lastDirection: isExit ? 'out' : 'in',
-            lastSeenTime: curTime
+            lastSeenTime: curTime,
+            ...gateInfo
           } : t);
         } else {
           updated = [...prev, {
             teacherId: matchedTeacher.id,
             date: todayDate,
-            status: isExit ? 'absent' : 'present',
+            status: isExit ? 'exited' : 'present',
+            hasEntered: true,
+            hasExited: isExit,
+            isInside: !isExit,
             inTime: isExit ? null : curTime,
             outTime: isExit ? curTime : null,
             lastDirection: isExit ? 'out' : 'in',
-            lastSeenTime: curTime
+            lastSeenTime: curTime,
+            ...gateInfo
           }];
         }
         saveModuleToSupabase('teacherAttendance', updated).catch(() => {});
@@ -3100,6 +3141,7 @@ export const SchoolProvider = ({ children }) => {
     teacherAttendance: teacherAttendance || [],
     hourlyAttendance: hourlyAttendance || {},
     toggleTeacherPresence,
+    triggerTeacherTurnstileScan,
     recordLessonAttendance,
     activeToast,
     showToast,

@@ -38,6 +38,7 @@ export const TeacherAttendanceView = () => {
     cameras = [],
     classes = [],
     toggleTeacherPresence,
+    triggerTeacherTurnstileScan,
     isLocalConnected,
     bridgeUrl,
     globalStreamUrl,
@@ -120,127 +121,64 @@ export const TeacherAttendanceView = () => {
     return fallbackGate || 'Bosh kirish eshigi (Turniket 3)';
   };
 
-  // Deterministic realistic fallback data for mock/demo if no live face scans happened yet
-  const getDeterministicTeacherData = (teacher, index) => {
-    // Generate realistic times based on teacher index
-    const hash = (index * 17 + 23) % 100;
-    // 82% present, 18% absent
-    if (hash < 18) {
-      return {
-        defaultEntered: false,
-        defaultExited: false,
-        defaultInside: false,
-        defaultInTime: null,
-        defaultOutTime: null,
-        defaultGate: 'Kelmadi',
-        defaultGateLocation: '---'
-      };
-    }
-
-    // Has entered
-    const inHour = 7 + Math.floor((hash % 30) / 25); // 7 or 8
-    const inMin = 30 + ((hash * 3) % 28);
-    const inTimeStr = `${String(inHour).padStart(2, '0')}:${String(inMin).padStart(2, '0')}`;
-
-    // 15% exited, 85% still inside
-    const isExited = hash >= 18 && hash < 34;
-    let outTimeStr = null;
-    if (isExited) {
-      const outHour = 13 + Math.floor((hash % 15) / 5);
-      const outMin = 10 + ((hash * 4) % 40);
-      outTimeStr = `${String(outHour).padStart(2, '0')}:${String(outMin).padStart(2, '0')}`;
-    }
-
-    const gateOptions = [
-      { name: 'Turniket 3 (Kirish)', location: 'Bosh kirish eshigi (3)' },
-      { name: 'Turniket 4 (Kirish)', location: "Chiqish yo'lagi (1)" },
-      { name: 'Turniket 5 (Kirish)', location: "Chiqish yo'lagi (2)" },
-      { name: 'Turniket 1 (Chiqish)', location: 'Bosh kirish eshigi (1)' },
-      { name: 'Turniket 6 (Chiqish)', location: "Chiqish yo'lagi (3)" }
-    ];
-    const gateObj = isExited ? gateOptions[3 + (hash % 2)] : gateOptions[hash % 3];
-
-    return {
-      defaultEntered: true,
-      defaultExited: isExited,
-      defaultInside: !isExited,
-      defaultInTime: inTimeStr,
-      defaultOutTime: outTimeStr,
-      defaultGate: `${gateObj.name} • ${gateObj.location}`,
-      defaultGateLocation: gateObj.location
-    };
-  };
-
-  // Barcha o'qituvchilarning hisoblangan to'liq davomati
+  // Barcha o'qituvchilarning real Face-ID turniket o'tishlariga asoslangan to'liq davomati
   const enrichedTeachers = useMemo(() => {
-    return (teachers || []).map((teacher, index) => {
-      const normId = String(teacher.employeeNo || teacher.faceId || teacher.id || '')
-        .replace(/^t-/, '')
+    return (teachers || []).map((teacher) => {
+      const normId = String(teacher.faceId || teacher.employeeNo || teacher.id || '')
+        .replace(/^[st]-/, '')
         .replace(/^0+/, '');
+      const tName = (teacher.fullName || teacher.name || '').toLowerCase().trim();
 
-      // Shu o'qituvchiga tegishli Face-ID o'tishlari
-      const scans = selectedDateScans.filter(s => {
-        const sEmp = String(s.employeeNo || '').replace(/^0+/, '');
+      // Shu o'qituvchiga tegishli haqiqiy Face-ID turniket o'tishlari (shu sanadagi)
+      const scans = (selectedDateScans || []).filter(s => {
+        const sEmp = String(s.employeeNo || s.employee_no || '').replace(/^[st]-/, '').replace(/^0+/, '');
         const sName = (s.name || '').toLowerCase().trim();
-        const tName = (teacher.fullName || teacher.name || '').toLowerCase().trim();
-        return (sEmp && normId && sEmp === normId) || 
+        return (sEmp && normId && (sEmp === normId || sEmp.endsWith(normId) || normId.endsWith(sEmp))) || 
                (sName && tName && (sName === tName || sName.includes(tName) || tName.includes(sName)));
       });
 
       const inScans = scans.filter(s => s.direction === 'in');
       const outScans = scans.filter(s => s.direction === 'out');
-      const firstInScan = inScans[inScans.length - 1] || inScans[0];
-      const lastScan = scans[0];
+      const firstInScan = inScans.length > 0 ? inScans[inScans.length - 1] : null;
+      const latestScan = scans.length > 0 ? scans[0] : null;
+      const latestOutScan = outScans.length > 0 ? outScans[0] : null;
 
-      // teacherAttendance ro'yxatidan ma'lumot
+      // teacherAttendance ro'yxatidan ma'lumot (agar mavjud bo'lsa)
       const tRecord = (teacherAttendance || []).find(t => 
-        t.teacherId === teacher.id && (t.date === selectedDate || !t.date)
+        (t.teacherId === teacher.id || (normId && String(t.faceId || t.employeeNo || '').replace(/^0+/, '') === normId)) &&
+        (t.date === selectedDate || !t.date)
       );
 
-      // Deterministic demo fallback
-      const fallback = getDeterministicTeacherData(teacher, index);
-
       const hasScanData = scans.length > 0;
-      const hasRecordData = !!tRecord && (tRecord.status === 'present' || tRecord.inTime || tRecord.outTime);
+      const hasRecordData = !!tRecord && (tRecord.hasEntered || tRecord.status === 'present' || tRecord.status === 'exited' || !!tRecord.inTime);
 
       let hasEntered = false;
       let hasExited = false;
       let isInside = false;
       let entryTime = null;
       let exitTime = null;
-      let gateName = '';
-      let gateLocation = '';
-      let latestScan = lastScan || null;
+      let gateName = "Turniket qayd etilmadi";
+      let gateLocation = "Hali o'tmagan";
 
       if (hasScanData) {
-        hasEntered = !!firstInScan || (scans.length > 0);
-        hasExited = hasEntered && lastScan?.direction === 'out';
+        hasEntered = true;
+        hasExited = latestScan?.direction === 'out';
         isInside = hasEntered && !hasExited;
         entryTime = firstInScan ? formatScanTime(firstInScan) : formatScanTime(scans[scans.length - 1]);
-        exitTime = hasExited ? formatScanTime(lastScan) : null;
-        gateName = getTurniketLocation(lastScan || firstInScan);
-        gateLocation = lastScan?.location || firstInScan?.location || 'Bosh kirish';
+        exitTime = hasExited ? formatScanTime(latestScan) : (latestOutScan ? formatScanTime(latestOutScan) : null);
+        gateName = getTurniketLocation(latestScan || firstInScan);
+        gateLocation = latestScan?.location || latestScan?.cameraLocation || firstInScan?.location || "Bosh kirish yo'lagi";
       } else if (hasRecordData) {
-        hasEntered = tRecord.status === 'present' || !!tRecord.inTime;
-        hasExited = hasEntered && (tRecord.lastDirection === 'out' || (tRecord.status === 'absent' && tRecord.outTime));
+        hasEntered = true;
+        hasExited = tRecord.hasExited || tRecord.lastDirection === 'out' || tRecord.status === 'exited';
         isInside = hasEntered && !hasExited;
-        entryTime = tRecord.inTime || '08:00';
-        exitTime = hasExited ? (tRecord.outTime || '14:00') : null;
-        gateName = tRecord.gateName || fallback.defaultGate;
-        gateLocation = tRecord.gateLocation || fallback.defaultGateLocation;
-      } else {
-        // Fallback realistic simulation
-        hasEntered = fallback.defaultEntered;
-        hasExited = fallback.defaultExited;
-        isInside = fallback.defaultInside;
-        entryTime = fallback.defaultInTime;
-        exitTime = fallback.defaultOutTime;
-        gateName = fallback.defaultGate;
-        gateLocation = fallback.defaultGateLocation;
+        entryTime = tRecord.inTime || null;
+        exitTime = hasExited ? (tRecord.outTime || null) : null;
+        gateName = tRecord.gateName || 'Turniket (Bosh kirish)';
+        gateLocation = tRecord.gateLocation || "Kirish yo'lagi";
       }
 
       const assignedClass = (classes || []).find(c => c.id === teacher.classId);
-
       const statusType = hasEntered ? (hasExited ? 'exited' : 'inside') : 'absent';
 
       return {
@@ -253,7 +191,8 @@ export const TeacherAttendanceView = () => {
         exitTime,
         gateName,
         gateLocation,
-        latestScan,
+        latestScan: latestScan || tRecord?.lastScan || null,
+        scans,
         tRecord,
         statusType
       };
@@ -376,11 +315,11 @@ export const TeacherAttendanceView = () => {
                 </h1>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                  Jonli Monitoring
+                  Real-Time Turniket
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Barcha o'qituvchilarning real vaqtdagi kirish-chiqish vaqti, holati va turniket eshigi locatsiyasi
+                Barcha o'qituvchilarning real Face-ID turniket o'tishlariga asoslangan jonli kirish-chiqish monitoringi
               </p>
             </div>
           </div>
@@ -784,7 +723,7 @@ export const TeacherAttendanceView = () => {
                 </div>
               </div>
 
-              {/* Turniket Locatsiyasi nishoni */}
+              {/* Turniket Locatsiyasi nishoni va amallar */}
               <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80 text-xs">
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 truncate" title={teacher.gateName}>
                   <MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
@@ -793,15 +732,37 @@ export const TeacherAttendanceView = () => {
                   </span>
                 </div>
 
-                {/* Ko'rish / Tafsilot tugmasi */}
-                <button
-                  onClick={() => setSelectedTeacherDetail(teacher)}
-                  className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
-                  title="To'liq tafsilotlar"
-                >
-                  <Eye className="w-3 h-3" />
-                  <span>Kadr</span>
-                </button>
+                {/* Amallar */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => {
+                      const nextDir = teacher.isInside ? 'out' : 'in';
+                      if (triggerTeacherTurnstileScan) {
+                        triggerTeacherTurnstileScan(teacher.id, nextDir);
+                      } else {
+                        handleTogglePresence(teacher);
+                      }
+                    }}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                      teacher.isInside 
+                        ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800' 
+                        : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                    }`}
+                    title={teacher.isInside ? "Turniketdan chiqish" : "Turniketdan kirish"}
+                  >
+                    {teacher.isInside ? <LogOut className="w-2.5 h-2.5" /> : <LogIn className="w-2.5 h-2.5" />}
+                    <span>{teacher.isInside ? 'Chiqish' : 'Kirish'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setSelectedTeacherDetail(teacher)}
+                    className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                    title="To'liq tafsilotlar va kadr"
+                  >
+                    <Eye className="w-3 h-3" />
+                    <span>Kadr</span>
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -932,13 +893,34 @@ export const TeacherAttendanceView = () => {
                     </td>
 
                     <td className="py-2.5 px-3 text-right">
-                      <button
-                        onClick={() => setSelectedTeacherDetail(teacher)}
-                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors inline-flex items-center gap-1 cursor-pointer"
-                        title="Kadr tafsilotlarini ko'rish"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => {
+                            const nextDir = teacher.isInside ? 'out' : 'in';
+                            if (triggerTeacherTurnstileScan) {
+                              triggerTeacherTurnstileScan(teacher.id, nextDir);
+                            } else {
+                              handleTogglePresence(teacher);
+                            }
+                          }}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all inline-flex items-center gap-1 cursor-pointer ${
+                            teacher.isInside 
+                              ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800' 
+                              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                          }`}
+                          title={teacher.isInside ? "Turniketdan chiqish" : "Turniketdan kirish"}
+                        >
+                          {teacher.isInside ? <LogOut className="w-2.5 h-2.5" /> : <LogIn className="w-2.5 h-2.5" />}
+                          <span>{teacher.isInside ? 'Chiqish' : 'Kirish'}</span>
+                        </button>
+                        <button
+                          onClick={() => setSelectedTeacherDetail(teacher)}
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                          title="Kadr tafsilotlarini ko'rish"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1043,6 +1025,62 @@ export const TeacherAttendanceView = () => {
                 </div>
                 <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 pl-5">
                   {selectedTeacherDetail.gateName}
+                </div>
+              </div>
+
+              {/* Turniketdan O'tkazish (Jonli Face-ID Simulyatsiyasi) */}
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Face-ID Turniketidan O'tkazish:</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    ID: #{selectedTeacherDetail.faceId || selectedTeacherDetail.employeeNo || selectedTeacherDetail.id?.replace(/^t-/, '')}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      if (triggerTeacherTurnstileScan) {
+                        triggerTeacherTurnstileScan(selectedTeacherDetail.id, 'in');
+                        setSelectedTeacherDetail(prev => ({
+                          ...prev,
+                          hasEntered: true,
+                          isInside: true,
+                          hasExited: false,
+                          statusType: 'inside',
+                          gateName: 'Turniket 3 (Bosh kirish eshigi)',
+                          entryTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        }));
+                      }
+                    }}
+                    className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>Turniket (Kirish)</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (triggerTeacherTurnstileScan) {
+                        triggerTeacherTurnstileScan(selectedTeacherDetail.id, 'out');
+                        setSelectedTeacherDetail(prev => ({
+                          ...prev,
+                          hasEntered: true,
+                          isInside: false,
+                          hasExited: true,
+                          statusType: 'exited',
+                          gateName: "Turniket 6 (Chiqish yo'lagi)",
+                          exitTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        }));
+                      }
+                    }}
+                    className="p-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Turniket (Chiqish)</span>
+                  </button>
                 </div>
               </div>
 

@@ -867,16 +867,16 @@ export const DirectorDashboard = () => {
   // Tanlangan sana bo'yicha barcha o'qituvchilarning aniq holati
   const enrichedTeachers = useMemo(() => {
     return (teachers || []).map(teacher => {
-      const normId = String(teacher.employeeNo || teacher.faceId || teacher.id || '')
-        .replace(/^t-/, '')
+      const normId = String(teacher.faceId || teacher.employeeNo || teacher.id || '')
+        .replace(/^[st]-/, '')
         .replace(/^0+/, '');
 
       // Face-ID o'tishlaridan qidirish (shu sanadagi)
-      const scans = selectedDateScans.filter(s => {
-        const sEmp = String(s.employeeNo || '').replace(/^0+/, '');
+      const scans = (selectedDateScans || []).filter(s => {
+        const sEmp = String(s.employeeNo || s.employee_no || '').replace(/^[st]-/, '').replace(/^0+/, '');
         const sName = (s.name || '').toLowerCase().trim();
         const tName = (teacher.fullName || teacher.name || '').toLowerCase().trim();
-        return (sEmp && normId && sEmp === normId) || 
+        return (sEmp && normId && (sEmp === normId || sEmp.endsWith(normId) || normId.endsWith(sEmp))) || 
                (sName && tName && (sName === tName || sName.includes(tName) || tName.includes(sName)));
       });
 

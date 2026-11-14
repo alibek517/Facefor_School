@@ -237,7 +237,9 @@ export const INITIAL_TEACHERS = [
     "classId": "c-10a",
     "subject": "Tarix",
     "login": "davletova_g",
-    "password": "123"
+    "password": "123",
+    "faceId": "00000785",
+    "employeeNo": "00000785"
   },
   {
     "id": "t-00000545",
