@@ -199,8 +199,8 @@ export const SchoolProvider = ({ children }) => {
   });
 
   const filterRealTeachers = (list) => {
-    if (!Array.isArray(list)) return [];
-    return list.filter(t => 
+    if (!Array.isArray(list) || list.length === 0) return INITIAL_TEACHERS;
+    const filtered = list.filter(t => 
       t && 
       t.id !== 't-00000558' && 
       t.id !== 't-00000706' && 
@@ -209,6 +209,7 @@ export const SchoolProvider = ({ children }) => {
       !String(t.name || '').toLowerCase().includes('mamashev viktor') &&
       !String(t.name || '').toLowerCase().includes('maxmudjanov elbek')
     );
+    return filtered.length > 0 ? filtered : INITIAL_TEACHERS;
   };
 
   // Asosiy ma'lumotlar - 100% DINAMIK: LocalStorage'da saqlanmaydi, doimo Supabase bulutidan olinadi
@@ -503,6 +504,9 @@ export const SchoolProvider = ({ children }) => {
     }
     if (p === '/teachers' || p === '/settings' || p === '/oqituvchilar' || p === '/darslar') {
       return { path: '/teachers', role: 'director', tab: 'settings' };
+    }
+    if (p === '/teacher-attendance' || p === '/oqituvchilar-davomati' || p === '/teacherattendance') {
+      return { path: '/teacher-attendance', role: 'director', tab: 'teacher_attendance' };
     }
     if (p === '/duty' || p === '/inspector' || p === '/navbatchi') {
       return { path: '/duty', role: 'inspector', tab: 'main' };

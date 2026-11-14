@@ -9,6 +9,7 @@ import { TeacherJournal } from './components/TeacherJournal';
 import { StudentDirectory } from './components/StudentDirectory';
 import { SchoolSettings } from './components/SchoolSettings';
 import { SchoolMonitor } from './components/SchoolMonitor';
+import { TeacherAttendanceView } from './components/TeacherAttendanceView';
 import { BigAdminDashboard } from './components/BigAdminDashboard';
 import { Toast } from './components/Toast';
 import { LocalNetworkModal } from './components/LocalNetworkModal';
@@ -35,6 +36,7 @@ const MainLayout = () => {
 
   const canSeeStudents = !isBigAdmin && isDirectorUser && hasPermission('students');
   const canSeeSettings = !isBigAdmin && isDirectorUser && (hasPermission('teachers') || hasPermission('schedules') || hasPermission('classes') || hasPermission('leadership'));
+  const canSeeTeacherAttendance = !isBigAdmin && (isDirectorUser || currentUser?.role === 'inspector');
 
   // Tizimga kirilganda /login yoki / dan mos sahifaga yo'naltirish
   React.useEffect(() => {
@@ -78,7 +80,11 @@ const MainLayout = () => {
           <>
             {activeTab === 'directory' && canSeeStudents && <StudentDirectory />}
             {activeTab === 'settings' && canSeeSettings && <SchoolSettings />}
-            {(activeTab === 'main' || (!canSeeStudents && activeTab === 'directory') || (!canSeeSettings && activeTab === 'settings')) && (
+            {activeTab === 'teacher_attendance' && canSeeTeacherAttendance && <TeacherAttendanceView />}
+            {(activeTab === 'main' || 
+              (!canSeeStudents && activeTab === 'directory') || 
+              (!canSeeSettings && activeTab === 'settings') || 
+              (!canSeeTeacherAttendance && activeTab === 'teacher_attendance')) && (
               <>
                 {(currentUser?.role === 'director' || currentUser?.isDirector || currentUser?.category === 'leadership' || currentUser?.category === 'administrator') && <DirectorDashboard />}
                 {currentUser?.role === 'inspector' && <InspectorAttendance />}
