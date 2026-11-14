@@ -53,7 +53,7 @@ export const ClassTeacherView = () => {
   const isClassTeacher = currentUser?.role === 'class_teacher';
   const currentTeacher = (teachers || []).find(t => t.id === currentUser?.teacherId || t.id === selectedTeacherId) || (teachers || []).find(t => t.classId) || (teachers || [])[0];
 
-  const assignedClassId = currentUser?.classId || currentTeacher?.classId || 'c-10a';
+  const assignedClassId = currentUser?.classId || currentTeacher?.classId || (classes[0]?.id || '');
   const [selectedClassId, setSelectedClassId] = useState(assignedClassId);
 
   // Agar oddiy sinf rahbari bo'lsa, sinf qat'iy o'ziga biriktirilgan sinf bo'ladi

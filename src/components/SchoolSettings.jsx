@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSchool } from '../context/SchoolContext';
 import { DAYS_OF_WEEK } from '../mockData';
 import { formatPhoneNumber, handlePhoneInputChange } from '../utils/phoneFormatter';
@@ -193,7 +193,8 @@ export const SchoolSettings = () => {
   const [classHeadTeacherId, setClassHeadTeacherId] = useState('');
 
   const openClassTeachersModal = (classId) => {
-    const targetClassId = classId || selectedClassForSchedule;
+    const targetClassId = classId || selectedClassForSchedule || (classes[0]?.id || '');
+    if (!targetClassId) return;
     setSelectedClassForTeachersId(targetClassId);
     const cObj = classes.find(c => c.id === targetClassId);
     setClassHeadTeacherId(cObj?.teacherId || '');
@@ -265,7 +266,18 @@ export const SchoolSettings = () => {
 
   const [activeSubTab, setActiveSubTab] = useState('schedules'); // 'schedules' | 'teachers' | 'leadership' | 'classes' | 'face_id'
   const [scheduleViewMode, setScheduleViewMode] = useState('grid');
-  const [selectedClassForSchedule, setSelectedClassForSchedule] = useState('c-10a');
+  const [selectedClassForSchedule, setSelectedClassForSchedule] = useState(() => {
+    const class1A = (classes || []).find(c => c.name === '1-A' || c.id === 'c-1a');
+    return class1A ? class1A.id : ((classes && classes[0]?.id) || 'c-1a');
+  });
+
+  useEffect(() => {
+    if ((!selectedClassForSchedule || !(classes || []).some(c => c.id === selectedClassForSchedule)) && classes && classes.length > 0) {
+      const class1A = classes.find(c => c.name === '1-A' || c.id === 'c-1a') || classes[0];
+      if (class1A) setSelectedClassForSchedule(class1A.id);
+    }
+  }, [classes]);
+
   const [selectedDayFilter, setSelectedDayFilter] = useState('all');
 
   // Face-ID qurilmadagi foydalanuvchilar modali
@@ -288,7 +300,7 @@ export const SchoolSettings = () => {
   const [editSchId, setEditSchId] = useState(null);
   const [schDay, setSchDay] = useState('Dushanba');
   const [schOrder, setSchOrder] = useState(1);
-  const [schClassId, setSchClassId] = useState('c-10a');
+  const [schClassId, setSchClassId] = useState('');
   const [schTeacherId, setSchTeacherId] = useState(teachers[0]?.id || '');
   const [schSubject, setSchSubject] = useState(teachers[0]?.subject || 'Matematika');
   const [schTime, setSchTime] = useState('08:30 - 09:15');
@@ -354,7 +366,7 @@ export const SchoolSettings = () => {
     setEditSchId(null);
     setSchDay('Dushanba');
     setSchOrder(1);
-    setSchClassId(selectedClassForSchedule);
+    setSchClassId(selectedClassForSchedule || (classes[0]?.id || ''));
     setSchTeacherId(teachers[0]?.id || '');
     setSchSubject(teachers[0]?.subject || 'Matematika');
     setSchTime('08:30 - 09:15');
@@ -585,22 +597,27 @@ export const SchoolSettings = () => {
                 onChange={(e) => setSelectedClassForSchedule(e.target.value)}
                 className="text-xs font-bold p-1 px-2 border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 outline-none text-blue-700 dark:text-blue-400 transition-colors"
               >
+                <option value="">-- Sinfni tanlang --</option>
                 {classes.map(c => (
                   <option key={c.id} value={c.id}>{c.name} sinfi</option>
                 ))}
               </select>
-              <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                ({classSchedules.length} ta dars kiritilgan)
-              </span>
+              {selectedClassForSchedule && (
+                <>
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                    ({classSchedules.length} ta dars kiritilgan)
+                  </span>
 
-              <button
-                onClick={() => openClassTeachersModal(selectedClassForSchedule)}
-                className="px-2 py-0.5 text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-md flex items-center gap-1 transition-colors"
-                title="Ushbu sinf darslariga fan o'qituvchilarini biriktirish"
-              >
-                <Users className="w-3 h-3" />
-                <span>Fan o'qituvchilarini belgilash</span>
-              </button>
+                  <button
+                    onClick={() => openClassTeachersModal(selectedClassForSchedule)}
+                    className="px-2 py-0.5 text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-md flex items-center gap-1 transition-colors"
+                    title="Ushbu sinf darslariga fan o'qituvchilarini biriktirish"
+                  >
+                    <Users className="w-3 h-3" />
+                    <span>Fan o'qituvchilarini belgilash</span>
+                  </button>
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-1">
@@ -627,8 +644,33 @@ export const SchoolSettings = () => {
             </div>
           </div>
 
-          {/* HAFTALIK PANJARA */}
-          {scheduleViewMode === 'grid' && (
+          {!selectedClassForSchedule ? (
+            <div className="bg-slate-50 dark:bg-slate-800/40 p-8 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-center flex flex-col items-center justify-center py-12">
+              <div className="w-12 h-12 rounded-xl bg-blue-500/10 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-3">
+                <BookOpen className="w-6 h-6" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                Dars jadvalini ko'rish uchun sinfni tanlang
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mb-4">
+                Haftalik dars jadvalini ko'rish yoki dars qo'shish uchun yuqoridagi ro'yxatdan sinfni tanlang:
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-1.5 max-w-2xl">
+                {classes.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelectedClassForSchedule(c.id)}
+                    className="px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                  >
+                    {c.name} sinfi
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* HAFTALIK PANJARA */}
+              {scheduleViewMode === 'grid' && (
             <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 shadow-2xs">
               <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
@@ -709,7 +751,7 @@ export const SchoolSettings = () => {
                                   setEditSchId(null);
                                   setSchDay(day);
                                   setSchOrder(order);
-                                  setSchClassId(selectedClassForSchedule);
+                                  setSchClassId(selectedClassForSchedule || (classes[0]?.id || ''));
                                   setSchTeacherId(teachers[0]?.id || '');
                                   setSchSubject(teachers[0]?.subject ? teachers[0].subject.split('/')[0].trim() : 'Matematika');
                                   setSchTime(
@@ -801,6 +843,8 @@ export const SchoolSettings = () => {
                 })
               )}
             </div>
+          )}
+            </>
           )}
 
         </div>

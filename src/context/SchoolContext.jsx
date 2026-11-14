@@ -198,13 +198,27 @@ export const SchoolProvider = ({ children }) => {
     }
   });
 
+  const filterRealTeachers = (list) => {
+    if (!Array.isArray(list)) return [];
+    return list.filter(t => 
+      t && 
+      t.id !== 't-00000558' && 
+      t.id !== 't-00000706' && 
+      t.faceId !== '00000558' && 
+      t.faceId !== '00000706' &&
+      !String(t.name || '').toLowerCase().includes('mamashev viktor') &&
+      !String(t.name || '').toLowerCase().includes('maxmudjanov elbek')
+    );
+  };
+
   // Asosiy ma'lumotlar - 100% DINAMIK: LocalStorage'da saqlanmaydi, doimo Supabase bulutidan olinadi
   const [classes, setClasses] = useState(INITIAL_CLASSES);
-  const [teachers, setTeachers] = useState([]);
+  const [teachers, setTeachersRaw] = useState(() => filterRealTeachers(INITIAL_TEACHERS));
+  const setTeachers = (val) => setTeachersRaw(prev => filterRealTeachers(typeof val === 'function' ? val(prev) : val));
   const [students, setStudents] = useState(INITIAL_STUDENTS);
   const [schedules, setSchedules] = useState(INITIAL_SCHEDULE);
   const [attendanceList, setAttendanceList] = useState(INITIAL_ATTENDANCE);
-  const [teacherAttendance, setTeacherAttendance] = useState([]);
+  const [teacherAttendance, setTeacherAttendance] = useState(INITIAL_TEACHER_ATTENDANCE);
   const [hourlyAttendance, setHourlyAttendance] = useState(INITIAL_HOURLY_ATTENDANCE);
   const [leadership, setLeadership] = useState(SCHOOL_LEADERSHIP);
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
@@ -283,12 +297,12 @@ export const SchoolProvider = ({ children }) => {
 
       const isFirstSchool = found.id === 'sch-1';
       // 2. Yangi maktab ma'lumotlarini yuklash (hech bir maktab boshqasi bilan aralashmaydi!)
-      setClasses(Array.isArray(found.classes) ? found.classes : (isFirstSchool ? INITIAL_CLASSES : []));
-      setTeachers(Array.isArray(found.teachers) ? found.teachers : []);
-      setStudents(Array.isArray(found.students) ? found.students : (isFirstSchool ? INITIAL_STUDENTS : []));
-      setSchedules(Array.isArray(found.schedules) ? found.schedules : (isFirstSchool ? INITIAL_SCHEDULE : []));
-      setAttendanceList(Array.isArray(found.attendanceList) ? found.attendanceList : (isFirstSchool ? INITIAL_ATTENDANCE : []));
-      setTeacherAttendance(Array.isArray(found.teacherAttendance) ? found.teacherAttendance : []);
+      setClasses(Array.isArray(found.classes) && found.classes.length > 0 ? found.classes : (isFirstSchool ? INITIAL_CLASSES : []));
+      setTeachers(Array.isArray(found.teachers) && found.teachers.length > 0 ? found.teachers : (isFirstSchool ? INITIAL_TEACHERS : []));
+      setStudents(Array.isArray(found.students) && found.students.length > 0 ? found.students : (isFirstSchool ? INITIAL_STUDENTS : []));
+      setSchedules(Array.isArray(found.schedules) && found.schedules.length > 0 ? found.schedules : (isFirstSchool ? INITIAL_SCHEDULE : []));
+      setAttendanceList(Array.isArray(found.attendanceList) && found.attendanceList.length > 0 ? found.attendanceList : (isFirstSchool ? INITIAL_ATTENDANCE : []));
+      setTeacherAttendance(Array.isArray(found.teacherAttendance) && found.teacherAttendance.length > 0 ? found.teacherAttendance : (isFirstSchool ? INITIAL_TEACHER_ATTENDANCE : []));
       setHourlyAttendance(found.hourlyAttendance || {});
       setCameras(Array.isArray(found.turnstiles) ? found.turnstiles : (isFirstSchool ? DEFAULT_CAMERAS : []));
 

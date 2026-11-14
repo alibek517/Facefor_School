@@ -267,16 +267,6 @@ export const INITIAL_TEACHERS = [
     "subject": "Boshlang'ich ta'lim"
   },
   {
-    "id": "t-00000558",
-    "name": "Mamashev Viktor Aleksandrovich",
-    "role": "Sinf rahbari",
-    "phone": "+998-90-647-07-49",
-    "faceId": "00000558",
-    "classId": "c-1a",
-    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000546.jpg@WEB000000001709",
-    "subject": "Jismoniy tarbiya"
-  },
-  {
     "id": "t-00000603",
     "name": "Davletova Zamira Urolovna",
     "role": "Sinf rahbari",
@@ -395,16 +385,6 @@ export const INITIAL_TEACHERS = [
     "classId": "c-1a",
     "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000605.jpg@WEB000000001768",
     "subject": "Musiqa"
-  },
-  {
-    "id": "t-00000706",
-    "name": "Maxmudjanov Elbek Husanovich",
-    "role": "Sinf rahbari",
-    "phone": "+998-90-794-64-88",
-    "faceId": "00000706",
-    "classId": "c-1a",
-    "faceURL": "http://192.168.1.35/LOCALS/pic/enrlFace/0/0000000693.jpg@WEB000000001856",
-    "subject": "Informatika"
   }
 ];
 

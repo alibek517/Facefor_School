@@ -64,7 +64,7 @@ export const Navbar = () => {
 
   // Sinf rahbarining sinfini aniqlash
   const myTeacherObj = (teachers || []).find(t => t.id === currentUser?.teacherId || t.id === selectedTeacherId);
-  const myClassId = currentUser?.classId || myTeacherObj?.classId || 'c-10a';
+  const myClassId = currentUser?.classId || myTeacherObj?.classId || (classes[0]?.id || '');
   const myClassObj = (classes || []).find(c => c.id === myClassId);
 
   // Filtrlangan bildirishnomalar:

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSchool } from '../context/SchoolContext';
 import { 
   Building, 
@@ -825,7 +825,7 @@ export const DirectorDashboard = () => {
 
   // Sinf filtri bo'yicha KPI hisoblash
   const scopedStudents = useMemo(() => {
-    return selectedClass === 'all' 
+    return (!selectedClass || selectedClass === 'all') 
       ? enrichedStudents 
       : enrichedStudents.filter(s => s.classId === selectedClass);
   }, [enrichedStudents, selectedClass]);
@@ -846,7 +846,7 @@ export const DirectorDashboard = () => {
     else if (attendanceTab === 'absent') list = absentStudents;
     else if (attendanceTab === 'exited') list = exitedStudents;
 
-    if (selectedClass !== 'all') {
+    if ((selectedClass && selectedClass !== 'all')) {
       list = list.filter(s => s.classId === selectedClass);
     }
 
@@ -1154,7 +1154,7 @@ export const DirectorDashboard = () => {
             {scopedStudents.length} <span className="text-xs font-medium text-slate-400">nafar</span>
           </div>
           <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-            {selectedClass === 'all' ? '1 - 11 sinflar bo\'yicha' : `${(classes.find(c => c.id === selectedClass)?.name || '')} sinfi bo'yicha`}
+            {(!selectedClass || selectedClass === 'all') ? '1 - 11 sinflar bo\'yicha' : `${(classes.find(c => c.id === selectedClass)?.name || '')} sinfi bo'yicha`}
           </div>
         </div>
 
@@ -2067,7 +2067,7 @@ export const DirectorDashboard = () => {
               ))}
             </select>
 
-            {(selectedClass !== 'all' || studentSearch) && (
+            {((selectedClass && selectedClass !== 'all') || studentSearch) && (
               <button
                 onClick={() => { setSelectedClass('all'); setStudentSearch(''); }}
                 className="px-2.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors shrink-0"
