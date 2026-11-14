@@ -9619,15 +9619,4 @@ export const INITIAL_ATTENDANCE = [
   }
 ];
 
-export const INITIAL_NOTIFICATIONS = [
-  {
-    id: 'notif-1',
-    target: 'all',
-    type: 'attendance_alert',
-    title: '10-A sinf davomati topshirildi',
-    message: 'Navbatchi 10-A sinf davomatini yubordi (2 nafar kelmagan).',
-    classId: 'c-10a',
-    time: '08:46',
-    isRead: false
-  }
-];
+export const INITIAL_NOTIFICATIONS = [];

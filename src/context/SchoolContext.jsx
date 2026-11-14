@@ -230,6 +230,16 @@ export const SchoolProvider = ({ children }) => {
     });
   };
 
+  const filterValidNotifications = (list) => {
+    if (!Array.isArray(list)) return [];
+    return list.filter(n => 
+      n && 
+      n.id !== 'notif-1' && 
+      !String(n.title || '').includes('10-A sinf davomati topshirildi') &&
+      !String(n.message || '').includes('Navbatchi 10-A sinf davomatini yubordi')
+    );
+  };
+
   // Asosiy ma'lumotlar - 100% DINAMIK: LocalStorage'da saqlanmaydi, doimo Supabase bulutidan olinadi
   const [classes, setClasses] = useState(INITIAL_CLASSES);
   const [teachers, setTeachersRaw] = useState(() => filterRealTeachers(INITIAL_TEACHERS));
@@ -241,7 +251,8 @@ export const SchoolProvider = ({ children }) => {
   const [teacherAttendance, setTeacherAttendance] = useState(INITIAL_TEACHER_ATTENDANCE);
   const [hourlyAttendance, setHourlyAttendance] = useState(INITIAL_HOURLY_ATTENDANCE);
   const [leadership, setLeadership] = useState(SCHOOL_LEADERSHIP);
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotificationsRaw] = useState(() => filterValidNotifications(INITIAL_NOTIFICATIONS));
+  const setNotifications = (val) => setNotificationsRaw(prev => filterValidNotifications(typeof val === 'function' ? val(prev) : val));
   const [activeToast, setActiveToast] = useState(null);
 
   // Hikvision Face-ID qurilmasi holati (192.168.1.35)
@@ -1019,7 +1030,11 @@ export const SchoolProvider = ({ children }) => {
           if (cloudData.teacherAttendance) setTeacherAttendance(cloudData.teacherAttendance);
           if (cloudData.hourlyAttendance) setHourlyAttendance(cloudData.hourlyAttendance);
           if (cloudData.notifications && Array.isArray(cloudData.notifications)) {
-            setNotifications(cloudData.notifications);
+            const cleanNotifs = filterValidNotifications(cloudData.notifications);
+            setNotifications(cleanNotifs);
+            if (cleanNotifs.length !== cloudData.notifications.length) {
+              saveModuleToSupabase('notifications', cleanNotifs).catch(() => {});
+            }
           }
           if (cloudData.cameras && Array.isArray(cloudData.cameras) && cloudData.cameras.length >= 6) {
             setCameras(cloudData.cameras);
