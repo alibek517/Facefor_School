@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSchool } from '../context/SchoolContext';
 import { 
   Users, 
@@ -82,18 +82,92 @@ export const StudentDirectory = () => {
   const [promoteModalOpen, setPromoteModalOpen] = useState(false);
   const [promoting, setPromoting] = useState(false);
 
-  // Filtrlangan o'quvchilar
-  const filtered = students.filter(st => {
-    const matchesClass = selectedClass === 'all' || st.classId === selectedClass;
-    const name = (st.fullName || st.name || '').toLowerCase();
-    const addr = (st.address || '').toLowerCase();
-    const ph = st.phone || '';
-    const fid = st.studentId || st.faceId || '';
-    const q = searchTerm.toLowerCase();
-    const matchesSearch = !q || name.includes(q) || addr.includes(q) || ph.includes(q) || fid.includes(q);
+  // Har bir sinf IDsi bo'yicha tezkor xarita
+  const classMap = useMemo(() => {
+    const map = {};
+    (classes || []).forEach(c => {
+      if (c && c.id) map[c.id] = c;
+    });
+    return map;
+  }, [classes]);
 
-    return matchesClass && matchesSearch;
-  });
+  // Sinfning tartib og'irligini hisoblash (1-A, 1-B, ..., 10-A, 11-B)
+  const getClassSortWeight = useCallback((targetClassId, cMap) => {
+    const cls = cMap[targetClassId];
+    const name = cls ? (cls.name || '') : String(targetClassId || '');
+    const clean = name.trim();
+
+    // 1. Masalan: "1-A", "2-B", "10-A", "11-D", "1A"
+    const match = clean.match(/^(\d+)\s*[-_ ]?\s*([A-Za-zА-Яа-яЎўҚқҒғҲҳ]?)/);
+    if (match) {
+      const grade = parseInt(match[1], 10);
+      const letter = (match[2] || '').toUpperCase();
+      const letterCode = letter ? letter.charCodeAt(0) : 0;
+      return grade * 1000 + letterCode;
+    }
+
+    // 2. Agar cls.grade mavjud bo'lsa
+    if (cls && typeof cls.grade === 'number') {
+      return cls.grade * 1000;
+    }
+
+    // 3. c-1a, c-10a kabi formatlar
+    const matchId = String(targetClassId || '').match(/^c-(\d+)([a-zа-я])?/i);
+    if (matchId) {
+      const grade = parseInt(matchId[1], 10);
+      const letter = (matchId[2] || '').toUpperCase();
+      const letterCode = letter ? letter.charCodeAt(0) : 0;
+      return grade * 1000 + letterCode;
+    }
+
+    return 999999;
+  }, []);
+
+  // Sinflarni ham kichigidan kattasiga tartiblash (1-A dan 11-sinfgacha)
+  const sortedClasses = useMemo(() => {
+    return [...(classes || [])].sort((a, b) => {
+      const wA = getClassSortWeight(a.id, classMap);
+      const wB = getClassSortWeight(b.id, classMap);
+      if (wA !== wB) return wA - wB;
+      return (a.name || '').localeCompare(b.name || '', 'uz');
+    });
+  }, [classes, classMap, getClassSortWeight]);
+
+  // Filtrlangan va qat'iy tartiblangan o'quvchilar:
+  // "Barchasi"da turganida: 1-A dan boshlab 11-gacha tartiblanadi, har bir sinf ichida A-Z alifbo bo'yicha
+  const filtered = useMemo(() => {
+    const q = searchTerm.toLowerCase().trim();
+    const list = (students || []).filter(st => {
+      if (!st) return false;
+      const matchesClass = selectedClass === 'all' || st.classId === selectedClass;
+      if (!matchesClass) return false;
+      if (!q) return true;
+      const name = (st.fullName || st.name || '').toLowerCase();
+      const addr = (st.address || '').toLowerCase();
+      const ph = st.phone || '';
+      const fid = String(st.studentId || st.faceId || st.employeeNo || st.id || '').toLowerCase();
+      return name.includes(q) || addr.includes(q) || ph.includes(q) || fid.includes(q);
+    });
+
+    return list.sort((a, b) => {
+      // 1. Agar "Barchasi" tanlangan bo'lsa, avval kichik sinfdan katta sinfga (1-A, 1-B, ..., 11-B)
+      if (selectedClass === 'all') {
+        const weightA = getClassSortWeight(a.classId, classMap);
+        const weightB = getClassSortWeight(b.classId, classMap);
+        if (weightA !== weightB) return weightA - weightB;
+      }
+      // 2. Sinf ichida o'quvchilar F.I.Sh bo'yicha alifbo tartibida (A-Z)
+      const nameA = String(a.fullName || a.name || '').trim();
+      const nameB = String(b.fullName || b.name || '').trim();
+      const comp = nameA.localeCompare(nameB, 'uz', { sensitivity: 'base' });
+      if (comp !== 0) return comp;
+
+      // 3. Agar ismlar teng bo'lsa, studentId bo'yicha
+      const idA = String(a.studentId || a.faceId || a.id || '');
+      const idB = String(b.studentId || b.faceId || b.id || '');
+      return idA.localeCompare(idB);
+    });
+  }, [students, selectedClass, searchTerm, classMap, getClassSortWeight]);
 
   const selectedClassName = selectedClass === 'all' 
     ? 'Barcha_oquvchilar' 
@@ -400,7 +474,7 @@ export const StudentDirectory = () => {
           className="text-xs p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 outline-none transition-colors font-bold"
         >
           <option value="all">Barcha sinflar ({students.length})</option>
-          {classes.map(c => {
+          {sortedClasses.map(c => {
             const count = students.filter(s => s.classId === c.id).length;
             return <option key={c.id} value={c.id}>{c.name} ({count} ta)</option>;
           })}
@@ -419,7 +493,7 @@ export const StudentDirectory = () => {
         >
           Barchasi ({students.length})
         </button>
-        {classes.map(c => {
+        {sortedClasses.map(c => {
           const count = students.filter(s => s.classId === c.id).length;
           const isSelected = selectedClass === c.id;
           return (
@@ -480,7 +554,7 @@ export const StudentDirectory = () => {
                             title="Sinfni to'g'ridan-to'g'ri almashtirish (Serverda saqlanadi)"
                           >
                             <option value="">Sinf tanlang</option>
-                            {classes.map(c => (
+                            {sortedClasses.map(c => (
                               <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
                           </select>
@@ -631,7 +705,7 @@ export const StudentDirectory = () => {
                       onChange={(e) => setImportTargetClass(e.target.value)}
                       className="w-full text-xs p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold outline-none"
                     >
-                      {classes.map(c => (
+                      {sortedClasses.map(c => (
                         <option key={c.id} value={c.id}>{c.name} sinfi</option>
                       ))}
                     </select>
@@ -967,7 +1041,7 @@ export const StudentDirectory = () => {
                     onChange={(e) => setClassId(e.target.value)}
                     className="w-full text-xs p-1.5 border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none font-bold"
                   >
-                    {classes.map(c => (
+                    {sortedClasses.map(c => (
                       <option key={c.id} value={c.id}>{c.name} sinfi</option>
                     ))}
                   </select>

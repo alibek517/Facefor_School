@@ -219,7 +219,7 @@ export const SchoolProvider = ({ children }) => {
 
   const filterRealStudents = (list) => {
     if (!Array.isArray(list)) return [];
-    return list.filter(s => {
+    const valid = list.filter(s => {
       if (!s) return false;
       const sId = String(s.studentId || s.id || s.employeeNo || '').replace(/^s-/, '').replace(/^0+/, '');
       const sName = String(s.fullName || s.name || '').toLowerCase().trim();
@@ -227,6 +227,26 @@ export const SchoolProvider = ({ children }) => {
       if (sId === '784' || s.id === 's-00000784' || s.studentId === '00000784' || s.employeeNo === '00000784') return false;
       if (sName.includes('urazmetov izzat') || sName.includes("o'razmetov izzat") || sName.includes("o‘razmetov izzat")) return false;
       return true;
+    });
+
+    return valid.sort((a, b) => {
+      const getWeight = (st) => {
+        const cId = String(st.classId || '').trim();
+        const cName = String(st.className || '').trim();
+        let m = cId.match(/^c-(\d+)([a-zа-я])?/i) || cName.match(/^(\d+)\s*[-_ ]?\s*([a-zа-я])?/i) || cId.match(/^(\d+)\s*[-_ ]?\s*([a-zа-я])?/i);
+        if (m) {
+          const g = parseInt(m[1], 10);
+          const l = (m[2] || '').toUpperCase();
+          return g * 1000 + (l ? l.charCodeAt(0) : 0);
+        }
+        return 999999;
+      };
+      const wA = getWeight(a);
+      const wB = getWeight(b);
+      if (wA !== wB) return wA - wB;
+      const nameA = String(a.fullName || a.name || '').trim();
+      const nameB = String(b.fullName || b.name || '').trim();
+      return nameA.localeCompare(nameB, 'uz', { sensitivity: 'base' });
     });
   };
 
