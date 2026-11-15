@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSchool } from '../context/SchoolContext';
 import { StudentAvatar } from './StudentAvatar';
+import { TeacherLocationHistoryView } from './TeacherLocationHistoryView';
 import { 
   Users, 
   UserCheck, 
@@ -27,10 +28,12 @@ import {
   Download, 
   ExternalLink,
   ShieldCheck,
-  Check
+  Check,
+  Navigation
 } from 'lucide-react';
 
 export const TeacherAttendanceView = () => {
+  const [activeSubTab, setActiveSubTab] = useState('turnstile'); // 'turnstile' | 'gps'
   const {
     teachers = [],
     teacherAttendance = [],
@@ -362,7 +365,39 @@ export const TeacherAttendanceView = () => {
         </div>
       </div>
 
-      {/* 2. KPI Statistik Kartochkalari (5 ta ko'rsatkich) */}
+      {/* Ko'rinish rejimini tanlash: Face-ID Turniket vs GPS Jonli Lokatsiya & Tarix */}
+      <div className="flex items-center gap-2 p-1.5 bg-slate-200/70 dark:bg-slate-800/80 rounded-2xl w-fit">
+        <button
+          onClick={() => setActiveSubTab('turnstile')}
+          className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+            activeSubTab === 'turnstile'
+              ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Camera className="w-4 h-4" />
+          <span>Face-ID Turniket Davomati (6 ta Turniket)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('gps')}
+          className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+            activeSubTab === 'gps'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <MapPin className="w-4 h-4" />
+          <span>GPS Jonli Lokatsiya & Tarix (10:00 - 18:00)</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        </button>
+      </div>
+
+      {activeSubTab === 'gps' ? (
+        <TeacherLocationHistoryView />
+      ) : (
+        <>
+          {/* 2. KPI Statistik Kartochkalari (5 ta ko'rsatkich) */}
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-5 gap-3">
         {/* Jami */}
         <div 
@@ -1120,6 +1155,8 @@ export const TeacherAttendanceView = () => {
             </div>
           </div>
         </div>
+      )}
+      </>
       )}
 
     </div>

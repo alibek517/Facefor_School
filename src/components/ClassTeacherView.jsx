@@ -26,6 +26,7 @@ import { formatPhoneNumber, handlePhoneInputChange } from '../utils/phoneFormatt
 import { exportStudentsToExcel } from '../utils/excelAndPromotion';
 import { DAYS_OF_WEEK } from '../mockData';
 import { StudentAvatar } from './StudentAvatar';
+import { TeacherGPSWatcherBar } from './TeacherGPSWatcherBar';
 
 export const ClassTeacherView = () => {
   const { 
@@ -355,6 +356,9 @@ export const ClassTeacherView = () => {
           </div>
         </div>
       </div>
+
+      {/* O'qituvchining Jonli GPS Lokatsiya Nazorati (10:00 - 18:00 & Oflayn Kesh) */}
+      <TeacherGPSWatcherBar />
 
       {/* 2. Sinf Rahbari Ichki Tablari (Davomat, O'quvchilar, Dars Jadvali) */}
       <div className="bg-white dark:bg-slate-900 rounded-xl p-1.5 border border-slate-200 dark:border-slate-800 flex items-center gap-1 overflow-x-auto no-scrollbar transition-colors">

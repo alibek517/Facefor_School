@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSchool } from '../context/SchoolContext';
 import { DAYS_OF_WEEK } from '../mockData';
+import { TeacherGPSWatcherBar } from './TeacherGPSWatcherBar';
 import { 
   BookOpen, 
   Check, 
@@ -393,6 +394,9 @@ export const TeacherJournal = () => {
           </div>
         )}
       </div>
+
+      {/* O'qituvchining Jonli GPS Lokatsiya Nazorati (10:00 - 18:00 & Oflayn Kesh) */}
+      <TeacherGPSWatcherBar />
 
       {/* ======================================================== */}
       {/* 2. HAFTALIK JADVAL KO'RINISHI                            */}
