@@ -278,17 +278,54 @@ export const SchoolProvider = ({ children }) => {
   });
   const [recentFaceScans, setRecentFaceScans] = useState([]);
 
-  // 6 ta Turniket Kameralari (Foydalanuvchi tanlagan tartib: Chiqish 6, Chiqish 2, Chiqish 1, Kirish 3, Kirish 4, Kirish 5)
+  // 6 ta Turniket Kameralari (Yagona va standart tartib: Turniket 1..6, 1-3 Kirish, 4-6 Chiqish)
   const DEFAULT_CAMERAS = [
+    { id: 'cam-1', ip: '192.168.1.35', type: 'in', name: 'Turniket 1 (Kirish)', location: 'Bosh kirish eshigi (1)', online: true },
+    { id: 'cam-2', ip: '192.168.1.36', type: 'in', name: 'Turniket 2 (Kirish)', location: 'Bosh kirish eshigi (2)', online: true },
+    { id: 'cam-3', ip: '192.168.1.33', type: 'in', name: 'Turniket 3 (Kirish)', location: 'Bosh kirish eshigi (3)', online: true },
+    { id: 'cam-4', ip: '192.168.1.86', type: 'out', name: 'Turniket 4 (Chiqish)', location: 'Chiqish yo\'lagi (1)', online: true },
+    { id: 'cam-5', ip: '192.168.1.32', type: 'out', name: 'Turniket 5 (Chiqish)', location: 'Chiqish yo\'lagi (2)', online: true },
     { id: 'cam-6', ip: '192.168.1.13', type: 'out', name: 'Turniket 6 (Chiqish)', location: 'Chiqish yo\'lagi (3)', online: true },
-    { id: 'cam-2', ip: '192.168.1.32', type: 'out', name: 'Turniket 2 (Chiqish)', location: 'Bosh kirish eshigi (2)', online: true },
-    { id: 'cam-1', ip: '192.168.1.35', type: 'out', name: 'Turniket 1 (Chiqish)', location: 'Bosh kirish eshigi (1)', online: true },
-    { id: 'cam-3', ip: '192.168.1.36', type: 'in', name: 'Turniket 3 (Kirish)', location: 'Bosh kirish eshigi (3)', online: true },
-    { id: 'cam-4', ip: '192.168.1.86', type: 'in', name: 'Turniket 4 (Kirish)', location: 'Chiqish yo\'lagi (1)', online: true },
-    { id: 'cam-5', ip: '192.168.1.33', type: 'in', name: 'Turniket 5 (Kirish)', location: 'Chiqish yo\'lagi (2)', online: true },
   ];
 
-  const [cameras, setCameras] = useState(DEFAULT_CAMERAS);
+  const normalizeCameras = (list) => {
+    if (!Array.isArray(list) || list.length === 0) return DEFAULT_CAMERAS;
+
+    const canonicalMap = {
+      '192.168.1.35': { id: 'cam-1', name: 'Turniket 1 (Kirish)', type: 'in', location: 'Bosh kirish eshigi (1)', ip: '192.168.1.35' },
+      '192.168.1.36': { id: 'cam-2', name: 'Turniket 2 (Kirish)', type: 'in', location: 'Bosh kirish eshigi (2)', ip: '192.168.1.36' },
+      '192.168.1.33': { id: 'cam-3', name: 'Turniket 3 (Kirish)', type: 'in', location: 'Bosh kirish eshigi (3)', ip: '192.168.1.33' },
+      '192.168.1.86': { id: 'cam-4', name: 'Turniket 4 (Chiqish)', type: 'out', location: 'Chiqish yo\'lagi (1)', ip: '192.168.1.86' },
+      '192.168.1.32': { id: 'cam-5', name: 'Turniket 5 (Chiqish)', type: 'out', location: 'Chiqish yo\'lagi (2)', ip: '192.168.1.32' },
+      '192.168.1.13': { id: 'cam-6', name: 'Turniket 6 (Chiqish)', type: 'out', location: 'Chiqish yo\'lagi (3)', ip: '192.168.1.13' },
+      'cam-1': { id: 'cam-1', name: 'Turniket 1 (Kirish)', type: 'in', location: 'Bosh kirish eshigi (1)', ip: '192.168.1.35' },
+      'cam-2': { id: 'cam-2', name: 'Turniket 2 (Kirish)', type: 'in', location: 'Bosh kirish eshigi (2)', ip: '192.168.1.36' },
+      'cam-3': { id: 'cam-3', name: 'Turniket 3 (Kirish)', type: 'in', location: 'Bosh kirish eshigi (3)', ip: '192.168.1.33' },
+      'cam-4': { id: 'cam-4', name: 'Turniket 4 (Chiqish)', type: 'out', location: 'Chiqish yo\'lagi (1)', ip: '192.168.1.86' },
+      'cam-5': { id: 'cam-5', name: 'Turniket 5 (Chiqish)', type: 'out', location: 'Chiqish yo\'lagi (2)', ip: '192.168.1.32' },
+      'cam-6': { id: 'cam-6', name: 'Turniket 6 (Chiqish)', type: 'out', location: 'Chiqish yo\'lagi (3)', ip: '192.168.1.13' },
+    };
+
+    const normalizedStandard = DEFAULT_CAMERAS.map(def => {
+      const match = list.find(c => c && (c.id === def.id || c.ip === def.ip));
+      return {
+        ...def,
+        ...(match || {}),
+        id: def.id,
+        name: def.name,
+        type: def.type,
+        location: def.location,
+        ip: def.ip,
+        online: match ? (match.online ?? true) : true
+      };
+    });
+
+    const extras = list.filter(c => c && !canonicalMap[c.ip] && !canonicalMap[c.id]);
+    return [...normalizedStandard, ...extras];
+  };
+
+  const [cameras, setCamerasRaw] = useState(() => normalizeCameras(DEFAULT_CAMERAS));
+  const setCameras = (val) => setCamerasRaw(prev => normalizeCameras(typeof val === 'function' ? val(prev) : val));
 
   // Maktablar (Schools) ro'yxati va tanlangan maktab (BigAdmin uchun) - 100% Supabase bulutida saqlanadi
   const [schools, setSchools] = useState(INITIAL_SCHOOLS);
@@ -696,8 +733,11 @@ export const SchoolProvider = ({ children }) => {
     const timeFormatted = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const empNo = String(teacher.faceId || teacher.employeeNo || teacher.id || '').replace(/^t-/, '');
     const isExit = direction === 'out';
-    const gateName = customGate?.name || (isExit ? 'Turniket 6 (Chiqish)' : 'Turniket 3 (Kirish)');
-    const location = customGate?.location || (isExit ? "Chiqish yo'lagi (3)" : "Bosh kirish eshigi (3)");
+    const defaultInCam = (cameras || []).find(c => c.type === 'in') || DEFAULT_CAMERAS[0];
+    const defaultOutCam = (cameras || []).find(c => c.type === 'out') || DEFAULT_CAMERAS[3];
+    const defaultCam = isExit ? defaultOutCam : defaultInCam;
+    const gateName = customGate?.name || defaultCam.name;
+    const location = customGate?.location || defaultCam.location;
 
     const scan = {
       id: `scan-t-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,

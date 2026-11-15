@@ -112,13 +112,18 @@ export const TeacherAttendanceView = () => {
 
   // Turniket lokatsiyasini chiroyli nomlash
   const getTurniketLocation = (scan, fallbackGate) => {
-    if (!scan && !fallbackGate) return 'Turniket 3 (Bosh kirish eshigi)';
-    if (scan?.cameraName) return scan.cameraName;
+    if (!scan && !fallbackGate) return 'Turniket 1 (Kirish) • Bosh kirish eshigi (1)';
+    if (scan?.cameraName) {
+      if (scan.location && !scan.cameraName.includes('•')) {
+        return `${scan.cameraName} • ${scan.location}`;
+      }
+      return scan.cameraName;
+    }
     if (scan?.cameraIp && cameraMap[scan.cameraIp]) {
       const c = cameraMap[scan.cameraIp];
-      return `${c.name || 'Turniket'} • ${c.location || "Kirish yo'lagi"}`;
+      return `${c.name || 'Turniket'} • ${c.location || "Bosh kirish eshigi"}`;
     }
-    return fallbackGate || 'Bosh kirish eshigi (Turniket 3)';
+    return fallbackGate || 'Turniket 1 (Kirish) • Bosh kirish eshigi (1)';
   };
 
   // Barcha o'qituvchilarning real Face-ID turniket o'tishlariga asoslangan to'liq davomati
@@ -166,16 +171,17 @@ export const TeacherAttendanceView = () => {
         isInside = hasEntered && !hasExited;
         entryTime = firstInScan ? formatScanTime(firstInScan) : formatScanTime(scans[scans.length - 1]);
         exitTime = hasExited ? formatScanTime(latestScan) : (latestOutScan ? formatScanTime(latestOutScan) : null);
-        gateName = getTurniketLocation(latestScan || firstInScan);
-        gateLocation = latestScan?.location || latestScan?.cameraLocation || firstInScan?.location || "Bosh kirish yo'lagi";
+        const activeScan = hasExited ? (latestOutScan || latestScan) : (firstInScan || latestScan);
+        gateName = getTurniketLocation(activeScan);
+        gateLocation = activeScan?.location || activeScan?.cameraLocation || (hasExited ? "Chiqish yo'lagi (1)" : "Bosh kirish eshigi (1)");
       } else if (hasRecordData) {
         hasEntered = true;
         hasExited = tRecord.hasExited || tRecord.lastDirection === 'out' || tRecord.status === 'exited';
         isInside = hasEntered && !hasExited;
         entryTime = tRecord.inTime || null;
         exitTime = hasExited ? (tRecord.outTime || null) : null;
-        gateName = tRecord.gateName || 'Turniket (Bosh kirish)';
-        gateLocation = tRecord.gateLocation || "Kirish yo'lagi";
+        gateName = tRecord.gateName || (hasExited ? 'Turniket 4 (Chiqish) • Chiqish yo\'lagi (1)' : 'Turniket 1 (Kirish) • Bosh kirish eshigi (1)');
+        gateLocation = tRecord.gateLocation || (hasExited ? "Chiqish yo'lagi (1)" : "Bosh kirish eshigi (1)");
       }
 
       const assignedClass = (classes || []).find(c => c.id === teacher.classId);
@@ -1042,15 +1048,16 @@ export const TeacherAttendanceView = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => {
+                      const inCam = (cameras || []).find(c => c.type === 'in') || { name: 'Turniket 1 (Kirish)', location: 'Bosh kirish eshigi (1)' };
                       if (triggerTeacherTurnstileScan) {
-                        triggerTeacherTurnstileScan(selectedTeacherDetail.id, 'in');
+                        triggerTeacherTurnstileScan(selectedTeacherDetail.id, 'in', inCam);
                         setSelectedTeacherDetail(prev => ({
                           ...prev,
                           hasEntered: true,
                           isInside: true,
                           hasExited: false,
                           statusType: 'inside',
-                          gateName: 'Turniket 3 (Bosh kirish eshigi)',
+                          gateName: `${inCam.name} • ${inCam.location}`,
                           entryTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                         }));
                       }
@@ -1058,20 +1065,21 @@ export const TeacherAttendanceView = () => {
                     className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <LogIn className="w-3.5 h-3.5" />
-                    <span>Turniket (Kirish)</span>
+                    <span>Turniket 1 (Kirish)</span>
                   </button>
 
                   <button
                     onClick={() => {
+                      const outCam = (cameras || []).find(c => c.type === 'out') || { name: 'Turniket 4 (Chiqish)', location: "Chiqish yo'lagi (1)" };
                       if (triggerTeacherTurnstileScan) {
-                        triggerTeacherTurnstileScan(selectedTeacherDetail.id, 'out');
+                        triggerTeacherTurnstileScan(selectedTeacherDetail.id, 'out', outCam);
                         setSelectedTeacherDetail(prev => ({
                           ...prev,
                           hasEntered: true,
                           isInside: false,
                           hasExited: true,
                           statusType: 'exited',
-                          gateName: "Turniket 6 (Chiqish yo'lagi)",
+                          gateName: `${outCam.name} • ${outCam.location}`,
                           exitTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                         }));
                       }
@@ -1079,7 +1087,7 @@ export const TeacherAttendanceView = () => {
                     className="p-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <LogOut className="w-3.5 h-3.5" />
-                    <span>Turniket (Chiqish)</span>
+                    <span>Turniket 4 (Chiqish)</span>
                   </button>
                 </div>
               </div>

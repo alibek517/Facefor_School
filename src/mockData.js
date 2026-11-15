@@ -140,12 +140,12 @@ export const INITIAL_SCHOOLS = [
     supabaseUrl: "https://ffwbxpqfzlkevxhijvtd.supabase.co",
     supabaseKey: "sb_publishable_IN4OpUU6gNpnZINpifQSAg_DZuksmMD",
     turnstiles: [
-      { id: 'cam-1', schoolId: 'sch-1', ip: '192.168.1.35', name: 'Turniket 1 (Chiqish)', type: 'out', location: 'Bosh kirish eshigi (1)', online: true },
-      { id: 'cam-6', schoolId: 'sch-1', ip: '192.168.1.13', name: 'Turniket 6 (Chiqish)', type: 'out', location: 'Chiqish yo\'lagi (3)', online: true },
-      { id: 'cam-2', schoolId: 'sch-1', ip: '192.168.1.32', name: 'Turniket 2 (Chiqish)', type: 'out', location: 'Bosh kirish eshigi (2)', online: true },
-      { id: 'cam-3', schoolId: 'sch-1', ip: '192.168.1.36', name: 'Turniket 3 (Kirish)', type: 'in', location: 'Bosh kirish eshigi (3)', online: true },
-      { id: 'cam-4', schoolId: 'sch-1', ip: '192.168.1.86', name: 'Turniket 4 (Kirish)', type: 'in', location: 'Chiqish yo\'lagi (1)', online: true },
-      { id: 'cam-5', schoolId: 'sch-1', ip: '192.168.1.33', name: 'Turniket 5 (Kirish)', type: 'in', location: 'Chiqish yo\'lagi (2)', online: true }
+      { id: 'cam-1', schoolId: 'sch-1', ip: '192.168.1.35', name: 'Turniket 1 (Kirish)', type: 'in', location: 'Bosh kirish eshigi (1)', online: true },
+      { id: 'cam-2', schoolId: 'sch-1', ip: '192.168.1.36', name: 'Turniket 2 (Kirish)', type: 'in', location: 'Bosh kirish eshigi (2)', online: true },
+      { id: 'cam-3', schoolId: 'sch-1', ip: '192.168.1.33', name: 'Turniket 3 (Kirish)', type: 'in', location: 'Bosh kirish eshigi (3)', online: true },
+      { id: 'cam-4', schoolId: 'sch-1', ip: '192.168.1.86', name: 'Turniket 4 (Chiqish)', type: 'out', location: 'Chiqish yo\'lagi (1)', online: true },
+      { id: 'cam-5', schoolId: 'sch-1', ip: '192.168.1.32', name: 'Turniket 5 (Chiqish)', type: 'out', location: 'Chiqish yo\'lagi (2)', online: true },
+      { id: 'cam-6', schoolId: 'sch-1', ip: '192.168.1.13', name: 'Turniket 6 (Chiqish)', type: 'out', location: 'Chiqish yo\'lagi (3)', online: true }
     ]
   },
   {

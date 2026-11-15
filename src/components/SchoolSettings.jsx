@@ -60,6 +60,7 @@ export const SchoolSettings = () => {
     bridgeUrl,
     isLocalConnected,
     globalStreamUrl,
+    cameras,
     showToast
   } = useSchool();
 
@@ -530,7 +531,7 @@ export const SchoolSettings = () => {
             }`}
           >
             <span className={`w-2 h-2 rounded-full ${faceDevice?.online ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
-            <span>Face-ID Terminal ({faceDevice?.ip || '192.168.1.35'})</span>
+            <span>Face-ID & Turniketlar (6 ta)</span>
           </button>
         </div>
 
@@ -1228,6 +1229,58 @@ export const SchoolSettings = () => {
                   Server HTTP Bridge
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Barcha 6 ta Turniket Apparatlari Ro'yxati */}
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Camera className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Maktab Turniket Apparatlari ({cameras?.length || 6} ta)
+                </h4>
+              </div>
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                1-3: Bosh Kirish • 4-6: Chiqish Yo'lagi
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {(cameras || []).map((cam, idx) => (
+                <div 
+                  key={cam.id || cam.ip || idx}
+                  className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 space-y-2 hover:border-blue-400 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[11px] flex items-center justify-center font-bold">
+                        {idx + 1}
+                      </span>
+                      <span>{cam.name}</span>
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      cam.type === 'in' 
+                        ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700/50' 
+                        : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700/50'
+                    }`}>
+                      {cam.type === 'in' ? 'Kirish' : 'Chiqish'}
+                    </span>
+                  </div>
+
+                  <div className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                    📍 {cam.location || (cam.type === 'in' ? 'Bosh kirish eshigi' : "Chiqish yo'lagi")}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-700/60 text-[11px] font-mono text-slate-500">
+                    <span>IP: {cam.ip}</span>
+                    <span className="flex items-center gap-1 text-emerald-600 font-sans font-bold text-[10px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Faol
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

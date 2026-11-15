@@ -27779,28 +27779,18 @@
     {
       "id": "cam-1",
       "ip": "192.168.1.35",
-      "name": "Turniket 1 (Chiqish)",
-      "type": "out",
+      "name": "Turniket 1 (Kirish)",
+      "type": "in",
       "online": true,
       "location": "Bosh kirish eshigi (1)",
       "lastEvent": null,
       "updated_at": "2026-10-14T04:42:17.882+00:00"
     },
     {
-      "id": "cam-6",
-      "ip": "192.168.1.13",
-      "name": "Turniket 6 (Chiqish)",
-      "type": "out",
-      "online": true,
-      "location": "Chiqish yo'lagi (3)",
-      "lastEvent": null,
-      "updated_at": "2026-10-14T04:42:17.882+00:00"
-    },
-    {
       "id": "cam-2",
-      "ip": "192.168.1.32",
-      "name": "Turniket 2 (Chiqish)",
-      "type": "out",
+      "ip": "192.168.1.36",
+      "name": "Turniket 2 (Kirish)",
+      "type": "in",
       "online": true,
       "location": "Bosh kirish eshigi (2)",
       "lastEvent": null,
@@ -27808,7 +27798,7 @@
     },
     {
       "id": "cam-3",
-      "ip": "192.168.1.36",
+      "ip": "192.168.1.33",
       "name": "Turniket 3 (Kirish)",
       "type": "in",
       "online": true,
@@ -27819,8 +27809,8 @@
     {
       "id": "cam-4",
       "ip": "192.168.1.86",
-      "name": "Turniket 4 (Kirish)",
-      "type": "in",
+      "name": "Turniket 4 (Chiqish)",
+      "type": "out",
       "online": true,
       "location": "Chiqish yo'lagi (1)",
       "lastEvent": null,
@@ -27828,11 +27818,21 @@
     },
     {
       "id": "cam-5",
-      "ip": "192.168.1.33",
-      "name": "Turniket 5 (Kirish)",
-      "type": "in",
+      "ip": "192.168.1.32",
+      "name": "Turniket 5 (Chiqish)",
+      "type": "out",
       "online": true,
       "location": "Chiqish yo'lagi (2)",
+      "lastEvent": null,
+      "updated_at": "2026-10-14T04:42:17.882+00:00"
+    },
+    {
+      "id": "cam-6",
+      "ip": "192.168.1.13",
+      "name": "Turniket 6 (Chiqish)",
+      "type": "out",
+      "online": true,
+      "location": "Chiqish yo'lagi (3)",
       "lastEvent": null,
       "updated_at": "2026-10-14T04:42:17.882+00:00"
     }
@@ -27863,8 +27863,8 @@
         {
           "id": "cam-1",
           "ip": "192.168.1.35",
-          "name": "Turniket 1 (Chiqish)",
-          "type": "out",
+          "name": "Turniket 1 (Kirish)",
+          "type": "in",
           "online": true,
           "location": "Bosh kirish eshigi (1)",
           "lastEvent": null,
@@ -27872,21 +27872,10 @@
           "schoolId": "sch-1"
         },
         {
-          "id": "cam-6",
-          "ip": "192.168.1.13",
-          "name": "Turniket 6 (Chiqish)",
-          "type": "out",
-          "online": true,
-          "location": "Chiqish yo'lagi (3)",
-          "lastEvent": null,
-          "updated_at": "2026-10-14T04:42:17.882+00:00",
-          "schoolId": "sch-1"
-        },
-        {
           "id": "cam-2",
-          "ip": "192.168.1.32",
-          "name": "Turniket 2 (Chiqish)",
-          "type": "out",
+          "ip": "192.168.1.36",
+          "name": "Turniket 2 (Kirish)",
+          "type": "in",
           "online": true,
           "location": "Bosh kirish eshigi (2)",
           "lastEvent": null,
@@ -27895,7 +27884,7 @@
         },
         {
           "id": "cam-3",
-          "ip": "192.168.1.36",
+          "ip": "192.168.1.33",
           "name": "Turniket 3 (Kirish)",
           "type": "in",
           "online": true,
@@ -27907,8 +27896,8 @@
         {
           "id": "cam-4",
           "ip": "192.168.1.86",
-          "name": "Turniket 4 (Kirish)",
-          "type": "in",
+          "name": "Turniket 4 (Chiqish)",
+          "type": "out",
           "online": true,
           "location": "Chiqish yo'lagi (1)",
           "lastEvent": null,
@@ -27917,11 +27906,22 @@
         },
         {
           "id": "cam-5",
-          "ip": "192.168.1.33",
-          "name": "Turniket 5 (Kirish)",
-          "type": "in",
+          "ip": "192.168.1.32",
+          "name": "Turniket 5 (Chiqish)",
+          "type": "out",
           "online": true,
           "location": "Chiqish yo'lagi (2)",
+          "lastEvent": null,
+          "updated_at": "2026-10-14T04:42:17.882+00:00",
+          "schoolId": "sch-1"
+        },
+        {
+          "id": "cam-6",
+          "ip": "192.168.1.13",
+          "name": "Turniket 6 (Chiqish)",
+          "type": "out",
+          "online": true,
+          "location": "Chiqish yo'lagi (3)",
           "lastEvent": null,
           "updated_at": "2026-10-14T04:42:17.882+00:00",
           "schoolId": "sch-1"
