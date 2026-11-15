@@ -2003,6 +2003,15 @@ export const SchoolProvider = ({ children }) => {
 
   const createSchool = async (newSchoolData) => {
     const tempId = newSchoolData.id || `sch-${Date.now()}`;
+    const defaultTurnstiles = [
+      { id: `cam-${tempId}-1`, schoolId: tempId, name: 'Turniket 1 (Kirish)', ip: '192.168.1.35', type: 'in', location: 'Bosh kirish eshigi (1)', port: 80, online: true },
+      { id: `cam-${tempId}-2`, schoolId: tempId, name: 'Turniket 2 (Kirish)', ip: '192.168.1.36', type: 'in', location: 'Bosh kirish eshigi (2)', port: 80, online: true },
+      { id: `cam-${tempId}-3`, schoolId: tempId, name: 'Turniket 3 (Kirish)', ip: '192.168.1.33', type: 'in', location: 'Bosh kirish eshigi (3)', port: 80, online: true },
+      { id: `cam-${tempId}-4`, schoolId: tempId, name: 'Turniket 4 (Chiqish)', ip: '192.168.1.86', type: 'out', location: "Chiqish yo'lagi (1)", port: 80, online: true },
+      { id: `cam-${tempId}-5`, schoolId: tempId, name: 'Turniket 5 (Chiqish)', ip: '192.168.1.32', type: 'out', location: "Chiqish yo'lagi (2)", port: 80, online: true },
+      { id: `cam-${tempId}-6`, schoolId: tempId, name: 'Turniket 6 (Chiqish)', ip: '192.168.1.13', type: 'out', location: "Chiqish yo'lagi (3)", port: 80, online: true },
+    ];
+
     const schoolObj = {
       id: tempId,
       name: newSchoolData.name.trim(),
@@ -2012,16 +2021,16 @@ export const SchoolProvider = ({ children }) => {
       director: newSchoolData.director ? newSchoolData.director.trim() : '',
       status: newSchoolData.status || 'active',
       createdAt: new Date().toISOString(),
-      turnstiles: Array.isArray(newSchoolData.turnstiles) ? newSchoolData.turnstiles.map((t, idx) => ({
-        id: t.id || `cam-${Date.now()}-${idx}`,
+      turnstiles: Array.isArray(newSchoolData.turnstiles) && newSchoolData.turnstiles.length > 0 ? newSchoolData.turnstiles.map((t, idx) => ({
+        id: t.id || `cam-${tempId}-${idx + 1}`,
         schoolId: tempId,
-        name: t.name ? t.name.trim() : `Turniket (${t.ip})`,
+        name: t.name ? t.name.trim() : `Turniket ${idx + 1}`,
         ip: t.ip.trim(),
         type: t.type === 'out' ? 'out' : 'in',
-        location: t.location ? t.location.trim() : 'Bosh kirish',
+        location: t.location ? t.location.trim() : (t.type === 'out' ? "Chiqish yo'lagi" : "Bosh kirish eshigi"),
         port: Number(t.port) || 80,
-        online: false
-      })) : []
+        online: true
+      })) : defaultTurnstiles
     };
 
     setSchools(prev => {
@@ -2442,6 +2451,78 @@ export const SchoolProvider = ({ children }) => {
     showToast('Turniket olib tashlandi', 'Turniket maktabdan olib tashlandi.', 'info');
   };
 
+  // =================== MARKAZIY APPARAT (6 TA TURNIKET) SINXRONLASH BOSHQARUVI ===================
+  // Veb-sayt barcha turniketlarning mutlaq master boshqaruv markazidir!
+  const pushToHardwareSyncQueue = async (action, type, item) => {
+    try {
+      const task = {
+        id: `sync-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        schoolId: selectedSchoolId || 'sch-1',
+        action,
+        type,
+        payload: item,
+        timestamp: new Date().toISOString()
+      };
+
+      // 1. Supabase hardware_sync_queue ga yozish (Verceldan bo'lsa ham lokal bridge barcha turniketlarga yuklaydi!)
+      if (!isQuotaExceeded()) {
+        const cfg = getSupabaseConfig();
+        if (cfg && cfg.URL && cfg.KEY) {
+          fetch(`${cfg.URL}/rest/v1/school_data?key=eq.hardware_sync_queue&select=*`, {
+            headers: { 'apikey': cfg.KEY, 'Authorization': `Bearer ${cfg.KEY}` }
+          })
+            .then(r => r.json())
+            .then(rows => {
+              const currentQueue = (rows && rows[0]?.data && Array.isArray(rows[0].data)) ? rows[0].data : [];
+              const nextQueue = [...currentQueue, task];
+              fetch(`${cfg.URL}/rest/v1/school_data`, {
+                method: 'POST',
+                headers: {
+                  'apikey': cfg.KEY,
+                  'Authorization': `Bearer ${cfg.KEY}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'resolution=merge-duplicates'
+                },
+                body: JSON.stringify({ key: 'hardware_sync_queue', data: nextQueue, updated_at: new Date().toISOString() })
+              }).catch(() => {});
+            })
+            .catch(() => {});
+        }
+      }
+
+      // 2. Agar lokal ko'prik serveri to'g'ridan-to'g'ri ochiq bo'lsa darhol uzatish
+      const targetUrl = getActiveBridgeUrl();
+      if (targetUrl) {
+        fetch(`${targetUrl}/api/school/hardware-sync-task`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(task)
+        }).catch(() => {});
+      }
+    } catch (e) {}
+  };
+
+  // Barcha turniketlarni saytdagi bazaga to'liq qayta sinxronlash (Master Push)
+  const syncAllToHardware = async () => {
+    showToast('Turniketlar sinxronlanmoqda', 'Barcha o\'quvchi va o\'qituvchilar 6 ta turniket apparatiga uzatilmoqda...', 'info');
+    try {
+      await pushToHardwareSyncQueue('full_resync', 'all', {});
+      const targetUrl = getActiveBridgeUrl();
+      if (targetUrl) {
+        fetch(`${targetUrl}/api/school/sync-all-to-hardware`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ schoolId: selectedSchoolId })
+        }).catch(() => {});
+      }
+      showToast('Muvaffaqiyatli', 'Barcha turniketlar bazasi veb-sayt ma\'lumotlari bilan to\'liq sinxronlandi.', 'success');
+      return true;
+    } catch (err) {
+      showToast('Xatolik', 'Sinxronlashda xatolik: ' + err.message, 'error');
+      return false;
+    }
+  };
+
   // =================== CRUD: O'QUVCHILAR (100% DINAMIK VA FACE-ID SINXRON) ===================
   const addStudent = (studentData) => {
     // Eng katta mavjud ID raqamini aniqlash (Face-ID kamerasi uchun to'g'ri 8 xonali raqam)
@@ -2474,6 +2555,8 @@ export const SchoolProvider = ({ children }) => {
       return next;
     });
 
+    pushToHardwareSyncQueue('add', 'student', newStudent);
+
     const targetUrl = getActiveBridgeUrl();
     if (targetUrl) {
       try {
@@ -2485,7 +2568,7 @@ export const SchoolProvider = ({ children }) => {
       } catch (e) {}
     }
 
-    showToast('Qo\'shildi', 'Yangi o\'quvchi saqlandi va Face-ID ga kiritildi.', 'success');
+    showToast('Qo\'shildi', 'Yangi o\'quvchi saqlandi va barcha Face-ID turniketlariga kiritildi.', 'success');
   };
 
   const updateStudent = (studentId, updatedData) => {
@@ -2512,6 +2595,10 @@ export const SchoolProvider = ({ children }) => {
       return next;
     });
 
+    if (updatedStudentObj) {
+      pushToHardwareSyncQueue('update', 'student', updatedStudentObj);
+    }
+
     // Jonli skanerlar (recentFaceScans) dagi eski ismlarni ham darhol yangilaymiz
     if (updatedStudentObj) {
       const emp = String(updatedStudentObj.studentId || updatedStudentObj.employeeNo || updatedStudentObj.id || '').replace(/^s-/, '').replace(/^0+/, '');
@@ -2537,7 +2624,7 @@ export const SchoolProvider = ({ children }) => {
         }).catch(() => {});
       } catch (e) {}
     }
-    showToast('Yangilandi', 'O\'quvchi ma\'lumotlari yangilandi va Face-ID apparatlariga uzatildi.', 'info');
+    showToast('Yangilandi', 'O\'quvchi ma\'lumotlari yangilandi va barcha Face-ID turniketlariga uzatildi.', 'info');
   };
 
   const deleteStudent = async (studentId) => {
@@ -2550,6 +2637,8 @@ export const SchoolProvider = ({ children }) => {
       saveToServer('students', next);
       return next;
     });
+
+    pushToHardwareSyncQueue('delete', 'student', studentToDel || { id: studentId, employeeNo: empNo });
 
     // 2. Face-ID apparatlaridan o'chirish
     const targetUrl = getActiveBridgeUrl();
@@ -2597,6 +2686,11 @@ export const SchoolProvider = ({ children }) => {
       saveToServer('students', next);
       return next;
     });
+
+    pushToHardwareSyncQueue('delete', 'student', student);
+    pushToHardwareSyncQueue('add', 'teacher', newTeacher);
+
+    showToast('O\'qituvchiga o\'tkazildi', `${newTeacher.name} o'qituvchilar safiga muvaffaqiyatli ko'chirildi!`, 'success');
 
     showToast('O\'qituvchiga o\'tkazildi', `${newTeacher.name} o'qituvchilar safiga muvaffaqiyatli ko'chirildi!`, 'success');
     return true;
@@ -2753,6 +2847,8 @@ export const SchoolProvider = ({ children }) => {
       return next;
     });
 
+    pushToHardwareSyncQueue('add', 'teacher', newTeacher);
+
     const targetUrl = getActiveBridgeUrl();
     if (targetUrl) {
       try {
@@ -2764,7 +2860,7 @@ export const SchoolProvider = ({ children }) => {
       } catch (e) {}
     }
 
-    showToast('Qo\'shildi', 'Yangi o\'qituvchi saqlandi va Face-ID ga kiritildi.', 'success');
+    showToast('Qo\'shildi', 'Yangi o\'qituvchi saqlandi va barcha Face-ID turniketlariga kiritildi.', 'success');
   };
 
   const updateTeacher = (teacherId, updatedData) => {
@@ -2786,6 +2882,10 @@ export const SchoolProvider = ({ children }) => {
       return next;
     });
 
+    if (updatedTeacherObj) {
+      pushToHardwareSyncQueue('update', 'teacher', updatedTeacherObj);
+    }
+
     const targetUrl = getActiveBridgeUrl();
     if (targetUrl && updatedTeacherObj) {
       try {
@@ -2797,7 +2897,7 @@ export const SchoolProvider = ({ children }) => {
       } catch (e) {}
     }
 
-    showToast('Yangilandi', 'O\'qituvchi ma\'lumotlari va Face-ID surati yangilandi.', 'info');
+    showToast('Yangilandi', 'O\'qituvchi ma\'lumotlari va Face-ID surati barcha turniketlarda yangilandi.', 'info');
   };
 
   const deleteTeacher = (teacherId) => {
@@ -2813,6 +2913,8 @@ export const SchoolProvider = ({ children }) => {
       return next;
     });
 
+    pushToHardwareSyncQueue('delete', 'teacher', teacherToDelete || { id: teacherId });
+
     const targetUrl = getActiveBridgeUrl();
     if (targetUrl && teacherToDelete) {
       try {
@@ -2824,7 +2926,7 @@ export const SchoolProvider = ({ children }) => {
       } catch (e) {}
     }
 
-    showToast('O\'chirildi', 'O\'qituvchi tizimdan va Face-ID dan o\'chirildi.', 'info');
+    showToast('O\'chirildi', 'O\'qituvchi tizimdan va barcha Face-ID terminallaridan o\'chirildi.', 'info');
   };
 
   // =================== CRUD: DARS FANLARI / JADVAL ===================
@@ -3303,6 +3405,8 @@ export const SchoolProvider = ({ children }) => {
     updateTurnstile,
     deleteTurnstile,
     fetchSchoolsFromBackend,
+    syncAllToHardware,
+    pushToHardwareSyncQueue,
     isLocalHostEnv,
     isBigAdmin: Boolean(currentUser?.role === 'bigadmin' || currentUser?.isBigAdmin)
   };

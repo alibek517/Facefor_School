@@ -61,10 +61,23 @@ export const SchoolSettings = () => {
     isLocalConnected,
     globalStreamUrl,
     cameras,
+    syncAllToHardware,
     showToast
   } = useSchool();
 
   const effectiveBaseUrl = isLocalConnected ? (bridgeUrl || 'http://localhost:5001') : (globalStreamUrl || bridgeUrl || 'http://localhost:5001');
+
+  const [isSyncingAllHardware, setIsSyncingAllHardware] = useState(false);
+  const handleFullHardwareSync = async () => {
+    setIsSyncingAllHardware(true);
+    try {
+      if (syncAllToHardware) {
+        await syncAllToHardware();
+      }
+    } finally {
+      setTimeout(() => setIsSyncingAllHardware(false), 2000);
+    }
+  };
 
   // Rahbariyat va Administratorlar modali holati
   const [staffModalOpen, setStaffModalOpen] = useState(false);
@@ -1229,6 +1242,31 @@ export const SchoolSettings = () => {
                   Server HTTP Bridge
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Asosiy Boshqaruvchi - Turniketlarni Markaziy Sinxronlash */}
+          <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 shadow-sm space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Turniketlar Ichki Bazasini Markaziy Sinxronlash (Master Controller)
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
+                  Veb-sayt barcha turniketlarning boshqaruv markazidir. Saytda kiritilgan har qanday o'zgarish (tahrirlash, o'chirish, fotosurat yuklash) barcha 6 ta turniketning o'zining ichki apparat bazasiga avtomatik yoziladi.
+                </p>
+              </div>
+              <button
+                onClick={handleFullHardwareSync}
+                disabled={isSyncingAllHardware}
+                className="shrink-0 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncingAllHardware ? 'animate-spin' : ''}`} />
+                <span>{isSyncingAllHardware ? 'Turniketlarga yuklanmoqda...' : 'Barcha 6 ta Turniket Bazasini Yangilash'}</span>
+              </button>
             </div>
           </div>
 

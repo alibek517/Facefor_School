@@ -405,18 +405,39 @@ async function syncModuleToSupabase(key, data, targetSchoolId = null) {
 }
 
 // ==================== FACE-ID QURILMALARI (6 TA KAMERA) APPARAT SINXRONIZATSIYASI ====================
-async function syncStudentToHardware(action, studentData) {
+function getCamerasForSchool(schoolId) {
+  if (schoolId && schoolDB && Array.isArray(schoolDB.schools)) {
+    const sch = schoolDB.schools.find(s => s.id === schoolId);
+    if (sch && Array.isArray(sch.turnstiles) && sch.turnstiles.length > 0) {
+      return sch.turnstiles;
+    }
+  }
+  return (CAMERAS && CAMERAS.length > 0) ? CAMERAS : [
+    { id: 'cam-1', ip: '192.168.1.35', type: 'in', name: 'Turniket 1 (Kirish)', location: 'Bosh kirish eshigi (1)', port: 80 },
+    { id: 'cam-2', ip: '192.168.1.36', type: 'in', name: 'Turniket 2 (Kirish)', location: 'Bosh kirish eshigi (2)', port: 80 },
+    { id: 'cam-3', ip: '192.168.1.33', type: 'in', name: 'Turniket 3 (Kirish)', location: 'Bosh kirish eshigi (3)', port: 80 },
+    { id: 'cam-4', ip: '192.168.1.86', type: 'out', name: 'Turniket 4 (Chiqish)', location: "Chiqish yo'lagi (1)", port: 80 },
+    { id: 'cam-5', ip: '192.168.1.32', type: 'out', name: 'Turniket 5 (Chiqish)', location: "Chiqish yo'lagi (2)", port: 80 },
+    { id: 'cam-6', ip: '192.168.1.13', type: 'out', name: 'Turniket 6 (Chiqish)', location: "Chiqish yo'lagi (3)", port: 80 },
+  ];
+}
+
+async function syncStudentToHardware(action, studentData, schoolId = null) {
   if (!studentData) return;
-  const rawEmp = String(studentData.employeeNo || studentData.studentId || studentData.id || '').replace(/^s-/, '').trim();
+  const rawEmp = String(studentData.employeeNo || studentData.studentId || studentData.faceId || studentData.id || '').replace(/^[st]-/, '').trim();
   if (!rawEmp) return;
 
-  const empPadded = rawEmp.padStart(8, '0');
-  const empClean = rawEmp.replace(/^0+/, '');
+  const rawNum = parseInt(rawEmp.replace(/\D/g, ''), 10);
+  const empPadded = isNaN(rawNum) ? rawEmp.padStart(8, '0') : String(rawNum).padStart(8, '0');
+  const empClean = isNaN(rawNum) ? rawEmp : String(rawNum);
   const name = (studentData.fullName || studentData.name || '').replace(/''/g, "'").trim();
   const gender = (studentData.gender === 'Qiz' || studentData.gender === 'female') ? 'female' : 'male';
+  const role = studentData.role === 'teacher' ? 'teacher' : 'student';
+
+  const targetCameras = getCamerasForSchool(schoolId);
 
   if (action === 'delete') {
-    console.log(`[HARDWARE SYNC] #${rawEmp} (${name || 'Oquvchi'}) Face-ID kameralaridan o'chirilmoqda...`);
+    console.log(`[HARDWARE SYNC] #${rawEmp} (${name || 'Shaxs'}) Face-ID kameralaridan o'chirilmoqda...`);
     // usersMap va keshdan olib tashlash
     usersMap.delete(rawEmp);
     usersMap.delete(empPadded);
@@ -432,11 +453,11 @@ async function syncStudentToHardware(action, studentData) {
       ]
     });
 
-    for (const cam of CAMERAS) {
+    for (const cam of targetCameras) {
       try {
         await digestRequest({
           host: cam.ip,
-          port: 80,
+          port: cam.port || 80,
           path: '/ISAPI/Intelligent/FDLib/FDSearch/Delete?format=json&FDID=1&faceLibType=blackFD',
           method: 'PUT',
           body: fdDelPayload,
@@ -446,7 +467,7 @@ async function syncStudentToHardware(action, studentData) {
         });
         await digestRequest({
           host: cam.ip,
-          port: 80,
+          port: cam.port || 80,
           path: '/ISAPI/Intelligent/FDLib/FDSearch/Delete?format=json&FDID=2&faceLibType=infraredFD',
           method: 'PUT',
           body: fdDelPayload,
@@ -468,11 +489,11 @@ async function syncStudentToHardware(action, studentData) {
       }
     });
 
-    for (const cam of CAMERAS) {
+    for (const cam of targetCameras) {
       try {
         const delRes = await digestRequest({
           host: cam.ip,
-          port: 80,
+          port: cam.port || 80,
           path: '/ISAPI/AccessControl/UserInfo/Delete?format=json',
           method: 'PUT',
           body: deletePayload,
@@ -498,9 +519,9 @@ async function syncStudentToHardware(action, studentData) {
 
     const userObj = {
       employeeNo: empPadded,
-      name: name || `O'quvchi #${empPadded}`,
+      name: name || `Shaxs #${empPadded}`,
       gender: gender,
-      role: 'student'
+      role: role
     };
     usersMap.set(empPadded, userObj);
     usersMap.set(rawEmp, userObj);
@@ -510,6 +531,7 @@ async function syncStudentToHardware(action, studentData) {
     if (existingCached) {
       existingCached.name = name;
       existingCached.gender = gender;
+      existingCached.role = role;
     } else {
       cachedUsers.push(userObj);
     }
@@ -533,11 +555,11 @@ async function syncStudentToHardware(action, studentData) {
       }
     });
 
-    for (const cam of CAMERAS) {
+    for (const cam of targetCameras) {
       try {
         const setRes = await digestRequest({
           host: cam.ip,
-          port: 80,
+          port: cam.port || 80,
           path: '/ISAPI/AccessControl/UserInfo/SetUp?format=json',
           method: 'PUT',
           body: setUpPayload,
@@ -551,7 +573,7 @@ async function syncStudentToHardware(action, studentData) {
         if (action === 'update') {
           await digestRequest({
             host: cam.ip,
-            port: 80,
+            port: cam.port || 80,
             path: '/ISAPI/AccessControl/UserInfo/Modify?format=json',
             method: 'PUT',
             body: setUpPayload,
@@ -564,14 +586,15 @@ async function syncStudentToHardware(action, studentData) {
     }
 
     // 2. Agar yangi rasm taqdim etilgan bo'lsa, uni barcha Face-ID terminallarining FDLib (Yuz bazasi) ga yuklash
-    if (studentData.photo && typeof studentData.photo === 'string') {
+    const photoSource = studentData.photo || studentData.photoUrl || studentData.faceURL;
+    if (photoSource && typeof photoSource === 'string') {
       try {
         let imgBuffer = null;
-        if (studentData.photo.startsWith('data:image/')) {
-          const base64Data = studentData.photo.replace(/^data:image\/[a-zA-Z+]+;base64,/, '');
+        if (photoSource.startsWith('data:image/')) {
+          const base64Data = photoSource.replace(/^data:image\/[a-zA-Z+]+;base64,/, '');
           imgBuffer = Buffer.from(base64Data, 'base64');
-        } else if (studentData.photo.startsWith('http')) {
-          const r = await fetch(studentData.photo);
+        } else if (photoSource.startsWith('http')) {
+          const r = await fetch(photoSource);
           if (r.ok) {
             const arr = await r.arrayBuffer();
             imgBuffer = Buffer.from(arr);
@@ -598,12 +621,12 @@ async function syncStudentToHardware(action, studentData) {
             Buffer.from(`\r\n--${boundary}--\r\n`)
           ]);
 
-          for (const cam of CAMERAS) {
+          for (const cam of targetCameras) {
             try {
               // Eskisini o'chirish (agar bo'lsa)
               await digestRequest({
                 host: cam.ip,
-                port: 80,
+                port: cam.port || 80,
                 path: '/ISAPI/Intelligent/FDLib/FDSearch/Delete?format=json&FDID=1&faceLibType=blackFD',
                 method: 'PUT',
                 body: JSON.stringify({ FPID: [{ value: empPadded }] }),
@@ -615,7 +638,7 @@ async function syncStudentToHardware(action, studentData) {
               // Yangisini yuklash
               const faceRes = await digestRequest({
                 host: cam.ip,
-                port: 80,
+                port: cam.port || 80,
                 path: '/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json',
                 method: 'POST',
                 body: multipartBody,
@@ -637,69 +660,192 @@ async function syncStudentToHardware(action, studentData) {
       }
     }
 
-    console.log(`[HARDWARE SYNC] #${empPadded} (${name}) barcha Face-ID terminallariga saqlandi.`);
+    console.log(`[HARDWARE SYNC] #${empPadded} (${name}) barcha ${targetCameras.length} ta Face-ID terminallariga saqlandi.`);
   }
 }
 
-// Baza va apparat o'rtasidagi farqlarni aniqlash va avtomatik sinxronlash
-function detectAndSyncStudentDifferences(oldStudents, newStudents) {
+// Baza va apparat o'rtasidagi farqlarni aniqlash va avtomatik sinxronlash (O'quvchilar)
+function detectAndSyncStudentDifferences(oldStudents, newStudents, schoolId = null) {
   if (!Array.isArray(oldStudents) || !Array.isArray(newStudents)) return;
-  if (oldStudents.length === 0) return; // Boshlang'ich yuklashda o'chirishni oldini olish
+  if (oldStudents.length === 0) return;
 
-  // 1. O'chirilganlarni aniqlash va Face-ID apparatlaridan o'chirish
-  const newIds = new Set(newStudents.map(s => String(s.studentId || s.id || '').replace(/^s-/, '').replace(/^0+/, '')));
+  const newIds = new Set(newStudents.map(s => String(s.studentId || s.faceId || s.id || '').replace(/^s-/, '').replace(/^0+/, '')));
   for (const oldS of oldStudents) {
-    const empNo = String(oldS.studentId || oldS.id || '').replace(/^s-/, '').replace(/^0+/, '');
+    const empNo = String(oldS.studentId || oldS.faceId || oldS.id || '').replace(/^s-/, '').replace(/^0+/, '');
     if (empNo && !newIds.has(empNo)) {
       console.log(`[STUDENT DIFF SYNC] O'chirilgan o'quvchi aniqlandi: #${empNo} (${oldS.fullName || oldS.name}). Kameralardan butunlay o'chirilmoqda...`);
-      syncStudentToHardware('delete', oldS).catch(() => {});
+      syncStudentToHardware('delete', oldS, schoolId).catch(() => {});
     }
   }
 
-  // 2. Yangi qo'shilgan yoki tahrirlanganlarni aniqlash
   const oldMap = new Map();
   oldStudents.forEach(s => {
-    const empNo = String(s.studentId || s.id || '').replace(/^s-/, '').replace(/^0+/, '');
+    const empNo = String(s.studentId || s.faceId || s.id || '').replace(/^s-/, '').replace(/^0+/, '');
     if (empNo) oldMap.set(empNo, s);
   });
 
   for (const newS of newStudents) {
-    const empNo = String(newS.studentId || newS.id || '').replace(/^s-/, '').replace(/^0+/, '');
+    const empNo = String(newS.studentId || newS.faceId || newS.id || '').replace(/^s-/, '').replace(/^0+/, '');
     if (!empNo) continue;
     const oldS = oldMap.get(empNo);
     if (!oldS) {
       console.log(`[STUDENT DIFF SYNC] Yangi o'quvchi aniqlandi: #${empNo} (${newS.fullName || newS.name}). Kameralarga kiritilmoqda...`);
-      syncStudentToHardware('add', newS).catch(() => {});
+      syncStudentToHardware('add', newS, schoolId).catch(() => {});
     } else if (
       (newS.fullName || newS.name) !== (oldS.fullName || oldS.name) ||
       newS.gender !== oldS.gender ||
-      (newS.photo && newS.photo !== oldS.photo)
+      (newS.photo && newS.photo !== oldS.photo) ||
+      (newS.photoUrl && newS.photoUrl !== oldS.photoUrl)
     ) {
       console.log(`[STUDENT DIFF SYNC] Tahrirlangan o'quvchi aniqlandi: #${empNo} (${newS.fullName || newS.name}). Kameralarda yangilanmoqda...`);
-      syncStudentToHardware('update', newS).catch(() => {});
+      syncStudentToHardware('update', newS, schoolId).catch(() => {});
     }
   }
 }
 
-async function loadSchoolDataFromSupabase(schoolId = 'sch-1') {
-  if (isSupabaseDisabled) return;
-  const cfg = getSupabaseConfigForSchool(schoolId);
-  if (!cfg) return;
+// Baza va apparat o'rtasidagi farqlarni aniqlash va avtomatik sinxronlash (O'qituvchilar)
+function detectAndSyncTeacherDifferences(oldTeachers, newTeachers, schoolId = null) {
+  if (!Array.isArray(oldTeachers) || !Array.isArray(newTeachers)) return;
+  if (oldTeachers.length === 0) return;
+
+  const newIds = new Set(newTeachers.map(t => String(t.faceId || t.employeeNo || t.id || '').replace(/^t-/, '').replace(/^0+/, '')));
+  for (const oldT of oldTeachers) {
+    const empNo = String(oldT.faceId || oldT.employeeNo || oldT.id || '').replace(/^t-/, '').replace(/^0+/, '');
+    if (empNo && !newIds.has(empNo)) {
+      console.log(`[TEACHER DIFF SYNC] O'chirilgan o'qituvchi aniqlandi: #${empNo} (${oldT.name || oldT.fullName}). Kameralardan butunlay o'chirilmoqda...`);
+      syncStudentToHardware('delete', { ...oldT, role: 'teacher' }, schoolId).catch(() => {});
+    }
+  }
+
+  const oldMap = new Map();
+  oldTeachers.forEach(t => {
+    const empNo = String(t.faceId || t.employeeNo || t.id || '').replace(/^t-/, '').replace(/^0+/, '');
+    if (empNo) oldMap.set(empNo, t);
+  });
+
+  for (const newT of newTeachers) {
+    const empNo = String(newT.faceId || newT.employeeNo || newT.id || '').replace(/^t-/, '').replace(/^0+/, '');
+    if (!empNo) continue;
+    const oldT = oldMap.get(empNo);
+    if (!oldT) {
+      console.log(`[TEACHER DIFF SYNC] Yangi o'qituvchi aniqlandi: #${empNo} (${newT.name || newT.fullName}). Kameralarga kiritilmoqda...`);
+      syncStudentToHardware('add', { ...newT, role: 'teacher' }, schoolId).catch(() => {});
+    } else if (
+      (newT.name || newT.fullName) !== (oldT.name || oldT.fullName) ||
+      newT.gender !== oldT.gender ||
+      (newT.photo && newT.photo !== oldT.photo) ||
+      (newT.photoUrl && newT.photoUrl !== oldT.photoUrl)
+    ) {
+      console.log(`[TEACHER DIFF SYNC] Tahrirlangan o'qituvchi aniqlandi: #${empNo} (${newT.name || newT.fullName}). Kameralarda yangilanmoqda...`);
+      syncStudentToHardware('update', { ...newT, role: 'teacher' }, schoolId).catch(() => {});
+    }
+  }
+}
+
+// Barcha o'quvchi va o'qituvchilarni maktabning barcha turniketlariga to'liq sinxronlash
+async function syncAllUsersToHardware(schoolId = 'sch-1') {
+  const targetCams = getCamerasForSchool(schoolId);
+  const students = (schoolDB.students || []).filter(s => s && (s.fullName || s.name));
+  const teachers = (schoolDB.teachers || []).filter(t => t && (t.name || t.fullName));
+  console.log(`[FULL SYNC] Barcha ${students.length} ta o'quvchi va ${teachers.length} ta o'qituvchi ${targetCams.length} ta turniketga sinxronlanmoqda...`);
+
+  let count = 0;
+  // 1. O'qituvchilar
+  for (const t of teachers) {
+    await syncStudentToHardware('update', { ...t, role: 'teacher' }, schoolId);
+    count++;
+  }
+
+  // 2. O'quvchilar
+  for (const s of students) {
+    await syncStudentToHardware('update', { ...s, role: 'student' }, schoolId);
+    count++;
+  }
+
+  console.log(`[FULL SYNC COMPLETE] Jami ${count} ta shaxs barcha turniketlarga yuklandi!`);
+  return { success: true, count, turnstiles: targetCams.map(c => ({ ip: c.ip, name: c.name, type: c.type })) };
+}
+
+// Supabase navbatidan kelgan apparat vazifalarini bajarish
+async function processHardwareSyncQueue(cfg, schoolId) {
   try {
-    const res = await fetch(`${cfg.URL}/rest/v1/school_data?select=*`, {
+    const res = await fetch(`${cfg.URL}/rest/v1/school_data?key=eq.hardware_sync_queue&select=*`, {
       headers: {
         'apikey': cfg.KEY,
         'Authorization': `Bearer ${cfg.KEY}`
       }
     });
-    if (checkSupabaseRes(res)) return;
-    if (res.ok) {
-      const rows = await res.json();
-      if (Array.isArray(rows) && rows.length > 0) {
-        let hasChanges = false;
-        rows.forEach(r => {
-          if (r.key && r.data) {
-            if (r.key === 'local_status') return; // Heartbeat keshini chetlab o'tish
+    if (!res.ok) return;
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) return;
+    const queueData = rows[0]?.data;
+    if (!Array.isArray(queueData) || queueData.length === 0) return;
+
+    console.log(`[HARDWARE QUEUE] ${queueData.length} ta sinxronlash vazifasi qabul qilindi...`);
+    for (const task of queueData) {
+      try {
+        if (task.action === 'full_resync') {
+          await syncAllUsersToHardware(task.schoolId || schoolId);
+        } else if (task.payload) {
+          console.log(`[QUEUE TASK] ${task.action} ${task.type || ''}: ${task.payload?.name || task.payload?.fullName || task.payload?.id}`);
+          await syncStudentToHardware(task.action, task.payload, task.schoolId || schoolId);
+        }
+      } catch (err) {
+        console.error(`[QUEUE TASK ERR]:`, err.message);
+      }
+    }
+
+    // Navbatni tozalash
+    await fetch(`${cfg.URL}/rest/v1/school_data`, {
+      method: 'POST',
+      headers: {
+        'apikey': cfg.KEY,
+        'Authorization': `Bearer ${cfg.KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ key: 'hardware_sync_queue', data: [], updated_at: new Date().toISOString() })
+    });
+
+    const targetCams = getCamerasForSchool(schoolId);
+    await syncModuleToSupabase('hardware_sync_status', {
+      lastSync: new Date().toISOString(),
+      status: 'synced',
+      totalTurnstiles: targetCams.length,
+      turnstiles: targetCams.map(c => ({ ip: c.ip, name: c.name, type: c.type, online: c.online }))
+    }, schoolId);
+  } catch (err) {}
+}
+
+async function loadSchoolDataFromSupabase(schoolId = 'sch-1') {
+  if (isSupabaseDisabled) return;
+  const targetSchools = (schoolDB && Array.isArray(schoolDB.schools) && schoolDB.schools.length > 0)
+    ? schoolDB.schools.map(s => s.id)
+    : [schoolId || 'sch-1'];
+
+  for (const sId of targetSchools) {
+    const cfg = getSupabaseConfigForSchool(sId);
+    if (!cfg || !cfg.URL || !cfg.KEY) continue;
+
+    try {
+      // 1. Apparat sinxronlash navbatini qayta ishlash
+      await processHardwareSyncQueue(cfg, sId);
+
+      // 2. Maktab ma'lumotlarini yuklash va tahlil qilish
+      const res = await fetch(`${cfg.URL}/rest/v1/school_data?select=*`, {
+        headers: {
+          'apikey': cfg.KEY,
+          'Authorization': `Bearer ${cfg.KEY}`
+        }
+      });
+      if (checkSupabaseRes(res)) continue;
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0) {
+          let hasChanges = false;
+          for (const r of rows) {
+            if (!r.key || !r.data) continue;
+            if (r.key === 'local_status' || r.key === 'hardware_sync_queue' || r.key === 'hardware_sync_status') continue;
 
             if (r.key === 'cameras' && Array.isArray(r.data) && r.data.length >= 6) {
               const reordered = [];
@@ -715,11 +861,21 @@ async function loadSchoolDataFromSupabase(schoolId = 'sch-1') {
               CAMERAS = reordered;
             }
 
+            // O'quvchilar farqini apparatga sinxronlash
             if (r.key === 'students' && Array.isArray(r.data)) {
               const oldStudents = Array.isArray(schoolDB.students) ? JSON.parse(JSON.stringify(schoolDB.students)) : [];
               const newStudents = r.data;
               if (oldStudents.length > 0 && JSON.stringify(oldStudents) !== JSON.stringify(newStudents)) {
-                detectAndSyncStudentDifferences(oldStudents, newStudents);
+                detectAndSyncStudentDifferences(oldStudents, newStudents, sId);
+              }
+            }
+
+            // O'qituvchilar farqini apparatga sinxronlash
+            if (r.key === 'teachers' && Array.isArray(r.data)) {
+              const oldTeachers = Array.isArray(schoolDB.teachers) ? JSON.parse(JSON.stringify(schoolDB.teachers)) : [];
+              const newTeachers = r.data;
+              if (oldTeachers.length > 0 && JSON.stringify(oldTeachers) !== JSON.stringify(newTeachers)) {
+                detectAndSyncTeacherDifferences(oldTeachers, newTeachers, sId);
               }
             }
 
@@ -728,17 +884,18 @@ async function loadSchoolDataFromSupabase(schoolId = 'sch-1') {
               hasChanges = true;
             }
           }
-        });
-        if (hasChanges) {
-          saveSchoolDB(schoolDB);
-          if (typeof broadcastSSE === 'function') {
-            broadcastSSE('school_data_sync', schoolDB);
+
+          if (hasChanges) {
+            saveSchoolDB(schoolDB);
+            if (typeof broadcastSSE === 'function') {
+              broadcastSSE('school_data_sync', schoolDB);
+            }
+            console.log(`[SUPABASE SYNC] Maktab (${sId}) ma'lumotlari yangilandi va turniketlar bilan muvofiqlashtirildi.`);
           }
-          console.log(`[SUPABASE SYNC] Direktor/admin bulutda kiritgan yangi o'zgarishlar lokal kompyuterga ko'chirildi va ekranlarga uzatildi.`);
         }
       }
-    }
-  } catch (err) {}
+    } catch (err) {}
+  }
 }
 
 async function logScanToSupabase(scan) {
@@ -2979,6 +3136,51 @@ const server = http.createServer(async (req, res) => {
 
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ success: true, message: "O'qituvchi bazadan va Face-ID dan o'chirildi" }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 12.4 Alohida apparat sinxronlash buyrug'ini qabul qilish
+  if (pathname === '/api/school/hardware-sync-task' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { action, type, payload, schoolId } = JSON.parse(body);
+        if (action === 'full_resync') {
+          await syncAllUsersToHardware(schoolId);
+        } else if (payload) {
+          await syncStudentToHardware(action, payload, schoolId);
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true, message: 'Turniket apparatlariga buyruq yuborildi' }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 12.5 Barcha foydalanuvchilarni barcha 6 ta turniketga to'liq qayta sinxronlash
+  if (pathname === '/api/school/sync-all-to-hardware' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const parsed = body ? JSON.parse(body) : {};
+        const sId = parsed.schoolId || 'sch-1';
+        const result = await syncAllUsersToHardware(sId);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: true,
+          message: `Barcha ${result.count} ta shaxs 6 ta turniket apparatiga muvaffaqiyatli sinxronlandi`,
+          ...result
+        }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ error: err.message }));
