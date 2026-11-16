@@ -476,6 +476,9 @@ export const SchoolProvider = ({ children }) => {
   const selectedSchoolIdRef = useRef(selectedSchoolId);
   useEffect(() => { selectedSchoolIdRef.current = selectedSchoolId; }, [selectedSchoolId]);
 
+  const selectedTeacherIdRef = useRef(selectedTeacherId);
+  useEffect(() => { selectedTeacherIdRef.current = selectedTeacherId; }, [selectedTeacherId]);
+
   const [globalStreamUrl, setGlobalStreamUrl] = useState(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
@@ -686,22 +689,20 @@ export const SchoolProvider = ({ children }) => {
 
     if (isTeacherUser && isTeacherRole) {
       if (currentUserRef.current?.role !== route.role) {
-        setCurrentUser(prev => {
-          if (!prev) return prev;
-          const updated = {
-            ...prev,
-            role: route.role
-          };
-          try {
-            localStorage.setItem('school_user', JSON.stringify(updated));
-          } catch (e) {}
-          return updated;
-        });
+        const updated = {
+          ...(currentUserRef.current || {}),
+          role: route.role
+        };
+        currentUserRef.current = updated;
+        setCurrentUser(updated);
+        try {
+          localStorage.setItem('school_user', JSON.stringify(updated));
+        } catch (e) {}
       }
       return;
     }
 
-    if (currentUserRef.current?.role !== 'bigadmin' && route.role && currentUser?.role !== route.role) {
+    if (currentUserRef.current?.role !== 'bigadmin' && route.role && currentUserRef.current?.role !== route.role) {
       quickSwitchRole(route.role, false, true);
     }
   };
@@ -1960,12 +1961,15 @@ export const SchoolProvider = ({ children }) => {
         localStorage.setItem('school_user', JSON.stringify(found));
       } catch (e) {}
 
+      currentUserRef.current = found;
+      if (found.teacherId) {
+        selectedTeacherIdRef.current = found.teacherId;
+        setSelectedTeacherId(found.teacherId);
+      }
       setCurrentUser(found);
       if (found.schoolId && found.role !== 'bigadmin') {
+        selectedSchoolIdRef.current = found.schoolId;
         selectSchool(found.schoolId);
-      }
-      if (found.teacherId) {
-        setSelectedTeacherId(found.teacherId);
       }
       showToast('Xush kelibsiz', `${found.name} sifatida kirdingiz.`, 'success');
 
@@ -1997,30 +2001,41 @@ export const SchoolProvider = ({ children }) => {
   // O'qituvchi profiliga 1-klikda to'g'ridan-to'g'ri kirish (Direktor yoki admin uchun)
   const loginAsTeacher = (teacher) => {
     if (!teacher) return;
-    const isClassTeacher = Boolean(teacher.classId);
-    const tClassObj = (classes || []).find(c => c.id === teacher.classId);
+    const tObj = typeof teacher === 'object' ? teacher : (teachers || []).find(t => t.id === teacher);
+    if (!tObj) return;
+
+    const isClassTeacher = Boolean(tObj.classId);
+    const tClassObj = (classes || []).find(c => c.id === tObj.classId);
     const userObj = {
-      id: `u-${teacher.id}`,
-      login: teacher.login || generateTeacherLogin(teacher.name),
-      password: teacher.password || '123',
+      id: `u-${tObj.id}`,
+      login: tObj.login || generateTeacherLogin(tObj.name),
+      password: tObj.password || '123',
       role: isClassTeacher ? 'class_teacher' : 'subject_teacher',
-      schoolId: selectedSchoolId || 'sch-1',
-      name: teacher.name,
-      detail: isClassTeacher ? `${tClassObj?.name || ''} sinf rahbari` : `${teacher.subject || 'Fan'} o'qituvchisi`,
-      teacherId: teacher.id,
-      classId: teacher.classId || null,
-      subject: teacher.subject || '',
+      schoolId: selectedSchoolIdRef.current || selectedSchoolId || 'sch-1',
+      name: tObj.name,
+      detail: isClassTeacher && tClassObj ? `${tClassObj.name} sinf rahbari` : `${tObj.subject || 'Fan'} o'qituvchisi`,
+      teacherId: tObj.id,
+      classId: tObj.classId || null,
+      subject: tObj.subject || '',
       permissions: isClassTeacher ? ['class_attendance', 'notifications', 'grades_journal'] : ['grades_journal']
     };
+
+    // Sinxron tarzda darhol ref larni yangilaymiz (navigateTo ichida xato fallback ga tushmasligi uchun)
+    currentUserRef.current = userObj;
+    selectedTeacherIdRef.current = tObj.id;
+
     setCurrentUser(userObj);
-    setSelectedTeacherId(teacher.id);
+    setSelectedTeacherId(tObj.id);
+
     try {
       localStorage.setItem('school_user', JSON.stringify(userObj));
-      localStorage.setItem('school_teacher_id', teacher.id);
+      localStorage.setItem('school_teacher_id', tObj.id);
       const token = generateAuthToken(userObj);
       localStorage.setItem('auth_token', token);
     } catch (e) {}
-    showToast('Profilga kirildi', `${teacher.name} profiliga muvaffaqiyatli o'tildi.`, 'success');
+
+    showToast('Profilga kirildi', `${tObj.name} kabinetiga muvaffaqiyatli o'tildi.`, 'success');
+
     if (isClassTeacher) {
       navigateTo('/class-teacher');
     } else {
@@ -2037,7 +2052,7 @@ export const SchoolProvider = ({ children }) => {
 
     // 1. Agar o'qituvchi rollariga o'tayotgan bo'lsa (class_teacher yoki subject_teacher):
     if (role === 'class_teacher' || role === 'subject_teacher') {
-      const activeTeacherId = currentUserRef.current?.teacherId || selectedTeacherId;
+      const activeTeacherId = currentUserRef.current?.teacherId || selectedTeacherIdRef.current || selectedTeacherId;
       let activeTeacher = (teachers || []).find(t => t.id === activeTeacherId);
 
       // Agar hozirgi o'qituvchi topilmasa:
@@ -2056,7 +2071,7 @@ export const SchoolProvider = ({ children }) => {
           id: `u-${activeTeacher.id}`,
           login: activeTeacher.login || generateTeacherLogin(activeTeacher.name),
           role: role,
-          schoolId: selectedSchoolId || 'sch-1',
+          schoolId: selectedSchoolIdRef.current || selectedSchoolId || 'sch-1',
           name: activeTeacher.name,
           detail: isClassTeacher && tClassObj ? `${tClassObj.name} sinf rahbari` : `${activeTeacher.subject || 'Fan'} o'qituvchisi`,
           teacherId: activeTeacher.id,
@@ -2064,6 +2079,9 @@ export const SchoolProvider = ({ children }) => {
           subject: activeTeacher.subject || '',
           permissions: ['class_attendance', 'notifications', 'grades_journal']
         };
+
+        currentUserRef.current = match;
+        selectedTeacherIdRef.current = activeTeacher.id;
 
         setCurrentUser(match);
         setSelectedTeacherId(activeTeacher.id);

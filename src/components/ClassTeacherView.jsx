@@ -32,6 +32,8 @@ export const ClassTeacherView = () => {
   const { 
     currentUser,
     selectedTeacherId, 
+    setSelectedTeacherId,
+    loginAsTeacher,
     teachers, 
     classes, 
     students, 
@@ -67,7 +69,7 @@ export const ClassTeacherView = () => {
       const byName = list.find(t => (t.name || '').toLowerCase().trim() === cNorm);
       if (byName) return byName;
     }
-    return list.find(t => t.classId) || list[0] || null;
+    return list[0] || null;
   }, [teachers, currentUser, selectedTeacherId]);
 
   const assignedClassId = currentUser?.classId || currentTeacher?.classId || '';
@@ -77,10 +79,12 @@ export const ClassTeacherView = () => {
   useEffect(() => {
     if (assignedClassId) {
       setSelectedClassId(assignedClassId);
+    } else if (teacherClasses.length > 0) {
+      setSelectedClassId(teacherClasses[0].id);
     }
   }, [assignedClassId, currentTeacher?.id]);
 
-  // Ushbu o'qituvchining barcha sinflari (Rahbarlik qiladigan sinfi + Jadval bo'yicha boshqa barcha sinflari)
+  // Ushbu o'qituvchining barcha sinflari (Rahbarlik qiladigan sinfi + Jadval bo'yicha dars beradigan sinflari + Maktabdagi boshqa sinflar)
   const teacherClasses = useMemo(() => {
     const classMap = new Map();
 
@@ -119,12 +123,17 @@ export const ClassTeacherView = () => {
       }
     });
 
-    // Agar ro'yxat bo'sh bo'lsa barcha sinflarni tanlash imkoni
-    if (classMap.size === 0 && classes && classes.length > 0) {
-      classes.forEach(c => {
-        classMap.set(c.id, { ...c, isHomeroom: false, label: c.name });
-      });
-    }
+    // 3. Maktabdagi qolgan barcha sinflar (o'qituvchi boshqa sinflarga ham kirib dars o'tishi va davomatini ko'rishi uchun)
+    (classes || []).forEach(c => {
+      if (!classMap.has(c.id)) {
+        const isThisHomeroom = c.id === assignedClassId;
+        classMap.set(c.id, {
+          ...c,
+          isHomeroom: isThisHomeroom,
+          label: isThisHomeroom ? `${c.name} (Mening sinfim / Rahbarlik)` : `${c.name} (Boshqa sinf)`
+        });
+      }
+    });
 
     return Array.from(classMap.values());
   }, [classes, schedules, assignedClassId, currentTeacher, currentUser, selectedTeacherId]);
@@ -390,6 +399,33 @@ export const ClassTeacherView = () => {
               <span className="text-[10px] font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md">
                 Fani: {currentTeacher.subject}
               </span>
+            )}
+
+            {/* O'qituvchini almashtirish / Boshqa o'qituvchi kabinetiga o'tish */}
+            {teachers && teachers.length > 0 && (
+              <div className="flex items-center gap-1.5 ml-0 sm:ml-2">
+                <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">Kabinet:</span>
+                <select
+                  value={currentTeacher?.id || ''}
+                  onChange={(e) => {
+                    const target = (teachers || []).find(t => t.id === e.target.value);
+                    if (target && loginAsTeacher) {
+                      loginAsTeacher(target);
+                    }
+                  }}
+                  className="text-xs font-bold bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 outline-none cursor-pointer hover:border-blue-500 shadow-2xs"
+                  title="Boshqa o'qituvchi kabinetiga tezkor o'tish"
+                >
+                  {teachers.map(t => {
+                    const cl = (classes || []).find(c => c.id === t.classId);
+                    return (
+                      <option key={t.id} value={t.id} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+                        👨‍🏫 {t.name} {cl ? `(${cl.name} rahbari)` : `(${t.subject || "O'qituvchi"})`}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
             )}
           </div>
 

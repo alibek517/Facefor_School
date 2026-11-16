@@ -31,6 +31,7 @@ export const TeacherJournal = () => {
     currentUser,
     selectedTeacherId, 
     setSelectedTeacherId,
+    loginAsTeacher,
     teachers, 
     classes, 
     students, 
@@ -255,7 +256,14 @@ export const TeacherJournal = () => {
             {(currentUser?.isDirector || currentUser?.role === 'director' || teachers.length > 0) && (
               <select
                 value={currentTeacher?.id || ''}
-                onChange={(e) => setSelectedTeacherId && setSelectedTeacherId(e.target.value)}
+                onChange={(e) => {
+                  const targetT = teachers.find(t => t.id === e.target.value);
+                  if (targetT && loginAsTeacher) {
+                    loginAsTeacher(targetT);
+                  } else if (setSelectedTeacherId) {
+                    setSelectedTeacherId(e.target.value);
+                  }
+                }}
                 className="text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 outline-none cursor-pointer"
                 title="O'qituvchi profilini tanlash"
               >
