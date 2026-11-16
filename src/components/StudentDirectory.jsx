@@ -93,11 +93,10 @@ export const StudentDirectory = () => {
 
   // Sinfning tartib og'irligini hisoblash (1-A, 1-B, ..., 10-A, 11-B)
   const getClassSortWeight = useCallback((targetClassId, cMap) => {
-    const cls = cMap[targetClassId];
+    const cls = cMap ? cMap[targetClassId] : null;
     const name = cls ? (cls.name || '') : String(targetClassId || '');
     const clean = name.trim();
 
-    // 1. Masalan: "1-A", "2-B", "10-A", "11-D", "1A"
     const match = clean.match(/^(\d+)\s*[-_ ]?\s*([A-Za-zА-Яа-яЎўҚқҒғҲҳ]?)/);
     if (match) {
       const grade = parseInt(match[1], 10);
@@ -106,12 +105,10 @@ export const StudentDirectory = () => {
       return grade * 1000 + letterCode;
     }
 
-    // 2. Agar cls.grade mavjud bo'lsa
     if (cls && typeof cls.grade === 'number') {
       return cls.grade * 1000;
     }
 
-    // 3. c-1a, c-10a kabi formatlar
     const matchId = String(targetClassId || '').match(/^c-(\d+)([a-zа-я])?/i);
     if (matchId) {
       const grade = parseInt(matchId[1], 10);
@@ -120,6 +117,32 @@ export const StudentDirectory = () => {
       return grade * 1000 + letterCode;
     }
 
+    return 999999;
+  }, []);
+
+  const getStudentSortWeight = useCallback((st, cMap) => {
+    if (!st) return 999999;
+    const cls = (cMap && st.classId) ? cMap[st.classId] : null;
+    const name = (cls && cls.name) || st.className || String(st.classId || '');
+    const clean = String(name).trim();
+
+    const match = clean.match(/^(\d+)\s*[-_ ]?\s*([A-Za-zА-Яа-яЎўҚқҒғҲҳ]?)/);
+    if (match) {
+      const grade = parseInt(match[1], 10);
+      const letter = (match[2] || '').toUpperCase();
+      const letterCode = letter ? letter.charCodeAt(0) : 0;
+      return grade * 1000 + letterCode;
+    }
+    if (cls && typeof cls.grade === 'number') {
+      return cls.grade * 1000;
+    }
+    const matchId = String(st.classId || '').match(/^c-(\d+)([a-zа-я])?/i);
+    if (matchId) {
+      const grade = parseInt(matchId[1], 10);
+      const letter = (matchId[2] || '').toUpperCase();
+      const letterCode = letter ? letter.charCodeAt(0) : 0;
+      return grade * 1000 + letterCode;
+    }
     return 999999;
   }, []);
 
@@ -152,8 +175,8 @@ export const StudentDirectory = () => {
     return list.sort((a, b) => {
       // 1. Agar "Barchasi" tanlangan bo'lsa, avval kichik sinfdan katta sinfga (1-A, 1-B, ..., 11-B)
       if (selectedClass === 'all') {
-        const weightA = getClassSortWeight(a.classId, classMap);
-        const weightB = getClassSortWeight(b.classId, classMap);
+        const weightA = getStudentSortWeight(a, classMap);
+        const weightB = getStudentSortWeight(b, classMap);
         if (weightA !== weightB) return weightA - weightB;
       }
       // 2. Sinf ichida o'quvchilar F.I.Sh bo'yicha alifbo tartibida (A-Z)
@@ -167,7 +190,7 @@ export const StudentDirectory = () => {
       const idB = String(b.studentId || b.faceId || b.id || '');
       return idA.localeCompare(idB);
     });
-  }, [students, selectedClass, searchTerm, classMap, getClassSortWeight]);
+  }, [students, selectedClass, searchTerm, classMap, getStudentSortWeight]);
 
   const selectedClassName = selectedClass === 'all' 
     ? 'Barcha_oquvchilar' 

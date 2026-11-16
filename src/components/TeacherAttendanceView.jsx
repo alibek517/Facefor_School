@@ -88,15 +88,34 @@ export const TeacherAttendanceView = () => {
     });
   }, [recentFaceScans, selectedDate]);
 
-  // Vaqtni formatlash
+  // Vaqtni formatlash (24-soatlik qat'iy standartda: masalan 15:35)
   const formatScanTime = (scan) => {
     if (!scan) return '--:--';
-    if (scan.timeFormatted) return scan.timeFormatted;
+    let t = scan.timeFormatted;
+    if (t) {
+      // 12-soatlik PM/AM format bo'lsa (masalan "03:35 PM"), 24-soatlik "15:35" ga aylantiramiz
+      const pmMatch = String(t).match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)$/i);
+      if (pmMatch) {
+        let h = parseInt(pmMatch[1], 10);
+        const m = pmMatch[2];
+        const ampm = pmMatch[3].toUpperCase();
+        if (ampm === 'PM' && h < 12) h += 12;
+        if (ampm === 'AM' && h === 12) h = 0;
+        return `${String(h).padStart(2, '0')}:${m}`;
+      }
+      const cleanMatch = String(t).match(/^(\d{1,2}):(\d{2})/);
+      if (cleanMatch) {
+        return `${cleanMatch[1].padStart(2, '0')}:${cleanMatch[2]}`;
+      }
+      return t;
+    }
     if (scan.timestamp) {
       try {
         const d = new Date(scan.timestamp);
         if (!isNaN(d.getTime())) {
-          return d.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+          const hh = String(d.getHours()).padStart(2, '0');
+          const mm = String(d.getMinutes()).padStart(2, '0');
+          return `${hh}:${mm}`;
         }
       } catch (e) {}
     }
@@ -113,18 +132,42 @@ export const TeacherAttendanceView = () => {
     return map;
   }, [cameras]);
 
-  // Turniket lokatsiyasini chiroyli nomlash
+  // Turniket lokatsiyasini chiroyli va qat'iy standartda nomlash (1..3 Kirish, 4..6 Chiqish)
   const getTurniketLocation = (scan, fallbackGate) => {
-    if (!scan && !fallbackGate) return 'Turniket 1 (Kirish) • Bosh kirish eshigi (1)';
-    if (scan?.cameraName) {
-      if (scan.location && !scan.cameraName.includes('•')) {
-        return `${scan.cameraName} • ${scan.location}`;
+    const ip = scan?.cameraIp || scan?.ip;
+    const ipCanonical = {
+      '192.168.1.35': 'Turniket 1 (Kirish) • Bosh kirish eshigi (1)',
+      '192.168.1.36': 'Turniket 2 (Kirish) • Bosh kirish eshigi (2)',
+      '192.168.1.33': 'Turniket 3 (Kirish) • Bosh kirish eshigi (3)',
+      '192.168.1.86': 'Turniket 4 (Chiqish) • Chiqish yo\'lagi (1)',
+      '192.168.1.32': 'Turniket 5 (Chiqish) • Chiqish yo\'lagi (2)',
+      '192.168.1.13': 'Turniket 6 (Chiqish) • Chiqish yo\'lagi (3)',
+    };
+    if (ip && ipCanonical[ip]) return ipCanonical[ip];
+
+    let name = scan?.cameraName || scan?.inspectorName || '';
+    if (name) {
+      name = name.replace(/^Turniket:\s*/i, '');
+      if (name.includes('Turniket 4') || name.includes('cam-4') || name.includes("Chiqish yo'lagi (1)")) {
+        return "Turniket 4 (Chiqish) • Chiqish yo'lagi (1)";
       }
-      return scan.cameraName;
+      if (name.includes('Turniket 5') || name.includes('cam-5') || name.includes("Chiqish yo'lagi (2)")) {
+        return "Turniket 5 (Chiqish) • Chiqish yo'lagi (2)";
+      }
+      if (name.includes('Turniket 6') || name.includes('cam-6') || name.includes("Chiqish yo'lagi (3)")) {
+        return "Turniket 6 (Chiqish) • Chiqish yo'lagi (3)";
+      }
+      if (name.includes('Turniket 1')) return "Turniket 1 (Kirish) • Bosh kirish eshigi (1)";
+      if (name.includes('Turniket 2')) return "Turniket 2 (Kirish) • Bosh kirish eshigi (2)";
+      if (name.includes('Turniket 3')) return "Turniket 3 (Kirish) • Bosh kirish eshigi (3)";
+      if (scan.location && !name.includes('•')) {
+        return `${name} • ${scan.location}`;
+      }
+      return name;
     }
-    if (scan?.cameraIp && cameraMap[scan.cameraIp]) {
-      const c = cameraMap[scan.cameraIp];
-      return `${c.name || 'Turniket'} • ${c.location || "Bosh kirish eshigi"}`;
+
+    if (scan?.direction === 'out') {
+      return "Turniket 4 (Chiqish) • Chiqish yo'lagi (1)";
     }
     return fallbackGate || 'Turniket 1 (Kirish) • Bosh kirish eshigi (1)';
   };

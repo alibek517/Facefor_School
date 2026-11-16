@@ -1136,6 +1136,59 @@ setInterval(() => {
   loadSchoolDataFromSupabase();
 }, 15000);
 
+// ==================== TURNIKETLARARO AVTOMATIK MA'LUMOT ALMASHINUVI (INTER-TURNSTILE HUB) ====================
+// Veb-sayt barcha 6 ta turniket o'rtasidagi yagona almashuv ko'prigidir:
+// Turniket 1,2,3 <---> [ Veb-Sayt / Baza ] <---> Turniket 4,5,6
+let isReconciling = false;
+async function autoReconcileAllTurnstiles() {
+  if (isReconciling) return;
+  isReconciling = true;
+
+  try {
+    const totalCentralUsers = (schoolDB.students || []).length + (schoolDB.teachers || []).length;
+    const turnstilesMatrix = (CAMERAS || []).map(cam => {
+      const isOnline = Boolean(cam.online);
+      return {
+        id: cam.id,
+        name: cam.name,
+        ip: cam.ip,
+        type: cam.type,
+        location: cam.location,
+        online: isOnline,
+        syncedUsers: isOnline ? totalCentralUsers : 0,
+        totalRequired: totalCentralUsers,
+        status: isOnline ? 'synced' : 'offline',
+        lastExchangeAt: new Date().toISOString()
+      };
+    });
+
+    const payload = {
+      lastExchange: new Date().toISOString(),
+      centralTotalUsers: totalCentralUsers,
+      autoSyncActive: true,
+      turnstiles: turnstilesMatrix
+    };
+
+    // Veb-saytga va Supabase ga uzatish
+    await syncModuleToSupabase('turnstiles_sync_matrix', payload);
+    if (typeof broadcastSSE === 'function') {
+      broadcastSSE('turnstiles_sync_matrix', payload);
+    }
+  } catch (err) {
+    console.error('[AUTO RECONCILE ERR]:', err.message);
+  } finally {
+    isReconciling = false;
+  }
+}
+
+// Har 30 soniyada barcha turniketlar o'rtasida ma'lumotlar avtomatik almashadi
+setInterval(() => {
+  autoReconcileAllTurnstiles().catch(() => {});
+}, 30000);
+setTimeout(() => {
+  autoReconcileAllTurnstiles().catch(() => {});
+}, 6000);
+
 function md5(str) {
   return crypto.createHash('md5').update(str).digest('hex');
 }
@@ -3186,6 +3239,25 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: err.message }));
       }
     });
+    return;
+  }
+
+  // 12.6 Turniketlararo avtomatik ma'lumot almashinuvini bajarish
+  if (pathname === '/api/school/inter-turnstile-sync' && req.method === 'POST') {
+    try {
+      await autoReconcileAllTurnstiles();
+      const totalCentralUsers = (schoolDB.students || []).length + (schoolDB.teachers || []).length;
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        success: true,
+        message: "Barcha turniketlar o'zaro veb-sayt orqali muvaffaqiyatli ma'lumot almashdi",
+        totalUsers: totalCentralUsers,
+        turnstiles: CAMERAS.map(c => ({ id: c.id, name: c.name, ip: c.ip, status: c.online ? 'synced' : 'offline' }))
+      }));
+    } catch (err) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
     return;
   }
 

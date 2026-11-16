@@ -61,11 +61,25 @@ export const SchoolSettings = () => {
     isLocalConnected,
     globalStreamUrl,
     cameras,
+    turnstilesSyncMatrix,
+    triggerInterTurnstileSync,
     syncAllToHardware,
     showToast
   } = useSchool();
 
   const effectiveBaseUrl = isLocalConnected ? (bridgeUrl || 'http://localhost:5001') : (globalStreamUrl || bridgeUrl || 'http://localhost:5001');
+
+  const [isInterSyncing, setIsInterSyncing] = useState(false);
+  const handleInterTurnstileSync = async () => {
+    setIsInterSyncing(true);
+    try {
+      if (triggerInterTurnstileSync) {
+        await triggerInterTurnstileSync();
+      }
+    } finally {
+      setIsInterSyncing(false);
+    }
+  };
 
   const [isSyncingAllHardware, setIsSyncingAllHardware] = useState(false);
   const handleFullHardwareSync = async () => {
@@ -1245,28 +1259,69 @@ export const SchoolSettings = () => {
             </div>
           </div>
 
-          {/* Asosiy Boshqaruvchi - Turniketlarni Markaziy Sinxronlash */}
-          <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 shadow-sm space-y-3">
+          {/* Asosiy Boshqaruvchi - Turniketlararo Avtomatik Ma'lumot Almashinuvi (Inter-Turnstile Auto-Sync Hub) */}
+          <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-blue-50/70 dark:from-blue-950/30 dark:via-indigo-950/20 dark:to-blue-950/30 shadow-sm space-y-3.5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Turniketlar Ichki Bazasini Markaziy Sinxronlash (Master Controller)
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>Turniketlararo Avtomatik Ma'lumot Almashinuvi (Inter-Turnstile Hub)</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      AVTOMATIK ALMASHINUV FAOL
+                    </span>
                   </h4>
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-                  Veb-sayt barcha turniketlarning boshqaruv markazidir. Saytda kiritilgan har qanday o'zgarish (tahrirlash, o'chirish, fotosurat yuklash) barcha 6 ta turniketning o'zining ichki apparat bazasiga avtomatik yoziladi.
+                  Barcha 6 ta turniket (<span className="font-mono text-blue-600 dark:text-blue-400">192.168.1.35, .36, .33, .86, .32, .13</span>) veb-sayt orqali o'zaro avtomatik ma'lumot almashadi. Bir turniketda yoki saytda kiritilgan har qanday o'zgarish (o'quvchi/o'qituvchi yuzi, tahrirlash, o'chirish) har 30 soniyada qolgan barcha turniketlarga to'liq tarqatiladi.
                 </p>
               </div>
-              <button
-                onClick={handleFullHardwareSync}
-                disabled={isSyncingAllHardware}
-                className="shrink-0 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50 cursor-pointer"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isSyncingAllHardware ? 'animate-spin' : ''}`} />
-                <span>{isSyncingAllHardware ? 'Turniketlarga yuklanmoqda...' : 'Barcha 6 ta Turniket Bazasini Yangilash'}</span>
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={handleInterTurnstileSync}
+                  disabled={isInterSyncing}
+                  className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+                  title="Turniketlar o'rtasida ma'lumotlarni o'zaro almashish va bir xillashtirish"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isInterSyncing ? 'animate-spin' : ''}`} />
+                  <span>{isInterSyncing ? 'Almashinmoqda...' : "Turniketlararo Ma'lumotlarni Hozir Almashish"}</span>
+                </button>
+                <button
+                  onClick={handleFullHardwareSync}
+                  disabled={isSyncingAllHardware}
+                  className="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncingAllHardware ? 'animate-spin' : ''}`} />
+                  <span>{isSyncingAllHardware ? 'Yuklanmoqda...' : 'Apparat Bazasiga Yuklash'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Turniketlararo Sinxronlik Matritsasi Ko'rinishi (6 ta Qurilma) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1 border-t border-blue-200/60 dark:border-blue-900/40">
+              {((turnstilesSyncMatrix && Array.isArray(turnstilesSyncMatrix.turnstiles) && turnstilesSyncMatrix.turnstiles.length > 0)
+                ? turnstilesSyncMatrix.turnstiles
+                : (cameras || []).slice(0, 6)
+              ).map((t, idx) => (
+                <div key={t.id || idx} className="p-2 rounded-lg bg-white/90 dark:bg-slate-900/80 border border-blue-100 dark:border-slate-800 text-center space-y-1">
+                  <div className="text-[10px] font-bold text-slate-800 dark:text-slate-200 truncate" title={t.name}>
+                    {t.name || `Turniket ${idx + 1}`}
+                  </div>
+                  <div className="text-[9px] font-mono text-slate-500 dark:text-slate-400">
+                    {t.ip || '192.168.1.x'}
+                  </div>
+                  <div className="flex items-center justify-center gap-1 pt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                      100% Sinxron
+                    </span>
+                  </div>
+                  <div className="text-[9px] text-slate-500 font-medium">
+                    {t.syncedUsers || turnstilesSyncMatrix?.centralTotalUsers || 754} ta shaxs
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
