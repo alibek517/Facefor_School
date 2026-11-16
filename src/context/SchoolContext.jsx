@@ -2170,6 +2170,9 @@ export const SchoolProvider = ({ children }) => {
       phone: newSchoolData.phone ? newSchoolData.phone.trim() : '',
       director: newSchoolData.director ? newSchoolData.director.trim() : '',
       status: newSchoolData.status || 'active',
+      lat: newSchoolData.lat !== undefined ? Number(newSchoolData.lat) : 41.5515,
+      lng: newSchoolData.lng !== undefined ? Number(newSchoolData.lng) : 60.6315,
+      radiusMeters: newSchoolData.radiusMeters !== undefined ? Number(newSchoolData.radiusMeters) : 180,
       createdAt: new Date().toISOString(),
       turnstiles: Array.isArray(newSchoolData.turnstiles) && newSchoolData.turnstiles.length > 0 ? newSchoolData.turnstiles.map((t, idx) => ({
         id: t.id || `cam-${tempId}-${idx + 1}`,

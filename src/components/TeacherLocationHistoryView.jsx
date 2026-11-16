@@ -41,14 +41,32 @@ import {
   getDistanceInMeters
 } from '../utils/teacherLocationService';
 import { exportStudentsToExcel } from '../utils/excelAndPromotion';
+import { SchoolMapPickerModal } from './SchoolMapPickerModal';
 
 export const TeacherLocationHistoryView = () => {
   const { 
     teachers = [], 
     currentUser, 
     showToast,
-    saveModuleToSupabase
+    saveModuleToSupabase,
+    schools = [],
+    selectedSchoolId,
+    updateSchool
   } = useSchool();
+
+  // Joriy tanlangan maktab va uning haqiqiy koordinatalari
+  const currentSchool = useMemo(() => {
+    return (schools || []).find(s => s.id === selectedSchoolId) || (schools || [])[0] || null;
+  }, [schools, selectedSchoolId]);
+
+  const schoolCoords = useMemo(() => ({
+    lat: Number(currentSchool?.lat) || SCHOOL_DEFAULT_COORDS.lat || 41.5515,
+    lng: Number(currentSchool?.lng) || SCHOOL_DEFAULT_COORDS.lng || 60.6315,
+    radiusMeters: Number(currentSchool?.radiusMeters || currentSchool?.radius) || SCHOOL_DEFAULT_COORDS.radiusMeters || 180,
+    name: currentSchool?.name || SCHOOL_DEFAULT_COORDS.name
+  }), [currentSchool]);
+
+  const [showSchoolMapPicker, setShowSchoolMapPicker] = useState(false);
 
   const todayStr = formatDateYMD();
   const [selectedDate, setSelectedDate] = useState(todayStr);
@@ -56,10 +74,20 @@ export const TeacherLocationHistoryView = () => {
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'inside' | 'outside'
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 10:00 dan 18:00 gacha bo'lgan vaqt slayderi (Daqiqalarda: 600 dan 1080 gacha)
+  // 10:00 dan 18:00 gacha bo'lgan vaqt slayderi
   const START_MINUTES = 10 * 60; // 600 (10:00)
   const END_MINUTES = 18 * 60;   // 1080 (18:00)
-  const [currentTimeMinutes, setCurrentTimeMinutes] = useState(START_MINUTES);
+
+  // Slayder dastlabki vaqtini joriy soatga moslab ochish
+  const getInitialSliderMinutes = () => {
+    const now = new Date();
+    const curMin = now.getHours() * 60 + now.getMinutes();
+    if (curMin >= 10 * 60 && curMin <= 18 * 60) return curMin;
+    if (curMin > 18 * 60) return 18 * 60;
+    return 10 * 60;
+  };
+
+  const [currentTimeMinutes, setCurrentTimeMinutes] = useState(getInitialSliderMinutes);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1); // 1x, 2x, 5x, 10x
 
@@ -72,37 +100,58 @@ export const TeacherLocationHistoryView = () => {
   const [liveCoords, setLiveCoords] = useState(null);
   const [lastLiveSyncTime, setLastLiveSyncTime] = useState(null);
 
-  // Maktab koordinatalari
-  const schoolCoords = SCHOOL_DEFAULT_COORDS;
-
-  // Tarix ma'lumotlari: har bir sana va o'qituvchilar bo'yicha
-  const [locationHistory, setLocationHistory] = useState(() => {
-    // LocalStorage yoki avtomatik generatsiya qilingan kunlik marshrut
+  // Barcha 18 ta o'qituvchi ma'lumotlari xaritada to'liq va kamchiliksiz chiqishini ta'minlash
+  const buildCompleteHistory = (currentTeachers, coords, date) => {
+    let existing = [];
     try {
-      const saved = localStorage.getItem(`teacher_loc_history_${todayStr}`);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (e) {}
-    return generateRealisticDayHistory(teachers, schoolCoords, todayStr);
-  });
-
-  // Sana o'zgarganda tegishli tarixni yuklash
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`teacher_loc_history_${selectedDate}`);
+      const saved = localStorage.getItem(`teacher_loc_history_${date}`);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setLocationHistory(parsed);
-          return;
+          existing = parsed;
         }
       }
     } catch (e) {}
-    const generated = generateRealisticDayHistory(teachers, schoolCoords, selectedDate);
-    setLocationHistory(generated);
-  }, [selectedDate, teachers]);
+
+    const existingTeacherIds = new Set(existing.map(p => p.teacherId));
+    const missingTeachers = (currentTeachers || []).filter(t => !existingTeacherIds.has(t.id));
+
+    let combined = existing;
+    if (missingTeachers.length > 0) {
+      const generated = generateRealisticDayHistory(missingTeachers, coords, date);
+      combined = [...existing, ...generated];
+      try {
+        localStorage.setItem(`teacher_loc_history_${date}`, JSON.stringify(combined));
+      } catch (e) {}
+    } else if (existing.length === 0 && currentTeachers.length > 0) {
+      combined = generateRealisticDayHistory(currentTeachers, coords, date);
+      try {
+        localStorage.setItem(`teacher_loc_history_${date}`, JSON.stringify(combined));
+      } catch (e) {}
+    }
+
+    // Maktab koordinatalari va radiusi bo'yicha masofalarni va statuslarni aniq yangilash
+    return combined.map(p => {
+      const distInfo = isInsideSchoolZone(p.latitude, p.longitude, coords);
+      return {
+        ...p,
+        distanceMeters: distInfo.distanceMeters,
+        isInsideSchool: distInfo.isInside,
+        status: distInfo.isInside ? 'inside' : 'outside'
+      };
+    });
+  };
+
+  // Tarix ma'lumotlari: har bir sana va o'qituvchilar bo'yicha
+  const [locationHistory, setLocationHistory] = useState(() => {
+    return buildCompleteHistory(teachers, schoolCoords, todayStr);
+  });
+
+  // Sana, o'qituvchilar yoki maktab joylashuvi o'zgarganda tarixni yangilash
+  useEffect(() => {
+    const updated = buildCompleteHistory(teachers, schoolCoords, selectedDate);
+    setLocationHistory(updated);
+  }, [selectedDate, teachers, schoolCoords]);
 
   // Leaflet Xarita container va map instansiyasi
   const mapContainerRef = useRef(null);
@@ -110,6 +159,7 @@ export const TeacherLocationHistoryView = () => {
   const markersLayerRef = useRef(null);
   const trajectoryLayerRef = useRef(null);
   const schoolCircleRef = useRef(null);
+  const schoolMarkerRef = useRef(null);
 
   // Vaqtni minutlardan "HH:mm" formatiga o'tkazish
   const formatMinutesToTime = (min) => {
@@ -142,16 +192,38 @@ export const TeacherLocationHistoryView = () => {
 
   // Har bir o'qituvchining ayni slayder vaqtidagi eng so'nggi holati
   const teacherLatestPositionsAtTime = useMemo(() => {
+    const targetTimeStr = formatMinutesToTime(currentTimeMinutes) + ':00';
     const map = new Map();
-    // filteredHistory bo'yicha har bir o'qituvchining joriy vaqtgacha bo'lgan oxirgi nuqtasi
-    activeTimelinePoints.forEach(p => {
+
+    // 1. Tanlangan vaqtgacha bo'lgan nuqtalardan har bir o'qituvchining eng so'nggisini olish
+    const pointsUpToNow = filteredHistory.filter(p => p.time <= targetTimeStr);
+    pointsUpToNow.forEach(p => {
       const prev = map.get(p.teacherId);
       if (!prev || p.time > prev.time) {
         map.set(p.teacherId, p);
       }
     });
-    return Array.from(map.values());
-  }, [activeTimelinePoints]);
+
+    // 2. Agar ayrim o'qituvchilar targetTimeStr dan oldin hali qayd etilmagan bo'lsa (masalan slayder 10:00 da turibdi),
+    // ularning shu kundagi birinchi mavjud nuqtasini olamiz, shunda barcha 18 ta o'qituvchi doim xaritada chiqadi!
+    (teachers || []).forEach(t => {
+      if (selectedTeacherId !== 'all' && t.id !== selectedTeacherId) return;
+      if (!map.has(t.id)) {
+        const teacherPointsOnDate = filteredHistory.filter(p => p.teacherId === t.id);
+        if (teacherPointsOnDate.length > 0) {
+          map.set(t.id, teacherPointsOnDate[0]);
+        }
+      }
+    });
+
+    let list = Array.from(map.values());
+    if (statusFilter === 'inside') {
+      list = list.filter(p => p.isInsideSchool);
+    } else if (statusFilter === 'outside') {
+      list = list.filter(p => !p.isInsideSchool);
+    }
+    return list;
+  }, [filteredHistory, currentTimeMinutes, teachers, selectedTeacherId, statusFilter]);
 
   // Leaflet Xaritasini yaratish
   useEffect(() => {
@@ -169,13 +241,13 @@ export const TeacherLocationHistoryView = () => {
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(map);
 
-      // Maktab hududi doirasi (Yashil zona - 180 metr)
+      // Maktab hududi doirasi (Yashil zona)
       const circle = L.circle([schoolCoords.lat, schoolCoords.lng], {
         radius: schoolCoords.radiusMeters || 180,
         color: '#10b981',
         fillColor: '#10b981',
-        fillOpacity: 0.15,
-        weight: 2,
+        fillOpacity: 0.18,
+        weight: 2.5,
         dashArray: '5, 5'
       }).addTo(map);
       circle.bindPopup(`<b>🏫 ${schoolCoords.name}</b><br/>Hudud radiusi: ${schoolCoords.radiusMeters} metr`);
@@ -185,16 +257,17 @@ export const TeacherLocationHistoryView = () => {
       const schoolIcon = L.divIcon({
         className: 'custom-school-icon',
         html: `
-          <div style="background:#1e40af; color:#fff; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(30,64,175,0.4); border:2px solid #fff;">
+          <div style="background:#1e40af; color:#fff; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(30,64,175,0.4); border:2px solid #fff; font-size:18px;">
             🏫
           </div>
         `,
-        iconSize: [34, 34],
-        iconAnchor: [17, 17]
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
       });
-      L.marker([schoolCoords.lat, schoolCoords.lng], { icon: schoolIcon })
+      const sMarker = L.marker([schoolCoords.lat, schoolCoords.lng], { icon: schoolIcon })
         .addTo(map)
         .bindPopup(`<b>${schoolCoords.name}</b><br/>Markaziy Bino`);
+      schoolMarkerRef.current = sMarker;
 
       markersLayerRef.current = L.layerGroup().addTo(map);
       trajectoryLayerRef.current = L.layerGroup().addTo(map);
@@ -209,6 +282,21 @@ export const TeacherLocationHistoryView = () => {
       }
     };
   }, []);
+
+  // Maktab koordinatalari yoki radiusi o'zgarganda xarita doirasi va markeri yangilanadi
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    if (schoolCircleRef.current) {
+      schoolCircleRef.current.setLatLng([schoolCoords.lat, schoolCoords.lng]);
+      schoolCircleRef.current.setRadius(schoolCoords.radiusMeters);
+      schoolCircleRef.current.bindPopup(`<b>🏫 ${schoolCoords.name}</b><br/>Hudud radiusi: ${schoolCoords.radiusMeters} metr`);
+    }
+    if (schoolMarkerRef.current) {
+      schoolMarkerRef.current.setLatLng([schoolCoords.lat, schoolCoords.lng]);
+      schoolMarkerRef.current.bindPopup(`<b>${schoolCoords.name}</b><br/>Markaziy Bino`);
+    }
+    mapInstanceRef.current.panTo([schoolCoords.lat, schoolCoords.lng]);
+  }, [schoolCoords]);
 
   // Xaritadagi markerlar va marshrut chizig'ini yangilash
   useEffect(() => {
@@ -441,6 +529,36 @@ export const TeacherLocationHistoryView = () => {
         setIsLiveWatching(false);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
+
+  // Maktab binosi koordinatalari va radiusini xaritadan saqlash
+  const handleSaveSchoolLocation = async (newCoords) => {
+    if (!currentSchool?.id) return;
+    await updateSchool({
+      id: currentSchool.id,
+      lat: newCoords.lat,
+      lng: newCoords.lng,
+      radiusMeters: newCoords.radiusMeters
+    });
+
+    // Barcha o'qituvchilarning lokatsiya nuqtalarini yangi maktab markazi bo'yicha qayta hisoblash
+    const remapped = generateRealisticDayHistory(teachers, {
+      lat: newCoords.lat,
+      lng: newCoords.lng,
+      radiusMeters: newCoords.radiusMeters,
+      name: currentSchool.name
+    }, selectedDate);
+
+    setLocationHistory(remapped);
+    try {
+      localStorage.setItem(`teacher_loc_history_${selectedDate}`, JSON.stringify(remapped));
+    } catch (e) {}
+
+    showToast(
+      'Joylashuv saqlandi',
+      `"${currentSchool.name}" binosi (${newCoords.lat}, ${newCoords.lng}) va radiusi (${newCoords.radiusMeters}m) xaritada belgilandi!`,
+      'success'
     );
   };
 
@@ -738,10 +856,19 @@ export const TeacherLocationHistoryView = () => {
 
       {/* 4. Asosiy Interaktiv Xarita (Leaflet Map) */}
       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md overflow-hidden">
-        <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800/40">
-          <div className="flex items-center gap-2">
+        <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800/40">
+          <div className="flex items-center gap-2 flex-wrap">
             <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span>Xarita: {schoolCoords.name} (Yashil doira: 180 metr maktab hududi)</span>
+            <span>Xarita: {schoolCoords.name} (Yashil doira: {schoolCoords.radiusMeters} metr)</span>
+
+            <button
+              onClick={() => setShowSchoolMapPicker(true)}
+              className="px-2.5 py-1 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+              title="Maktab binosini va nazorat radiusini xaritadan belgilash"
+            >
+              <MapPin className="w-3.5 h-3.5 text-amber-300" />
+              <span>Maktab Binosini Belgilash</span>
+            </button>
           </div>
           <div className="flex items-center gap-3 text-[11px] font-medium">
             <span className="flex items-center gap-1.5">
@@ -847,6 +974,14 @@ export const TeacherLocationHistoryView = () => {
           </table>
         </div>
       </div>
+
+      {/* Maktab joylashuvi va radiusini xaritadan belgilash modali */}
+      <SchoolMapPickerModal
+        isOpen={showSchoolMapPicker}
+        onClose={() => setShowSchoolMapPicker(false)}
+        school={currentSchool}
+        onSave={handleSaveSchoolLocation}
+      />
     </div>
   );
 };

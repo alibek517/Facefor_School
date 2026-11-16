@@ -23,7 +23,22 @@ import {
 } from '../utils/teacherLocationService';
 
 export const TeacherGPSWatcherBar = () => {
-  const { currentUser, showToast, saveModuleToSupabase } = useSchool();
+  const { 
+    currentUser, 
+    showToast, 
+    saveModuleToSupabase, 
+    schools = [], 
+    selectedSchoolId 
+  } = useSchool();
+
+  const currentSchool = (schools || []).find(s => s.id === selectedSchoolId) || (schools || [])[0];
+  const schoolCoords = {
+    lat: Number(currentSchool?.lat) || SCHOOL_DEFAULT_COORDS.lat || 41.5515,
+    lng: Number(currentSchool?.lng) || SCHOOL_DEFAULT_COORDS.lng || 60.6315,
+    radiusMeters: Number(currentSchool?.radiusMeters || currentSchool?.radius) || SCHOOL_DEFAULT_COORDS.radiusMeters || 180,
+    name: currentSchool?.name || SCHOOL_DEFAULT_COORDS.name
+  };
+
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [offlineCount, setOfflineCount] = useState(() => getLocalOfflineQueue().length);
   const [lastPingTime, setLastPingTime] = useState(null);
@@ -32,7 +47,6 @@ export const TeacherGPSWatcherBar = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [gpsError, setGpsError] = useState(null);
 
-  const schoolCoords = SCHOOL_DEFAULT_COORDS;
   const isTrackingHour = isTrackingTimeActive();
 
   // Bitta lokatsiya pingini olish va yuborish/saqlash

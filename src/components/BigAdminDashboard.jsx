@@ -32,8 +32,11 @@ import {
   Snowflake,
   Clock,
   PauseCircle,
-  PlayCircle
+  PlayCircle,
+  Compass
 } from 'lucide-react';
+import { SchoolMapPickerModal } from './SchoolMapPickerModal';
+import { BigAdminSchoolMapView } from './BigAdminSchoolMapView';
 
 export const BigAdminDashboard = () => {
   const {
@@ -103,6 +106,35 @@ export const BigAdminDashboard = () => {
     freezeReason: ''
   });
 
+  // Maktab binosi va radiusini xaritadan belgilash modali
+  const [selectedSchoolForMap, setSelectedSchoolForMap] = useState(null);
+  const [showMapPickerModal, setShowMapPickerModal] = useState(false);
+
+  const handleOpenMapPicker = (school) => {
+    setSelectedSchoolForMap(school);
+    setShowMapPickerModal(true);
+  };
+
+  const handleSaveMapCoords = async (coords) => {
+    if (!selectedSchoolForMap) return;
+    if (selectedSchoolForMap.id) {
+      await updateSchool({
+        id: selectedSchoolForMap.id,
+        lat: coords.lat,
+        lng: coords.lng,
+        radiusMeters: coords.radiusMeters
+      });
+      showToast('Joylashuv saqlandi', `"${selectedSchoolForMap.name}" binosi va radiusi saqlandi!`, 'success');
+    }
+    setSchoolFormData(prev => ({
+      ...prev,
+      lat: coords.lat,
+      lng: coords.lng,
+      radiusMeters: coords.radiusMeters
+    }));
+    setShowMapPickerModal(false);
+  };
+
   // Barcha turniketlar yig'indisi
   const allTurnstilesWithSchool = useMemo(() => {
     const list = [];
@@ -151,6 +183,9 @@ export const BigAdminDashboard = () => {
         address: school.address || '',
         phone: school.phone || '',
         director: school.director || '',
+        lat: school.lat ?? 41.5515,
+        lng: school.lng ?? 60.6315,
+        radiusMeters: school.radiusMeters ?? 180,
         status: school.status || 'active',
         initialTurnstiles: []
       });
@@ -162,6 +197,9 @@ export const BigAdminDashboard = () => {
         address: '',
         phone: '+998 ',
         director: '',
+        lat: 41.5515,
+        lng: 60.6315,
+        radiusMeters: 180,
         status: 'active',
         initialTurnstiles: [
           { name: 'Turniket 1 (Kirish)', ip: '', type: 'in', location: 'Bosh kirish' },
@@ -451,6 +489,18 @@ export const BigAdminDashboard = () => {
             <DoorClosed className="w-3.5 h-3.5" />
             <span>Barcha Turniketlar ({totalTurnstiles})</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('map')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === 'map'
+                ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-400 shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Maktablar Xaritasi & Radius</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-2 flex-1 sm:max-w-xs">
@@ -552,6 +602,12 @@ export const BigAdminDashboard = () => {
                       </div>
                       <span className="truncate">{school.address || 'Manzil kiritilmagan'}</span>
                     </div>
+                    <div className="flex items-center gap-2 truncate sm:col-span-2 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                      <div className="w-6 h-6 rounded-lg bg-emerald-100/70 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <Compass className="w-3.5 h-3.5" />
+                      </div>
+                      <span>GPS Binosi: <b>{school.lat || 41.5515}, {school.lng || 60.6315}</b> • Yashil Hudud: <b className="text-emerald-600 dark:text-emerald-400">{school.radiusMeters || 180} metr</b></span>
+                    </div>
                   </div>
 
                   {/* Supabase Bulut Bazasi Sozlamalari & Holati */}
@@ -573,13 +629,24 @@ export const BigAdminDashboard = () => {
                       </span>
                     </div>
 
-                    <button
-                      onClick={() => handleOpenSupabaseModal(school)}
-                      className="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 rounded-xl transition-all flex items-center gap-1.5 shadow-sm hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                    >
-                      <Database className="w-3.5 h-3.5" />
-                      <span>Supabase Sozlamalari</span>
-                    </button>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        onClick={() => handleOpenMapPicker(school)}
+                        className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 rounded-xl transition-all flex items-center gap-1.5 shadow-sm hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                        title="Maktab joylashuvi va radiusini xaritadan belgilash"
+                      >
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span>Xaritadan Belgilash</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleOpenSupabaseModal(school)}
+                        className="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 rounded-xl transition-all flex items-center gap-1.5 shadow-sm hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                      >
+                        <Database className="w-3.5 h-3.5" />
+                        <span>Supabase Sozlamalari</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -793,6 +860,16 @@ export const BigAdminDashboard = () => {
         </div>
       )}
 
+      {/* 4. MAKTABLAR XARITASI VA RADIUSNI QO'LDA BELGILASH / CHIZISH */}
+      {activeTab === 'map' && (
+        <BigAdminSchoolMapView
+          schools={schools}
+          selectedSchoolId={selectedSchoolId}
+          updateSchool={updateSchool}
+          showToast={showToast}
+        />
+      )}
+
       {/* ==================== 5. MAKTAB YARATISH / TAHRIRLASH MODALI ==================== */}
       {showSchoolModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
@@ -884,6 +961,57 @@ export const BigAdminDashboard = () => {
                   placeholder="Masalan: Urganch shahri, Al-Xorazmiy ko'chasi 15"
                   className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-slate-900 dark:text-white"
                 />
+              </div>
+
+              {/* Maktab GPS Binosi & Nazorat Radiusi */}
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                    <MapPin className="w-4 h-4 text-emerald-600" />
+                    <span>Maktab GPS Joylashuvi & Hudud Radiusi</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenMapPicker(editingSchool ? { ...editingSchool, ...schoolFormData } : schoolFormData)}
+                    className="px-2.5 py-1 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-1 shadow-xs transition-colors"
+                  >
+                    <Compass className="w-3.5 h-3.5" />
+                    <span>Xaritadan Tanlash</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <label className="block text-[10px] text-slate-500 mb-0.5">Kenglik (Lat):</label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      value={schoolFormData.lat ?? 41.5515}
+                      onChange={(e) => setSchoolFormData({ ...schoolFormData, lat: Number(e.target.value) })}
+                      className="w-full px-2 py-1 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded font-mono outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-500 mb-0.5">Uzunlik (Lng):</label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      value={schoolFormData.lng ?? 60.6315}
+                      onChange={(e) => setSchoolFormData({ ...schoolFormData, lng: Number(e.target.value) })}
+                      className="w-full px-2 py-1 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded font-mono outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-500 mb-0.5">Radius (metr):</label>
+                    <input
+                      type="number"
+                      step="10"
+                      value={schoolFormData.radiusMeters ?? 180}
+                      onChange={(e) => setSchoolFormData({ ...schoolFormData, radiusMeters: Number(e.target.value) })}
+                      className="w-full px-2 py-1 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded font-mono outline-none"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Yangi maktab yaratishda boshlang'ich turniketlar qo'shish imkoniyati */}
@@ -1488,6 +1616,14 @@ export const BigAdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Maktab joylashuvi va radiusini xaritadan belgilash modali */}
+      <SchoolMapPickerModal
+        isOpen={showMapPickerModal}
+        onClose={() => setShowMapPickerModal(false)}
+        school={selectedSchoolForMap}
+        onSave={handleSaveMapCoords}
+      />
     </div>
   );
 };
