@@ -10,6 +10,7 @@ import { StudentDirectory } from './components/StudentDirectory';
 import { SchoolSettings } from './components/SchoolSettings';
 import { SchoolMonitor } from './components/SchoolMonitor';
 import { TeacherAttendanceView } from './components/TeacherAttendanceView';
+import { StudentAttendanceHistoryView } from './components/StudentAttendanceHistoryView';
 import { BigAdminDashboard } from './components/BigAdminDashboard';
 import { Toast } from './components/Toast';
 import { LocalNetworkModal } from './components/LocalNetworkModal';
@@ -79,10 +80,12 @@ const MainLayout = () => {
         ) : (
           <>
             {activeTab === 'directory' && canSeeStudents && <StudentDirectory />}
+            {activeTab === 'student_attendance' && canSeeStudents && <StudentAttendanceHistoryView />}
             {activeTab === 'settings' && canSeeSettings && <SchoolSettings />}
             {activeTab === 'teacher_attendance' && canSeeTeacherAttendance && <TeacherAttendanceView />}
             {(activeTab === 'main' || 
               (!canSeeStudents && activeTab === 'directory') || 
+              (!canSeeStudents && activeTab === 'student_attendance') || 
               (!canSeeSettings && activeTab === 'settings') || 
               (!canSeeTeacherAttendance && activeTab === 'teacher_attendance')) && (
               <>

@@ -236,6 +236,45 @@ export function exportStudentsToExcel(studentsList, className = 'Barcha_oquvchil
 }
 
 /**
+ * Tanlangan sana bo'yicha o'quvchilar davomati hisobotini Excelga (.xlsx) eksport qilish
+ */
+export function exportStudentAttendanceToExcel(attendanceData, dateStr, className = 'Barchasi') {
+  const rows = (attendanceData || []).map((item, idx) => ({
+    'T/r': idx + 1,
+    'ID': item.studentId || item.faceId || item.id || '',
+    'F.I.Sh (O\'quvchi)': item.fullName || item.name || '',
+    'Sinf': item.className || '',
+    'Holati': item.hasEntered ? (item.hasExited ? 'Chiqib ketgan' : 'Maktabda (Bino ichida)') : 'Kelmagan',
+    'Kirgan vaqti': item.entryTime || (item.hasEntered ? '08:00' : '---'),
+    'Chiqqan vaqti': item.exitTime || (item.hasExited ? '13:00' : (item.hasEntered ? 'Bino ichida' : '---')),
+    'Turniket': item.gateName || (item.hasEntered ? 'Turniket 1 (Kirish)' : 'Turniket qayd etilmadi'),
+    'Ota-onasi': item.parentName || '',
+    'Telefon': formatPhoneNumber(item.parentPhone || item.phone || ''),
+    'Manzil': item.address || ''
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  worksheet['!cols'] = [
+    { wch: 6 },
+    { wch: 12 },
+    { wch: 32 },
+    { wch: 10 },
+    { wch: 22 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 30 },
+    { wch: 22 },
+    { wch: 18 },
+    { wch: 35 },
+  ];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, `Davomat_${dateStr}`);
+  const safeClass = String(className).replace(/[^a-zA-Z0-9_\u0400-\u04FF]/g, '_');
+  XLSX.writeFile(workbook, `Davomat_${dateStr}_${safeClass}.xlsx`);
+}
+
+/**
  * Yuklangan Excel faylni o'qish, formatlash va ichidagi fotosuratlarni avtomatik ajratib olish
  */
 export async function parseStudentsExcelFile(file) {

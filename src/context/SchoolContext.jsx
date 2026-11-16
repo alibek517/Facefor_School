@@ -620,6 +620,9 @@ export const SchoolProvider = ({ children }) => {
     if (p === '/students' || p === '/directory' || p === '/oquvchilar') {
       return { path: '/students', role: 'director', tab: 'directory' };
     }
+    if (p === '/student-attendance' || p === '/oquvchilar-davomati' || p === '/studentattendance') {
+      return { path: '/student-attendance', role: 'director', tab: 'student_attendance' };
+    }
     if (p === '/teachers' || p === '/settings' || p === '/oqituvchilar' || p === '/darslar') {
       return { path: '/teachers', role: 'director', tab: 'settings' };
     }
