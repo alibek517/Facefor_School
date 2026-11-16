@@ -29,7 +29,8 @@ import {
   GraduationCap,
   UserCheck,
   Sparkles,
-  Camera
+  Camera,
+  LogIn
 } from 'lucide-react';
 import { StudentAvatar } from './StudentAvatar';
 import { compressImageBase64 } from '../utils/excelAndPromotion';
@@ -64,6 +65,7 @@ export const SchoolSettings = () => {
     turnstilesSyncMatrix,
     triggerInterTurnstileSync,
     syncAllToHardware,
+    loginAsTeacher,
     showToast
   } = useSchool();
 
@@ -929,7 +931,15 @@ export const SchoolSettings = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => loginAsTeacher(t)}
+                    className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 transition-colors"
+                    title={`${t.name} sifatida tizimga kirish`}
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Profilga kirish</span>
+                  </button>
                   <button
                     onClick={() => openEditTeacher(t)}
                     className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded transition-colors"

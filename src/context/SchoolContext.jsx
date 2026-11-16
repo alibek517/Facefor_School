@@ -676,6 +676,31 @@ export const SchoolProvider = ({ children }) => {
       window.history.pushState({ path: route.path }, '', route.path);
     }
 
+    // O'qituvchi /class-teacher va /subject-teacher orasida o'tayotganida boshqa o'qituvchiga almashtirib yubormaslik!
+    const isTeacherRole = route.role === 'class_teacher' || route.role === 'subject_teacher';
+    const isTeacherUser = Boolean(
+      currentUserRef.current?.teacherId || 
+      currentUserRef.current?.role === 'class_teacher' || 
+      currentUserRef.current?.role === 'subject_teacher'
+    );
+
+    if (isTeacherUser && isTeacherRole) {
+      if (currentUserRef.current?.role !== route.role) {
+        setCurrentUser(prev => {
+          if (!prev) return prev;
+          const updated = {
+            ...prev,
+            role: route.role
+          };
+          try {
+            localStorage.setItem('school_user', JSON.stringify(updated));
+          } catch (e) {}
+          return updated;
+        });
+      }
+      return;
+    }
+
     if (currentUserRef.current?.role !== 'bigadmin' && route.role && currentUser?.role !== route.role) {
       quickSwitchRole(route.role, false, true);
     }
@@ -709,7 +734,26 @@ export const SchoolProvider = ({ children }) => {
       const route = parsePath(window.location.pathname);
       setCurrentPath(route.path);
       setActiveTab(route.tab);
-      quickSwitchRole(route.role, false, true);
+
+      const isTeacherRole = route.role === 'class_teacher' || route.role === 'subject_teacher';
+      const isTeacherUser = Boolean(
+        currentUserRef.current?.teacherId || 
+        currentUserRef.current?.role === 'class_teacher' || 
+        currentUserRef.current?.role === 'subject_teacher'
+      );
+
+      if (isTeacherUser && isTeacherRole) {
+        if (currentUserRef.current?.role !== route.role) {
+          setCurrentUser(prev => {
+            if (!prev) return prev;
+            const updated = { ...prev, role: route.role };
+            try { localStorage.setItem('school_user', JSON.stringify(updated)); } catch (e) {}
+            return updated;
+          });
+        }
+      } else {
+        quickSwitchRole(route.role, false, true);
+      }
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -728,8 +772,18 @@ export const SchoolProvider = ({ children }) => {
     }
     setCurrentPath(initialRoute.path);
     setActiveTab(initialRoute.tab);
+
+    const isInitTeacherRole = initialRoute.role === 'class_teacher' || initialRoute.role === 'subject_teacher';
+    const isInitTeacherUser = Boolean(
+      currentUserRef.current?.teacherId || 
+      currentUserRef.current?.role === 'class_teacher' || 
+      currentUserRef.current?.role === 'subject_teacher'
+    );
+
     if (initialRoute.role && initialRoute.role !== 'director') {
-      quickSwitchRole(initialRoute.role, false, true);
+      if (!(isInitTeacherUser && isInitTeacherRole)) {
+        quickSwitchRole(initialRoute.role, false, true);
+      }
     }
 
     return () => {
@@ -1796,48 +1850,56 @@ export const SchoolProvider = ({ children }) => {
           permissions: ['dashboard', 'cameras', 'playback', 'students', 'teachers', 'leadership', 'classes', 'schedules', 'attendance_control', 'class_attendance', 'notifications', 'settings']
         };
       } else {
-        // 3. Standart USERS_AUTH ro'yxatini tekshirish
-        found = USERS_AUTH.find(
-          u => {
-            // Agar u-mon bo'lsa, lekin joriy maktab paroli almashtirilgan bo'lsa, eski USERS_AUTH monitor paroli o'tmasin
-            if (u.role === 'monitor') {
-              const sch = schools.find(s => s.id === (u.schoolId || 'sch-1'));
-              if (sch && sch.monitorPassword && sch.monitorPassword !== u.password) {
-                return false;
-              }
-            }
-            return u.login.toLowerCase() === cleanLogin && u.password === cleanPass;
-          }
+        // 3. Avval barcha O'qituvchilarning Login va Parolini tekshirish (dinamik)
+        const matchedTeacher = (teachers || []).find(t => {
+          const tLogin = (t.login || generateTeacherLogin(t.name)).toLowerCase().trim();
+          const tPass = String(t.password || '123').trim();
+          const cleanPhone = (t.phone || '').replace(/[^0-9]/g, '');
+          const inputPhone = cleanLogin.replace(/[^0-9]/g, '');
+          const matchesPhone = cleanPhone && inputPhone && cleanPhone.endsWith(inputPhone) && inputPhone.length >= 7;
+          return (tLogin === cleanLogin || matchesPhone) && tPass === cleanPass;
+        }) || (
+          (cleanLogin === 'sinfraxbari' && cleanPass === '123') 
+            ? ((teachers || []).find(t => t.id === selectedTeacherId && t.classId) || (teachers || []).find(t => t.classId) || (teachers || [])[0])
+            : null
+        ) || (
+          (cleanLogin === 'oqituvchi' && cleanPass === '123')
+            ? ((teachers || []).find(t => t.id === selectedTeacherId) || (teachers || [])[0])
+            : null
         );
 
-        // 4. Barcha O'qituvchilarning Login va Parolini tekshirish (dinamik)
-        if (!found) {
-          const matchedTeacher = (teachers || []).find(t => {
-            const tLogin = (t.login || generateTeacherLogin(t.name)).toLowerCase().trim();
-            const tPass = String(t.password || '123').trim();
-            const cleanPhone = (t.phone || '').replace(/[^0-9]/g, '');
-            const inputPhone = cleanLogin.replace(/[^0-9]/g, '');
-            const matchesPhone = cleanPhone && inputPhone && cleanPhone.endsWith(inputPhone) && inputPhone.length >= 7;
-            return (tLogin === cleanLogin || matchesPhone) && tPass === cleanPass;
-          });
+        if (matchedTeacher) {
+          const isClassTeacher = Boolean(matchedTeacher.classId);
+          const tClassObj = (classes || []).find(c => c.id === matchedTeacher.classId);
+          found = {
+            id: `u-${matchedTeacher.id}`,
+            login: matchedTeacher.login || generateTeacherLogin(matchedTeacher.name),
+            password: cleanPass,
+            role: isClassTeacher ? 'class_teacher' : 'subject_teacher',
+            schoolId: selectedSchoolId || 'sch-1',
+            name: matchedTeacher.name,
+            detail: isClassTeacher ? `${tClassObj?.name || ''} sinf rahbari` : `${matchedTeacher.subject || 'Fan'} o'qituvchisi`,
+            teacherId: matchedTeacher.id,
+            classId: matchedTeacher.classId || null,
+            subject: matchedTeacher.subject || '',
+            permissions: ['class_attendance', 'notifications', 'grades_journal']
+          };
+        }
 
-          if (matchedTeacher) {
-            const isClassTeacher = Boolean(matchedTeacher.classId);
-            const tClassObj = (classes || []).find(c => c.id === matchedTeacher.classId);
-            found = {
-              id: `u-${matchedTeacher.id}`,
-              login: matchedTeacher.login || generateTeacherLogin(matchedTeacher.name),
-              password: cleanPass,
-              role: isClassTeacher ? 'class_teacher' : 'subject_teacher',
-              schoolId: selectedSchoolId || 'sch-1',
-              name: matchedTeacher.name,
-              detail: isClassTeacher ? `${tClassObj?.name || ''} sinf rahbari` : `${matchedTeacher.subject || 'Fan'} o'qituvchisi`,
-              teacherId: matchedTeacher.id,
-              classId: matchedTeacher.classId || null,
-              subject: matchedTeacher.subject || '',
-              permissions: isClassTeacher ? ['class_attendance', 'notifications'] : ['grades_journal']
-            };
-          }
+        // 4. Standart USERS_AUTH ro'yxatini tekshirish
+        if (!found) {
+          found = USERS_AUTH.find(
+            u => {
+              // Agar u-mon bo'lsa, lekin joriy maktab paroli almashtirilgan bo'lsa, eski USERS_AUTH monitor paroli o'tmasin
+              if (u.role === 'monitor') {
+                const sch = schools.find(s => s.id === (u.schoolId || 'sch-1'));
+                if (sch && sch.monitorPassword && sch.monitorPassword !== u.password) {
+                  return false;
+                }
+              }
+              return u.login.toLowerCase() === cleanLogin && u.password === cleanPass;
+            }
+          );
         }
 
         // 5. Rahbariyat va ma'muriyat a'zolarini tekshirish
@@ -1932,48 +1994,106 @@ export const SchoolProvider = ({ children }) => {
     showToast('Chiqildi', 'Tizimdan muvaffaqiyatli chiqildi.', 'info');
   };
 
+  // O'qituvchi profiliga 1-klikda to'g'ridan-to'g'ri kirish (Direktor yoki admin uchun)
+  const loginAsTeacher = (teacher) => {
+    if (!teacher) return;
+    const isClassTeacher = Boolean(teacher.classId);
+    const tClassObj = (classes || []).find(c => c.id === teacher.classId);
+    const userObj = {
+      id: `u-${teacher.id}`,
+      login: teacher.login || generateTeacherLogin(teacher.name),
+      password: teacher.password || '123',
+      role: isClassTeacher ? 'class_teacher' : 'subject_teacher',
+      schoolId: selectedSchoolId || 'sch-1',
+      name: teacher.name,
+      detail: isClassTeacher ? `${tClassObj?.name || ''} sinf rahbari` : `${teacher.subject || 'Fan'} o'qituvchisi`,
+      teacherId: teacher.id,
+      classId: teacher.classId || null,
+      subject: teacher.subject || '',
+      permissions: isClassTeacher ? ['class_attendance', 'notifications', 'grades_journal'] : ['grades_journal']
+    };
+    setCurrentUser(userObj);
+    setSelectedTeacherId(teacher.id);
+    try {
+      localStorage.setItem('school_user', JSON.stringify(userObj));
+      localStorage.setItem('school_teacher_id', teacher.id);
+      const token = generateAuthToken(userObj);
+      localStorage.setItem('auth_token', token);
+    } catch (e) {}
+    showToast('Profilga kirildi', `${teacher.name} profiliga muvaffaqiyatli o'tildi.`, 'success');
+    if (isClassTeacher) {
+      navigateTo('/class-teacher');
+    } else {
+      navigateTo('/subject-teacher');
+    }
+  };
+
   // Tezkor almashtirish
   const quickSwitchRole = (role, updateUrl = true, silent = false) => {
     // Agar BigAdmin tizimda bo'lsa, boshqa rollarga o'tish bloklanadi
     if (currentUserRef.current?.role === 'bigadmin' && role !== 'bigadmin') {
       return;
     }
-    let match = USERS_AUTH.find(u => u.role === role);
-    if (!match && role === 'class_teacher') {
-      const classTeacher = teachers.find(t => t.classId) || teachers[0];
-      const teacherClass = classes.find(c => c.id === classTeacher?.classId);
-      match = {
-        id: 'u-cl-10a',
-        login: 'sinfraxbari',
-        role: 'class_teacher',
-        name: classTeacher ? classTeacher.name : 'Davletova Gulasal',
-        detail: teacherClass ? `${teacherClass.name} sinf rahbari` : '10-A sinf rahbari',
-        teacherId: classTeacher?.id || 't-1791520951199',
-        classId: classTeacher?.classId || 'c-10a'
-      };
-    } else if (!match && role === 'subject_teacher') {
-      const subjTeacher = teachers[0];
-      match = {
-        id: 'u-sub-t1',
-        login: 'oqituvchi',
-        role: 'subject_teacher',
-        name: subjTeacher ? subjTeacher.name : 'Davletova Gulasal',
-        detail: subjTeacher?.subject ? `${subjTeacher.subject} fani o'qituvchisi` : 'Fan o\'qituvchisi',
-        teacherId: subjTeacher?.id || 't-1791520951199'
-      };
-    }
 
-    if (match) {
-      if (match.role === 'class_teacher') {
-        const tObj = teachers.find(t => t.id === match.teacherId) || teachers.find(t => t.classId);
-        if (tObj && tObj.classId) {
-          match = { ...match, classId: tObj.classId };
+    // 1. Agar o'qituvchi rollariga o'tayotgan bo'lsa (class_teacher yoki subject_teacher):
+    if (role === 'class_teacher' || role === 'subject_teacher') {
+      const activeTeacherId = currentUserRef.current?.teacherId || selectedTeacherId;
+      let activeTeacher = (teachers || []).find(t => t.id === activeTeacherId);
+
+      // Agar hozirgi o'qituvchi topilmasa:
+      if (!activeTeacher) {
+        if (role === 'class_teacher') {
+          activeTeacher = (teachers || []).find(t => t.classId) || (teachers || [])[0];
+        } else {
+          activeTeacher = (teachers || [])[0];
         }
       }
-      setCurrentUser(match);
-      if (match.teacherId) {
-        setSelectedTeacherId(match.teacherId);
+
+      if (activeTeacher) {
+        const isClassTeacher = role === 'class_teacher';
+        const tClassObj = (classes || []).find(c => c.id === activeTeacher.classId);
+        const match = {
+          id: `u-${activeTeacher.id}`,
+          login: activeTeacher.login || generateTeacherLogin(activeTeacher.name),
+          role: role,
+          schoolId: selectedSchoolId || 'sch-1',
+          name: activeTeacher.name,
+          detail: isClassTeacher && tClassObj ? `${tClassObj.name} sinf rahbari` : `${activeTeacher.subject || 'Fan'} o'qituvchisi`,
+          teacherId: activeTeacher.id,
+          classId: activeTeacher.classId || null,
+          subject: activeTeacher.subject || '',
+          permissions: ['class_attendance', 'notifications', 'grades_journal']
+        };
+
+        setCurrentUser(match);
+        setSelectedTeacherId(activeTeacher.id);
+        try {
+          localStorage.setItem('school_user', JSON.stringify(match));
+          localStorage.setItem('school_teacher_id', activeTeacher.id);
+        } catch (e) {}
+
+        if (!silent) {
+          showToast('Rol almashtirildi', `${match.name} (${match.detail || match.role}) rejimiga o'tildi.`, 'info');
+        }
+
+        if (updateUrl) {
+          const p = role === 'class_teacher' ? '/class-teacher' : '/subject-teacher';
+          if (typeof window !== 'undefined' && window.location.pathname !== p) {
+            window.history.pushState({ path: p }, '', p);
+          }
+          setCurrentPath(p);
+        }
+        return;
       }
+    }
+
+    // 2. Boshqa rollar uchun USERS_AUTH dan qidirish
+    let match = USERS_AUTH.find(u => u.role === role);
+    if (match) {
+      setCurrentUser(match);
+      try {
+        localStorage.setItem('school_user', JSON.stringify(match));
+      } catch (e) {}
       if (!silent) {
         showToast('Rol almashtirildi', `${match.name} (${match.detail || match.role}) rejimiga o'tildi.`, 'info');
       }
@@ -3349,6 +3469,7 @@ export const SchoolProvider = ({ children }) => {
     currentUser,
     login,
     logout,
+    loginAsTeacher,
     quickSwitchRole,
     switchStaffMember,
     selectedTeacherId,

@@ -145,12 +145,37 @@ export const Navbar = () => {
                   <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
                   <span>Foye Tablosi (Monitor)</span>
                 </div>
+              ) : (currentUser?.role === 'class_teacher' || currentUser?.role === 'subject_teacher' || currentUser?.teacherId) ? (
+                <>
+                  {(myClassId || currentUser?.role === 'class_teacher') && (
+                    <button
+                      onClick={() => navigateTo('/class-teacher')}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                        currentPath === '/class-teacher'
+                          ? 'bg-blue-700 text-white shadow-sm'
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <GraduationCap className="w-3.5 h-3.5" />
+                      <span>{myClassObj ? `${myClassObj.name} Rahbari` : 'Sinf Rahbari'}</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => navigateTo('/subject-teacher')}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                      currentPath === '/subject-teacher'
+                        ? 'bg-blue-700 text-white shadow-sm'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Dars Jurnali</span>
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={() => {
                     if (currentUser?.role === 'inspector') navigateTo('/duty');
-                    else if (currentUser?.role === 'class_teacher') navigateTo('/class-teacher');
-                    else if (currentUser?.role === 'subject_teacher') navigateTo('/subject-teacher');
                     else navigateTo('/director');
                   }}
                   className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
@@ -163,8 +188,6 @@ export const Navbar = () => {
                   <span>
                     {currentUser?.role === 'director' && 'Direktor'}
                     {currentUser?.role === 'inspector' && 'Navbatchi'}
-                    {currentUser?.role === 'class_teacher' && (myClassObj ? `${myClassObj.name} Rahbari` : 'Sinf Rahbari')}
-                    {currentUser?.role === 'subject_teacher' && "Fan O'qituvchisi"}
                     {currentUser?.category === 'leadership' && currentUser?.role !== 'director' && (currentUser?.detail || currentUser?.role || 'Rahbariyat')}
                     {currentUser?.category === 'administrator' && (currentUser?.detail || 'Administrator')}
                   </span>

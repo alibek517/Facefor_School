@@ -37,7 +37,8 @@ export const TeacherJournal = () => {
     schedules, 
     updateStudentAttendance,
     recordLessonAttendance,
-    showToast 
+    showToast,
+    navigateTo 
   } = useSchool();
 
   // 1. Joriy o'qituvchini aniqlash (currentUser, selectedTeacherId yoki ism bo'yicha)
@@ -70,6 +71,12 @@ export const TeacherJournal = () => {
 
   const teacherId = currentTeacher?.id || currentUser?.teacherId || selectedTeacherId;
   const teacherNormName = normalizeText(currentTeacher?.name || currentUser?.name || '');
+
+  const homeroomClassId = currentTeacher?.classId || currentUser?.classId;
+  const myHomeroomClass = useMemo(() => {
+    if (!homeroomClassId) return null;
+    return (classes || []).find(c => c.id === homeroomClassId);
+  }, [classes, homeroomClassId]);
 
   // 2. Ushbu o'qituvchining maktab bo'yicha BARCHA darslari
   const allTeacherLessons = useMemo(() => {
@@ -233,7 +240,18 @@ export const TeacherJournal = () => {
           </div>
 
           {/* O'qituvchi tanlash yoki Rejim almashtirish */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {myHomeroomClass && (
+              <button
+                onClick={() => navigateTo('/class-teacher')}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-xs transition-colors shrink-0"
+                title={`${myHomeroomClass.name} sinf rahbarligi sahifasiga o'tish`}
+              >
+                <GraduationCap className="w-3.5 h-3.5" />
+                <span>🏫 {myHomeroomClass.name} (Rahbarlik sinfim)</span>
+              </button>
+            )}
+
             {(currentUser?.isDirector || currentUser?.role === 'director' || teachers.length > 0) && (
               <select
                 value={currentTeacher?.id || ''}
