@@ -25,6 +25,7 @@ import {
 import { StudentAvatar } from './StudentAvatar';
 import { formatPhoneNumber } from '../utils/phoneFormatter';
 import { exportStudentAttendanceToExcel } from '../utils/excelAndPromotion';
+import { evaluateStudentDayAttendance } from '../utils/attendanceScheduleHelper';
 
 // O'zbekiston mahalliy vaqti bo'yicha bugungi sanani olish (YYYY-MM-DD)
 const getTodayDateStr = () => {
@@ -98,6 +99,7 @@ export const StudentAttendanceHistoryView = () => {
     students = [], 
     classes = [], 
     attendanceList = [], 
+    schedules = [],
     recentFaceScans = [], 
     cameras = [], 
     bridgeUrl, 
@@ -261,20 +263,35 @@ export const StudentAttendanceHistoryView = () => {
         let entryTime = null;
         let exitTime = null;
         let gateName = "Turniket qayd etilmadi";
+        let scheduleStatus = 'absent';
+        let scheduleLabel = 'Kelmagan';
+        let scheduleDetail = '';
 
         if (scans.length > 0) {
-          hasEntered = true;
-          hasExited = lastScan?.direction === 'out';
-          isInside = hasEntered && !hasExited;
-          entryTime = formatTime24(firstInScan?.timeFormatted || (firstInScan ? new Date(firstInScan.timestamp).toLocaleTimeString() : null), '07:50');
-          exitTime = hasExited ? formatTime24(lastScan?.timeFormatted, '13:15') : (outScans[0] ? formatTime24(outScans[0].timeFormatted) : null);
-          gateName = getTurniketGateName(hasExited ? lastScan : firstInScan, hasExited ? 'out' : 'in');
+          const dayEval = evaluateStudentDayAttendance({
+            scans,
+            attRecord,
+            classId: student.classId,
+            schedules,
+            dateStr: selectedDate
+          });
+          hasEntered = dayEval.hasEntered;
+          hasExited = dayEval.hasExited && dayEval.scheduleStatus !== 'inside';
+          isInside = dayEval.scheduleStatus === 'inside';
+          entryTime = dayEval.firstEntryTime || formatTime24(firstInScan?.timeFormatted, '07:50');
+          exitTime = dayEval.lastExitTime || null;
+          scheduleStatus = dayEval.scheduleStatus;
+          scheduleLabel = dayEval.scheduleLabel;
+          scheduleDetail = dayEval.scheduleDetail;
+          gateName = getTurniketGateName(hasExited ? (dayEval.lastExitScan || lastScan) : (dayEval.firstEntryScan || firstInScan), hasExited ? 'out' : 'in');
         } else if (attRecord && (attRecord.status === 'present' || attRecord.status === 'exited' || attRecord.inTime)) {
           hasEntered = true;
           hasExited = attRecord.status === 'exited' || attRecord.lastDirection === 'out';
           isInside = hasEntered && !hasExited;
           entryTime = formatTime24(attRecord.inTime, '08:00');
           exitTime = hasExited ? formatTime24(attRecord.outTime, '13:00') : null;
+          scheduleStatus = hasExited ? 'completed_all' : 'inside';
+          scheduleLabel = hasExited ? 'Barcha darsga kirgan' : 'Maktab ichida';
           gateName = attRecord.inspector ? `Qayd: ${attRecord.inspector}` : 'Turniket 1 (Kirish) • Bosh kirish eshigi (1)';
         } else if (!isToday) {
           // O'tgan sana uchun deterministik arxiv
@@ -285,6 +302,8 @@ export const StudentAttendanceHistoryView = () => {
             isInside = hasEntered && !hasExited;
             entryTime = hist.inTime;
             exitTime = hist.outTime;
+            scheduleStatus = hasEntered ? (hasExited ? 'completed_all' : 'inside') : 'absent';
+            scheduleLabel = hasEntered ? (hasExited ? 'Barcha darsga kirgan' : 'Maktab ichida') : 'Kelmagan';
             gateName = hist.gateName;
           }
         }
@@ -300,6 +319,9 @@ export const StudentAttendanceHistoryView = () => {
           entryTime,
           exitTime,
           gateName,
+          scheduleStatus,
+          scheduleLabel,
+          scheduleDetail,
           statusType: hasEntered ? (hasExited ? 'exited' : 'inside') : 'absent'
         };
       })
@@ -313,7 +335,7 @@ export const StudentAttendanceHistoryView = () => {
         const nameB = String(b.fullName || b.name || '').trim();
         return nameA.localeCompare(nameB, 'uz', { sensitivity: 'base' });
       });
-  }, [students, selectedDateScans, selectedDateRecords, selectedDate, todayStr, classMap]);
+  }, [students, selectedDateScans, selectedDateRecords, selectedDate, todayStr, classMap, schedules]);
 
   // Tanlangan sinf bo'yicha cheklangan ro'yxat (KPI hisoblash uchun)
   const scopedStudents = useMemo(() => {
@@ -326,6 +348,9 @@ export const StudentAttendanceHistoryView = () => {
   const insideStudents = useMemo(() => scopedStudents.filter(s => s.isInside), [scopedStudents]);
   const enteredStudents = useMemo(() => scopedStudents.filter(s => s.hasEntered), [scopedStudents]);
   const exitedStudents = useMemo(() => scopedStudents.filter(s => s.hasExited), [scopedStudents]);
+  const completedAllStudents = useMemo(() => scopedStudents.filter(s => s.scheduleStatus === 'completed_all'), [scopedStudents]);
+  const leftEarlyStudents = useMemo(() => scopedStudents.filter(s => s.scheduleStatus === 'left_early'), [scopedStudents]);
+  const outdoorStudents = useMemo(() => scopedStudents.filter(s => s.scheduleStatus === 'outdoor_lesson'), [scopedStudents]);
   const absentStudents = useMemo(() => scopedStudents.filter(s => !s.hasEntered), [scopedStudents]);
 
   const insidePercent = totalCount > 0 ? Math.round((insideStudents.length / totalCount) * 100) : 0;
@@ -338,6 +363,9 @@ export const StudentAttendanceHistoryView = () => {
     if (selectedTab === 'inside') list = insideStudents;
     else if (selectedTab === 'entered') list = enteredStudents;
     else if (selectedTab === 'exited') list = exitedStudents;
+    else if (selectedTab === 'completed_all') list = completedAllStudents;
+    else if (selectedTab === 'left_early') list = leftEarlyStudents;
+    else if (selectedTab === 'outdoor_lesson') list = outdoorStudents;
     else if (selectedTab === 'absent') list = absentStudents;
 
     if (searchTerm.trim()) {
@@ -622,6 +650,9 @@ export const StudentAttendanceHistoryView = () => {
               { id: 'all', label: 'Barchasi', count: totalCount, color: 'blue' },
               { id: 'inside', label: 'Bino Ichida', count: insideStudents.length, color: 'emerald' },
               { id: 'entered', label: 'Kelganlar', count: enteredStudents.length, color: 'blue' },
+              { id: 'completed_all', label: 'Barcha darsga kirgan', count: completedAllStudents.length, color: 'emerald' },
+              { id: 'left_early', label: 'Ketib qolgan', count: leftEarlyStudents.length, color: 'rose' },
+              { id: 'outdoor_lesson', label: 'Jismoniy / CHQBT', count: outdoorStudents.length, color: 'cyan' },
               { id: 'exited', label: 'Chiqib ketgan', count: exitedStudents.length, color: 'amber' },
               { id: 'absent', label: 'Kelmaganlar', count: absentStudents.length, color: 'rose' }
             ].map(tab => {
@@ -782,21 +813,49 @@ export const StudentAttendanceHistoryView = () => {
                   <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5">
                     {st.hasEntered ? (
                       <>
-                        <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center justify-between text-xs gap-1">
                           <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5 text-blue-500" />
-                            Kirgan: <b className="text-slate-800 dark:text-slate-200 font-mono">{st.entryTime || '07:50'}</b>
+                            1-kirish: <b className="text-slate-800 dark:text-slate-200 font-mono">{st.entryTime || '--:--'}</b>
                           </span>
                           
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                            st.hasExited 
-                              ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400' 
+                            st.scheduleStatus === 'left_early'
+                              ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
+                              : st.scheduleStatus === 'completed_all'
+                              ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                              : st.scheduleStatus === 'outdoor_lesson'
+                              ? 'bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300'
+                              : st.hasExited
+                              ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400'
                               : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400'
                           }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${st.hasExited ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`}></span>
-                            {st.hasExited ? `Chiqdi: ${st.exitTime || '13:00'}` : 'Bino ichida'}
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              st.scheduleStatus === 'left_early'
+                                ? 'bg-rose-500'
+                                : st.scheduleStatus === 'outdoor_lesson'
+                                ? 'bg-cyan-500'
+                                : st.hasExited
+                                ? 'bg-emerald-500'
+                                : 'bg-emerald-500 animate-pulse'
+                            }`}></span>
+                            {st.hasExited ? `Oxirgi chiqish: ${st.exitTime || '--:--'}` : 'Bino ichida'}
                           </span>
                         </div>
+
+                        {st.scheduleLabel && (
+                          <div className={`text-[10px] font-bold px-2 py-0.5 rounded-lg inline-block ${
+                            st.scheduleStatus === 'completed_all'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                              : st.scheduleStatus === 'left_early'
+                              ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
+                              : st.scheduleStatus === 'outdoor_lesson'
+                              ? 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                          }`} title={st.scheduleDetail || st.scheduleLabel}>
+                            {st.scheduleLabel}
+                          </div>
+                        )}
 
                         <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate" title={st.gateName}>
                           📍 {st.gateName}

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { useSchool } from '../context/SchoolContext';
+import { evaluateStudentDayAttendance } from '../utils/attendanceScheduleHelper';
 import {
   Building2,
   GraduationCap,
@@ -111,6 +112,7 @@ export const AttendanceReportView = () => {
     technicalStaff = [],
     attendanceList = [],
     teacherAttendance = [],
+    schedules = [],
     recentFaceScans = [],
     currentSchool,
     showToast
@@ -241,17 +243,18 @@ export const AttendanceReportView = () => {
         }
       }
 
-      const sortedScans = [...scans].sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
-      const inScans = sortedScans.filter(s => s.direction !== 'out' && s.type !== 'out');
-      const outScans = sortedScans.filter(s => s.direction === 'out' || s.type === 'out');
-
-      const firstIn = inScans[0] || sortedScans[0] || null;
-      const lastOut = outScans[outScans.length - 1] || null;
-      const entryTime = extractScanTime(firstIn);
-      const exitTime = extractScanTime(lastOut);
-
       const attRec = studentAttMap.get(String(st.id)) || studentAttMap.get(String(st.studentId));
-      const hasEntered = Boolean(firstIn) || attRec?.status === 'present' || attRec?.status === 'late';
+      const dayEval = evaluateStudentDayAttendance({
+        scans,
+        attRecord: attRec,
+        classId: st.classId,
+        schedules,
+        dateStr: selectedDate
+      });
+
+      const entryTime = dayEval.firstEntryTime;
+      const exitTime = dayEval.lastExitTime;
+      const hasEntered = dayEval.hasEntered;
 
       let status = 'unexcused'; // 'ontime' | 'late' | 'excused' | 'unexcused'
       if (hasEntered) {
@@ -280,13 +283,16 @@ export const AttendanceReportView = () => {
         className: cls?.name || st.className || 'Biriktirilmagan',
         grade: cls?.grade || null,
         status,
-        entryTime: entryTime || (attRec?.time ? formatTime24(attRec.time) : ''),
-        exitTime: exitTime || '',
-        reason: attRec?.reason || '',
+        scheduleStatus: dayEval.scheduleStatus,
+        scheduleLabel: dayEval.scheduleLabel,
+        scheduleDetail: dayEval.scheduleDetail,
+        entryTime,
+        exitTime,
+        reason: attRec?.reason || dayEval.scheduleDetail || '',
         parentPhone: st.parentPhone || st.phone || ''
       };
     });
-  }, [students, scanIndex, studentAttMap, classMap, lateMinutes]);
+  }, [students, scanIndex, studentAttMap, classMap, lateMinutes, schedules, selectedDate]);
 
   // Bo'limlar ro'yxatini shakllantirish (O'qituvchilar, Rahbariyat, Ma'muriyat va boshqalar)
   const evaluatedStaff = useMemo(() => {
@@ -473,10 +479,18 @@ export const AttendanceReportView = () => {
   const rawRows = useMemo(() => {
     if (activeSection === 'classes_summary') return classSummaryRows;
     if (activeSection === 'departments_summary') return departmentSummaryRows;
+    const matchesStatus = (s) => {
+      if (statusFilter === 'all') return true;
+      if (statusFilter === 'completed_all' || statusFilter === 'left_early' || statusFilter === 'outdoor_lesson') {
+        return s.scheduleStatus === statusFilter;
+      }
+      return s.status === statusFilter;
+    };
+
     if (activeSection === 'class_detail') {
       return evaluatedStudents
         .filter(s => s.classId === activeClassId)
-        .filter(s => statusFilter === 'all' || s.status === statusFilter)
+        .filter(matchesStatus)
         .map((s, idx) => ({ ...s, index: idx + 1 }));
     }
     if (activeSection === 'department_detail') {
@@ -489,7 +503,7 @@ export const AttendanceReportView = () => {
     return evaluatedStudents
       .filter(s => gradeFilter === 'all' || String(s.grade) === String(gradeFilter))
       .filter(s => !selectedClassId || selectedClassId === 'all' || s.classId === selectedClassId)
-      .filter(s => statusFilter === 'all' || s.status === statusFilter)
+      .filter(matchesStatus)
       .map((s, idx) => ({ ...s, index: idx + 1 }));
   }, [
     activeSection,
@@ -991,6 +1005,9 @@ export const AttendanceReportView = () => {
                     { id: 'all', label: 'Barchasi' },
                     { id: 'ontime', label: 'Vaqtida' },
                     { id: 'late', label: 'Kechikkan' },
+                    { id: 'completed_all', label: 'Barcha darsga kirgan' },
+                    { id: 'left_early', label: 'Ketib qolgan' },
+                    { id: 'outdoor_lesson', label: 'Jismoniy / CHQBT' },
                     { id: 'excused', label: 'Sababli' },
                     { id: 'unexcused', label: 'Sababsiz' }
                   ].map(f => (
@@ -1030,6 +1047,9 @@ export const AttendanceReportView = () => {
                     { id: 'all', label: 'Barchasi' },
                     { id: 'ontime', label: 'Vaqtida' },
                     { id: 'late', label: 'Kechikkan' },
+                    { id: 'completed_all', label: 'Barcha darsga kirgan' },
+                    { id: 'left_early', label: 'Ketib qolgan' },
+                    { id: 'outdoor_lesson', label: 'Jismoniy / CHQBT' },
                     { id: 'excused', label: 'Sababli' },
                     { id: 'unexcused', label: 'Sababsiz' }
                   ].map(f => (
@@ -1067,6 +1087,9 @@ export const AttendanceReportView = () => {
                     { id: 'all', label: 'Barchasi' },
                     { id: 'ontime', label: 'Vaqtida' },
                     { id: 'late', label: 'Kechikkan' },
+                    { id: 'completed_all', label: 'Barcha darsga kirgan' },
+                    { id: 'left_early', label: 'Ketib qolgan' },
+                    { id: 'outdoor_lesson', label: 'Jismoniy / CHQBT' },
                     { id: 'excused', label: 'Sababli' },
                     { id: 'unexcused', label: 'Sababsiz' }
                   ].map(f => (
@@ -1346,12 +1369,12 @@ export const AttendanceReportView = () => {
                     )}
                     {visibleCols.entryTime && (
                       <th onClick={() => toggleSort('entryTime')} className="px-3 py-2.5 text-center font-black border-r border-slate-200 dark:border-slate-700 cursor-pointer select-none whitespace-nowrap">
-                        KIRISH VAQTI {renderSortIcon('entryTime')}
+                        BIRINCHI KIRISH {renderSortIcon('entryTime')}
                       </th>
                     )}
                     {visibleCols.exitTime && (
                       <th onClick={() => toggleSort('exitTime')} className="px-3 py-2.5 text-center font-black border-r border-slate-200 dark:border-slate-700 cursor-pointer select-none whitespace-nowrap">
-                        CHIQISH VAQTI {renderSortIcon('exitTime')}
+                        OXIRGI CHIQISH {renderSortIcon('exitTime')}
                       </th>
                     )}
                     {visibleCols.reason && (
@@ -1403,8 +1426,23 @@ export const AttendanceReportView = () => {
                           </td>
                         )}
                         {visibleCols.status && (
-                          <td className="px-3 py-2.5 text-center border-r border-slate-100 dark:border-slate-800">
-                            {statusBadge(row.status)}
+                          <td className="px-3 py-2.5 text-center border-r border-slate-100 dark:border-slate-800 space-y-1">
+                            <div>{statusBadge(row.status)}</div>
+                            {row.scheduleStatus && row.scheduleStatus !== 'absent' && (
+                              <div>
+                                <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                  row.scheduleStatus === 'completed_all'
+                                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                    : row.scheduleStatus === 'left_early'
+                                    ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300'
+                                    : row.scheduleStatus === 'outdoor_lesson'
+                                    ? 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/70 dark:text-cyan-300'
+                                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                                }`}>
+                                  {row.scheduleLabel}
+                                </span>
+                              </div>
+                            )}
                           </td>
                         )}
                         {visibleCols.entryTime && (
