@@ -342,7 +342,14 @@ export const SchoolProvider = ({ children }) => {
       };
     });
 
-    const extras = list.filter(c => c && !canonicalMap[c.ip] && !canonicalMap[c.id]);
+    const activeSchId = (typeof window !== 'undefined' && localStorage.getItem('school_selected_id')) || 'sch-1';
+    const extras = list.filter(c => {
+      if (!c || canonicalMap[c.ip] || canonicalMap[c.id]) return false;
+      // Boshqa maktablarning turniketlari (masalan 192.168.2.10 / 192.168.2.11) joriy maktabda ko'rinmasin
+      if (c.schoolId && c.schoolId !== activeSchId) return false;
+      if (activeSchId === 'sch-1' && !c.schoolId) return false;
+      return true;
+    });
     return [...normalizedStandard, ...extras];
   };
 
