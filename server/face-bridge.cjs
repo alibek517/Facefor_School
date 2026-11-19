@@ -1,4 +1,5 @@
 const http = require('http');
+const https = require('https');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
@@ -1236,8 +1237,15 @@ function parseDigestHeader(header) {
   return params;
 }
 
-// Digest avtorizatsiya so'rovi (Promise va timeout bilan)
-function digestRequest({ host, port = 80, path, method = 'GET', body = null, username, password, timeout = 3500, isBinary = false, contentType = 'application/json' }) {
+// HTTP (80) yopiq bo'lib, faqat HTTPS (443) orqali ishlaydigan kameralar keshi (masalan 192.168.1.33)
+const httpsHostsCache = new Set();
+
+// Digest avtorizatsiya so'rovi (Promise, timeout va avtomatik HTTPS 443 fallback bilan)
+function digestRequest({ host, port = 80, path, method = 'GET', body = null, username, password, timeout = 3500, isBinary = false, contentType = 'application/json', _forceHttps = false }) {
+  const useHttps = _forceHttps || port === 443 || httpsHostsCache.has(host);
+  const transport = useHttps ? https : http;
+  const targetPort = useHttps ? (port === 80 || !port ? 443 : port) : (port || 80);
+
   return new Promise((resolve, reject) => {
     let resolved = false;
     let activeReq = null;
@@ -1260,15 +1268,18 @@ function digestRequest({ host, port = 80, path, method = 'GET', body = null, use
       resolve(result);
     };
 
-    const probeReq = http.request({
+    const reqOpts1 = {
       host,
-      port: port || 80,
+      port: targetPort,
       path,
       method,
       agent: false,
       timeout: timeout,
       headers: { 'Content-Length': 0, 'Connection': 'close' }
-    }, (res1) => {
+    };
+    if (useHttps) reqOpts1.rejectUnauthorized = false;
+
+    const probeReq = transport.request(reqOpts1, (res1) => {
       const dummyChunks = [];
       res1.on('data', c => dummyChunks.push(c));
       res1.on('end', () => {
@@ -1314,15 +1325,18 @@ function digestRequest({ host, port = 80, path, method = 'GET', body = null, use
           headers2['Content-Length'] = 0;
         }
 
-        const req2 = http.request({
+        const reqOpts2 = {
           host,
-          port: port || 80,
+          port: targetPort,
           path,
           method,
           agent: false,
           timeout: timeout,
           headers: headers2
-        }, (res2) => {
+        };
+        if (useHttps) reqOpts2.rejectUnauthorized = false;
+
+        const req2 = transport.request(reqOpts2, (res2) => {
           const bodyChunks = [];
           res2.on('data', c => bodyChunks.push(c));
           res2.on('end', () => {
@@ -1347,7 +1361,21 @@ function digestRequest({ host, port = 80, path, method = 'GET', body = null, use
       try { probeReq.destroy(); } catch (e) {}
       done(new Error('Probe timeout'));
     });
-    probeReq.on('error', err => done(err));
+    probeReq.on('error', (err) => {
+      // Agar HTTP (80) rad etilsa (ECONNREFUSED), avtomatik HTTPS (443) orqali ulanamiz!
+      if (!useHttps && (err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET')) {
+        httpsHostsCache.add(host);
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timer);
+          digestRequest({ host, port: 443, path, method, body, username, password, timeout, isBinary, contentType, _forceHttps: true })
+            .then(resolve)
+            .catch(reject);
+        }
+        return;
+      }
+      done(err);
+    });
     probeReq.end();
   });
 }
