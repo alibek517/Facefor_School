@@ -70,11 +70,15 @@ if exist "%STARTUP_FOLDER%" (
     echo       [OK] Avtozagruzka sozlandi!
 )
 
-:: 4. Serverni kompyuterdan ishga tushirish (Port 5001)
+:: 4. Serverni kompyuterdan TO'LIQ YASHIRIN (HIDDEN) holda ishga tushirish (Port 5001)
 echo.
-echo [4/4] Face-ID va Turniket ko'prik serveri ishga tushirilmoqda...
+echo [4/4] Face-ID va Turniket ko'prik serveri yashirin fonda ishga tushirilmoqda...
 cd /d "%INSTALL_DIR%"
-start "Maktab Face Bridge" /min node server/face-bridge.cjs
+(
+    echo Set WshShell = CreateObject^("WScript.Shell"^)
+    echo WshShell.Run "cmd /c cd /d ""C:\Maktab_FaceID_Tizimi"" && node server/face-bridge.cjs", 0, False
+) > "%INSTALL_DIR%\run_hidden.vbs"
+wscript.exe //B "%INSTALL_DIR%\run_hidden.vbs"
 
 :: Ulanish kutilmoqda
 timeout /t 3 /nobreak >nul
