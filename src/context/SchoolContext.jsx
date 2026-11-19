@@ -284,6 +284,7 @@ export const SchoolProvider = ({ children }) => {
   const [teacherAttendance, setTeacherAttendance] = useState(INITIAL_TEACHER_ATTENDANCE);
   const [hourlyAttendance, setHourlyAttendance] = useState(INITIAL_HOURLY_ATTENDANCE);
   const [leadership, setLeadership] = useState(SCHOOL_LEADERSHIP);
+  const [technicalStaff, setTechnicalStaff] = useState([]);
   const [notifications, setNotificationsRaw] = useState(() => filterValidNotifications(INITIAL_NOTIFICATIONS));
   const setNotifications = (val) => setNotificationsRaw(prev => filterValidNotifications(typeof val === 'function' ? val(prev) : val));
   const [activeToast, setActiveToast] = useState(null);
@@ -297,6 +298,7 @@ export const SchoolProvider = ({ children }) => {
     lastSync: new Date().toISOString()
   });
   const [recentFaceScans, setRecentFaceScans] = useState([]);
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
 
   // 6 ta Turniket Kameralari (Yagona va standart tartib: Turniket 1..6, 1-3 Kirish, 4-6 Chiqish)
   const DEFAULT_CAMERAS = [
@@ -436,6 +438,7 @@ export const SchoolProvider = ({ children }) => {
               if (Array.isArray(d.students)) setStudents(d.students);
               if (Array.isArray(d.classes)) setClasses(d.classes);
               if (Array.isArray(d.teachers)) setTeachers(d.teachers);
+              if (Array.isArray(d.technicalStaff)) setTechnicalStaff(d.technicalStaff);
               if (Array.isArray(d.schedules)) setSchedules(d.schedules);
               if (Array.isArray(d.attendanceList)) setAttendanceList(d.attendanceList);
               if (Array.isArray(d.teacherAttendance)) setTeacherAttendance(d.teacherAttendance);
@@ -528,6 +531,7 @@ export const SchoolProvider = ({ children }) => {
           if (sJson.data.classes && sJson.data.classes.length > 0) setClasses(sJson.data.classes);
           if (sJson.data.teachers && sJson.data.teachers.length > 0) setTeachers(sJson.data.teachers);
           if (sJson.data.leadership && sJson.data.leadership.length > 0) setLeadership(sJson.data.leadership);
+          if (Array.isArray(sJson.data.technicalStaff)) setTechnicalStaff(sJson.data.technicalStaff);
           if (sJson.data.schedules && sJson.data.schedules.length > 0) setSchedules(sJson.data.schedules);
           if (sJson.data.attendanceList) setAttendanceList(sJson.data.attendanceList);
           if (sJson.data.teacherAttendance) setTeacherAttendance(sJson.data.teacherAttendance);
@@ -631,6 +635,9 @@ export const SchoolProvider = ({ children }) => {
     }
     if (p === '/teacher-attendance' || p === '/oqituvchilar-davomati' || p === '/teacherattendance') {
       return { path: '/teacher-attendance', role: 'director', tab: 'teacher_attendance' };
+    }
+    if (p === '/reports' || p === '/hisobot' || p === '/hisobotlar' || p === '/davomat-hisoboti') {
+      return { path: '/reports', role: 'director', tab: 'reports' };
     }
     if (p === '/duty' || p === '/inspector' || p === '/navbatchi') {
       return { path: '/duty', role: 'inspector', tab: 'main' };
@@ -1214,6 +1221,7 @@ export const SchoolProvider = ({ children }) => {
             }
           }
           if (cloudData.leadership && Array.isArray(cloudData.leadership) && cloudData.leadership.length > 0) setLeadership(cloudData.leadership);
+          if (Array.isArray(cloudData.technicalStaff)) setTechnicalStaff(cloudData.technicalStaff);
           if (cloudData.schedules && cloudData.schedules.length > 0) setSchedules(cloudData.schedules);
           if (cloudData.attendanceList) setAttendanceList(cloudData.attendanceList);
           if (cloudData.teacherAttendance) setTeacherAttendance(cloudData.teacherAttendance);
@@ -1334,6 +1342,7 @@ export const SchoolProvider = ({ children }) => {
               else if (key === 'students' && Array.isArray(data)) setStudents(data);
               else if (key === 'classes' && Array.isArray(data)) setClasses(data);
               else if (key === 'teachers' && Array.isArray(data)) setTeachers(data);
+              else if (key === 'technicalStaff' && Array.isArray(data)) setTechnicalStaff(data);
               else if (key === 'schedules' && Array.isArray(data)) setSchedules(data);
               else if (key === 'attendanceList' && Array.isArray(data)) setAttendanceList(data);
               else if (key === 'teacherAttendance' && Array.isArray(data)) setTeacherAttendance(data);
@@ -1413,97 +1422,86 @@ export const SchoolProvider = ({ children }) => {
       } catch (e) {}
     }
 
-    // 3. Kameralar holati va lokal/global tarmoqni tekshirib borish
-    const connectSSE = () => {
-      if (es || typeof window === 'undefined' || !window.EventSource) return;
+    // 3. Real-vaqtli WebSocket (asosiy) va SSE (zaxira) ulanishi — barcha sahifalarga jonli ma'lumot
+    let ws = null;
+    let wsUrlActive = '';
+    let wsReconnectTimer = null;
+    let wsPingTimer = null;
+    let isEffectUnmounted = false;
+
+    const handleRealtimeEvent = (type, payload) => {
       try {
-        es = new EventSource(`${BRIDGE_API}/api/device/stream`);
-        es.addEventListener('scan', (e) => {
-          try {
-            const scan = JSON.parse(e.data);
-            handleIncomingFaceScan(scan);
-          } catch (e) {}
-        });
-        es.addEventListener('connected', (e) => {
-          try {
-            const data = JSON.parse(e.data);
-            if (data.device) setFaceDevice(data.device);
-            if (data.cameras) setCameras(data.cameras);
-            if (data.globalStreamUrl && !isLocalHostEnv) updateGlobalStreamUrl(data.globalStreamUrl);
-          } catch (e) {}
-        });
-        es.addEventListener('global_stream_url', (e) => {
-          try {
-            const data = typeof e.data === 'string' && e.data.startsWith('{') ? JSON.parse(e.data) : { url: e.data };
-            if (data.url && !isLocalHostEnv) updateGlobalStreamUrl(data.url);
-          } catch (e) {}
-        });
-        es.addEventListener('school_data_sync', (e) => {
-          try {
-            const data = JSON.parse(e.data);
-            if (data.students && data.students.length > 0) setStudents(data.students);
-            if (data.classes && data.classes.length > 0) setClasses(data.classes);
-            if (data.teachers && data.teachers.length > 0) setTeachers(data.teachers);
-            if (data.schedules && data.schedules.length > 0) setSchedules(data.schedules);
-            if (data.attendanceList) setAttendanceList(data.attendanceList);
-            if (data.teacherAttendance) setTeacherAttendance(data.teacherAttendance);
-            if (data.hourlyAttendance) setHourlyAttendance(data.hourlyAttendance);
-            if (data.turnstiles_sync_matrix) setTurnstilesSyncMatrix(data.turnstiles_sync_matrix);
-          } catch (err) {}
-        });
-        es.addEventListener('turnstiles_sync_matrix', (e) => {
-          try {
-            const data = JSON.parse(e.data);
-            if (data) setTurnstilesSyncMatrix(data);
-          } catch (e) {}
-        });
-        es.addEventListener('student_updated', (e) => {
-          try {
-            const { studentId, updatedData } = JSON.parse(e.data);
-            setStudents(prev => prev.map(s => (s.id === studentId || s.studentId === studentId) ? { ...s, ...updatedData } : s));
-          } catch (err) {}
-        });
-        es.addEventListener('cameras_updated', (e) => {
-          try {
-            const updatedCameras = JSON.parse(e.data);
-            if (Array.isArray(updatedCameras)) setCameras(updatedCameras);
-          } catch (err) {}
-        });
-        es.addEventListener('schools_updated', (e) => {
-          try {
-            const updatedSchools = JSON.parse(e.data);
-            if (Array.isArray(updatedSchools)) {
-              setSchools(updatedSchools);
-              saveModuleToSupabase('school_list', updatedSchools).catch(() => {});
-            }
-          } catch (err) {}
-        });
-        es.addEventListener('school_subscription_updated', (e) => {
-          try {
-            const payload = JSON.parse(e.data);
-            if (Array.isArray(payload.schools)) {
-              setSchools(payload.schools);
-              saveModuleToSupabase('school_list', payload.schools).catch(() => {});
-            }
-            // Agar joriy kirib turgan foydalanuvchi muzlatilgan maktabga tegishli bo'lsa, zudlik bilan chiqarish!
-            if (currentUserRef.current && currentUserRef.current.role !== 'bigadmin') {
-              const mySchId = currentUserRef.current.schoolId || selectedSchoolIdRef.current;
-              if (payload.schoolId === mySchId) {
-                const isNowFrozen = Boolean(payload.isFrozen);
-                const isExpired = payload.subscriptionEnd && (new Date(payload.subscriptionEnd).getTime() < new Date().setHours(0,0,0,0));
-                if (isNowFrozen || isExpired) {
-                  logout();
-                  showToast(
-                    'Faoliyat to\'xtatildi',
-                    isNowFrozen 
-                      ? `Maktab bosh administrator tomonidan muzlatildi (${payload.freezeReason || "To'xtatilgan"}). Tizimdan chiqarildingiz.`
-                      : "Ushbu maktab uchun obuna muddati tugaganligi sababli tizimdan chiqarildingiz.",
-                    'error'
-                  );
-                }
+        if (type === 'scan' && payload) {
+          handleIncomingFaceScan(payload);
+        } else if (type === 'connected' && payload) {
+          if (payload.device) setFaceDevice(payload.device);
+          if (payload.cameras) setCameras(payload.cameras);
+          if (payload.globalStreamUrl && !isLocalHostEnv) updateGlobalStreamUrl(payload.globalStreamUrl);
+          if (Array.isArray(payload.recentScans) && payload.recentScans.length > 0) {
+            mergeScans(payload.recentScans);
+          }
+        } else if (type === 'global_stream_url' && payload) {
+          const url = typeof payload === 'string' ? payload : payload.url;
+          if (url && !isLocalHostEnv) updateGlobalStreamUrl(url);
+        } else if (type === 'school_data_sync' && payload) {
+          const data = (payload.data && typeof payload.data === 'object' && !Array.isArray(payload.data)) ? payload.data : payload;
+          if (data.students && data.students.length > 0) setStudents(data.students);
+          if (data.classes && data.classes.length > 0) setClasses(data.classes);
+          if (data.teachers && data.teachers.length > 0) setTeachers(data.teachers);
+          if (Array.isArray(data.technicalStaff)) setTechnicalStaff(data.technicalStaff);
+          if (Array.isArray(data.leadership) && data.leadership.length > 0) setLeadership(data.leadership);
+          if (data.schedules && data.schedules.length > 0) setSchedules(data.schedules);
+          if (data.attendanceList) setAttendanceList(data.attendanceList);
+          if (data.teacherAttendance) setTeacherAttendance(data.teacherAttendance);
+          if (data.hourlyAttendance) setHourlyAttendance(data.hourlyAttendance);
+          if (data.turnstiles_sync_matrix) setTurnstilesSyncMatrix(data.turnstiles_sync_matrix);
+        } else if (type === 'turnstiles_sync_matrix' && payload) {
+          setTurnstilesSyncMatrix(payload);
+        } else if (type === 'student_updated' && payload) {
+          const { studentId, updatedData } = payload;
+          setStudents(prev => prev.map(s => (s.id === studentId || s.studentId === studentId) ? { ...s, ...updatedData } : s));
+        } else if (type === 'cameras_updated' && Array.isArray(payload)) {
+          setCameras(payload);
+        } else if (type === 'schools_updated' && Array.isArray(payload)) {
+          setSchools(payload);
+          saveModuleToSupabase('school_list', payload).catch(() => {});
+        } else if (type === 'school_subscription_updated' && payload) {
+          if (Array.isArray(payload.schools)) {
+            setSchools(payload.schools);
+            saveModuleToSupabase('school_list', payload.schools).catch(() => {});
+          }
+          if (currentUserRef.current && currentUserRef.current.role !== 'bigadmin') {
+            const mySchId = currentUserRef.current.schoolId || selectedSchoolIdRef.current;
+            if (payload.schoolId === mySchId) {
+              const isNowFrozen = Boolean(payload.isFrozen);
+              const isExpired = payload.subscriptionEnd && (new Date(payload.subscriptionEnd).getTime() < new Date().setHours(0,0,0,0));
+              if (isNowFrozen || isExpired) {
+                logout();
+                showToast(
+                  'Faoliyat to\'xtatildi',
+                  isNowFrozen
+                    ? `Maktab bosh administrator tomonidan muzlatildi (${payload.freezeReason || "To'xtatilgan"}). Tizimdan chiqarildingiz.`
+                    : "Ushbu maktab uchun obuna muddati tugaganligi sababli tizimdan chiqarildingiz.",
+                  'error'
+                );
               }
             }
-          } catch (err) {}
+          }
+        }
+      } catch (err) {}
+    };
+
+    const connectSSE = () => {
+      if (es || (ws && ws.readyState === WebSocket.OPEN) || typeof window === 'undefined' || !window.EventSource) return;
+      try {
+        es = new EventSource(`${BRIDGE_API}/api/device/stream`);
+        ['scan', 'connected', 'global_stream_url', 'school_data_sync', 'turnstiles_sync_matrix', 'student_updated', 'cameras_updated', 'schools_updated', 'school_subscription_updated'].forEach(evName => {
+          es.addEventListener(evName, (e) => {
+            try {
+              const parsed = (typeof e.data === 'string' && (e.data.startsWith('{') || e.data.startsWith('['))) ? JSON.parse(e.data) : e.data;
+              handleRealtimeEvent(evName, parsed);
+            } catch (err) {}
+          });
         });
         es.onerror = () => {
           if (es) {
@@ -1512,6 +1510,73 @@ export const SchoolProvider = ({ children }) => {
           }
         };
       } catch (err) {}
+    };
+
+    const connectWebSocket = (targetHttpUrl) => {
+      if (isEffectUnmounted || typeof window === 'undefined' || !window.WebSocket) return;
+      const cleanHttp = String(targetHttpUrl || BRIDGE_API || '').trim().replace(/\/+$/, '');
+      if (!cleanHttp || !cleanHttp.startsWith('http')) return;
+      const wsEndpoint = cleanHttp.replace(/^https:/i, 'wss:').replace(/^http:/i, 'ws:') + '/ws';
+
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) && wsUrlActive === wsEndpoint) {
+        return;
+      }
+
+      if (ws) {
+        try { ws.close(); } catch (e) {}
+        ws = null;
+      }
+      if (wsPingTimer) { clearInterval(wsPingTimer); wsPingTimer = null; }
+      if (wsReconnectTimer) { clearTimeout(wsReconnectTimer); wsReconnectTimer = null; }
+
+      try {
+        wsUrlActive = wsEndpoint;
+        ws = new WebSocket(wsEndpoint);
+
+        ws.onopen = () => {
+          setIsSocketConnected(true);
+          // SSE zaxirasi ochiq bo'lsa yopamiz (WebSocket asosiy kanal)
+          if (es) {
+            try { es.close(); } catch (e) {}
+            es = null;
+          }
+          // Har 20 soniyada heartbeat ping
+          if (wsPingTimer) clearInterval(wsPingTimer);
+          wsPingTimer = setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              try { ws.send(JSON.stringify({ type: 'ping' })); } catch (e) {}
+            }
+          }, 20000);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg && msg.type && msg.type !== 'pong') {
+              handleRealtimeEvent(msg.type, msg.data);
+            }
+          } catch (e) {}
+        };
+
+        ws.onerror = () => {
+          setIsSocketConnected(false);
+          connectSSE();
+        };
+
+        ws.onclose = () => {
+          setIsSocketConnected(false);
+          if (wsPingTimer) { clearInterval(wsPingTimer); wsPingTimer = null; }
+          ws = null;
+          if (!isEffectUnmounted) {
+            wsReconnectTimer = setTimeout(() => {
+              connectWebSocket(targetHttpUrl);
+            }, 2500);
+          }
+        };
+      } catch (err) {
+        setIsSocketConnected(false);
+        connectSSE();
+      }
     };
 
     const pollDevice = async () => {
@@ -1549,7 +1614,7 @@ export const SchoolProvider = ({ children }) => {
       }
 
       if (localReachable) {
-        connectSSE();
+        connectWebSocket(activeBridge || BRIDGE_API);
         // Ushbu qurilma lokalga ulangan - u Global va Localni bir-biriga bog'lovchi faol ko'prikdir
         const hbInfo = {
           bridgedBy: currentUser?.fullName || currentUser?.name || 'Lokal Maktab Profili',
@@ -1598,6 +1663,7 @@ export const SchoolProvider = ({ children }) => {
               }
               setIsSchoolLocalOnline(true);
               tunnelReachable = true;
+              connectWebSocket(activeTunnel);
             } else {
               markTunnelFailure(activeTunnel, handleDeadTunnelEviction);
             }
@@ -1639,7 +1705,14 @@ export const SchoolProvider = ({ children }) => {
     const interval = setInterval(pollDevice, 2000);
 
     return () => {
+      isEffectUnmounted = true;
       clearInterval(interval);
+      if (wsReconnectTimer) clearTimeout(wsReconnectTimer);
+      if (wsPingTimer) clearInterval(wsPingTimer);
+      if (ws) {
+        try { ws.close(); } catch (err) {}
+        ws = null;
+      }
       if (es) {
         try { es.close(); } catch (err) {}
         es = null;
@@ -3100,6 +3173,121 @@ export const SchoolProvider = ({ children }) => {
     showToast('O\'chirildi', 'O\'qituvchi tizimdan va barcha Face-ID terminallaridan o\'chirildi.', 'info');
   };
 
+  // =================== CRUD: TEXNIK XODIMLAR (FACE-ID VA RASM BILAN) ===================
+  const addTechnicalStaff = (staffData) => {
+    let maxEmp = 0;
+    (students || []).concat(teachers || []).concat(technicalStaff || []).forEach(p => {
+      const num = parseInt(String(p.faceId || p.employeeNo || p.studentId || p.id || '').replace(/^(?:tech|[st])-/, '').replace(/\D/g, ''), 10);
+      if (!isNaN(num) && num > maxEmp && num < 90000000) {
+        maxEmp = num;
+      }
+    });
+    const nextEmpNo = String(maxEmp + 1).padStart(8, '0');
+    const assignedEmpNo = staffData.faceId || staffData.employeeNo || nextEmpNo;
+
+    const newStaff = {
+      ...staffData,
+      id: 'tech-' + assignedEmpNo,
+      faceId: assignedEmpNo,
+      employeeNo: assignedEmpNo,
+      name: staffData.name || staffData.fullName || '',
+      fullName: staffData.fullName || staffData.name || '',
+      position: staffData.position || staffData.role || 'Texnik xodim',
+      role: staffData.position || staffData.role || 'Texnik xodim',
+      department: staffData.department || 'Texnik xodimlar',
+      gender: staffData.gender || 'Erkak',
+      photo: staffData.photo || null,
+      photoUrl: staffData.photoUrl || staffData.photo || null,
+      createdAt: new Date().toISOString()
+    };
+
+    setTechnicalStaff(prev => {
+      const next = [newStaff, ...(prev || [])];
+      saveToServer('technicalStaff', next);
+      return next;
+    });
+
+    pushToHardwareSyncQueue('add', 'technical', { ...newStaff, role: 'teacher' });
+
+    const targetUrl = getActiveBridgeUrl();
+    if (targetUrl) {
+      try {
+        fetch(`${targetUrl}/api/school/save-technical`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ staff: newStaff })
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    showToast("Qo'shildi", "Texnik xodim saqlandi va barcha Face-ID turniketlariga yuklandi.", 'success');
+  };
+
+  const updateTechnicalStaff = (staffId, updatedData) => {
+    let updatedObj = null;
+    setTechnicalStaff(prev => {
+      const next = (prev || []).map(item => {
+        if (item.id === staffId) {
+          updatedObj = {
+            ...item,
+            ...updatedData,
+            name: updatedData.name || updatedData.fullName || item.name,
+            fullName: updatedData.fullName || updatedData.name || item.fullName || item.name,
+            position: updatedData.position || updatedData.role || item.position || 'Texnik xodim',
+            role: updatedData.position || updatedData.role || item.role || 'Texnik xodim',
+            department: updatedData.department || item.department || 'Texnik xodimlar',
+            photo: updatedData.photo !== undefined ? updatedData.photo : item.photo,
+            photoUrl: updatedData.photoUrl !== undefined ? updatedData.photoUrl : (updatedData.photo !== undefined ? updatedData.photo : item.photoUrl)
+          };
+          return updatedObj;
+        }
+        return item;
+      });
+      saveToServer('technicalStaff', next);
+      return next;
+    });
+
+    if (updatedObj) {
+      pushToHardwareSyncQueue('update', 'technical', { ...updatedObj, role: 'teacher' });
+      const targetUrl = getActiveBridgeUrl();
+      if (targetUrl) {
+        try {
+          fetch(`${targetUrl}/api/school/save-technical`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ staff: updatedObj })
+          }).catch(() => {});
+        } catch (e) {}
+      }
+    }
+
+    showToast('Yangilandi', "Texnik xodim ma'lumotlari va Face-ID surati yangilandi.", 'info');
+  };
+
+  const deleteTechnicalStaff = (staffId) => {
+    const target = (technicalStaff || []).find(t => t.id === staffId);
+    setTechnicalStaff(prev => {
+      const next = (prev || []).filter(t => t.id !== staffId);
+      saveToServer('technicalStaff', next);
+      return next;
+    });
+
+    pushToHardwareSyncQueue('delete', 'technical', target || { id: staffId });
+
+    const targetUrl = getActiveBridgeUrl();
+    if (targetUrl && target) {
+      try {
+        fetch(`${targetUrl}/api/school/delete-technical`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ staffId: target.id, employeeNo: target.employeeNo || target.faceId })
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    showToast("O'chirildi", "Texnik xodim tizimdan va Face-ID terminallaridan o'chirildi.", 'info');
+  };
+
   // =================== CRUD: DARS FANLARI / JADVAL ===================
   const addSchedule = (scheduleData) => {
     const newSchedule = {
@@ -3500,6 +3688,7 @@ export const SchoolProvider = ({ children }) => {
     classes: classes || [],
     teachers: teachers || [],
     leadership: leadership || [],
+    technicalStaff: technicalStaff || [],
     setLeadership,
     addStaffMember,
     updateStaffMember,
@@ -3532,6 +3721,9 @@ export const SchoolProvider = ({ children }) => {
     addTeacher,
     updateTeacher,
     deleteTeacher,
+    addTechnicalStaff,
+    updateTechnicalStaff,
+    deleteTechnicalStaff,
     addSchedule,
     updateSchedule,
     batchAssignTeacherToSchedule,
@@ -3542,6 +3734,7 @@ export const SchoolProvider = ({ children }) => {
     // Face-ID Hikvision & Kameralar
     faceDevice,
     recentFaceScans,
+    isSocketConnected,
     fetchDeviceUsers,
     cameras,
     turnstilesSyncMatrix,

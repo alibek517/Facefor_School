@@ -10,15 +10,23 @@ echo.
 set "INSTALL_DIR=C:\Maktab_FaceID_Tizimi"
 set "STARTUP_FOLDER=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
 
+:: 0. Eski ishlab turgan serverni to'xtatish (yangi versiya to'liq ishga tushishi uchun)
+powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | Where-Object { $_.CommandLine -match 'face-bridge\.cjs' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" >nul 2>nul
+
 :: 1. Agar skript fleshkadan yoki boshqa joydan ishga tushayotgan bo'lsa, kompyuterga o'rnatish
 if /i not "%~dp0"=="%INSTALL_DIR%\" (
     echo [1/4] Tizim kompyuterning qattiq diskiga o'rnatilmoqda: %INSTALL_DIR%...
     if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%" >nul 2>nul
     
     echo       Fayllar ko'chirilmoqda, iltimos kuting...
+    if exist "%INSTALL_DIR%\dist\assets" del /q "%INSTALL_DIR%\dist\assets\*" >nul 2>nul
     xcopy /e /y /q "%~dp0server" "%INSTALL_DIR%\server\" >nul 2>nul
     xcopy /e /y /q "%~dp0dist" "%INSTALL_DIR%\dist\" >nul 2>nul
     xcopy /e /y /q "%~dp0src" "%INSTALL_DIR%\src\" >nul 2>nul
+    if exist "%~dp0public\photos" (
+        xcopy /e /y /q "%~dp0public\photos" "%INSTALL_DIR%\dist\photos\" >nul 2>nul
+        xcopy /e /y /q "%~dp0public\photos" "%INSTALL_DIR%\server\photo_cache\" >nul 2>nul
+    )
     if exist "%~dp0package.json" copy /y "%~dp0package.json" "%INSTALL_DIR%\" >nul 2>nul
     if exist "%~dp0NodeJS_Ornatuvchi.msi" copy /y "%~dp0NodeJS_Ornatuvchi.msi" "%INSTALL_DIR%\" >nul 2>nul
     copy /y "%~f0" "%INSTALL_DIR%\START_MAKTAB.bat" >nul 2>nul
@@ -71,8 +79,8 @@ start "Maktab Face Bridge" /min node server/face-bridge.cjs
 :: Ulanish kutilmoqda
 timeout /t 3 /nobreak >nul
 
-:: Brauzerda srazi ochish
-start http://localhost:5001/
+:: Brauzerda yangi versiyani srazi ochish
+start http://localhost:5001/?v=%RANDOM%
 
 echo.
 echo ======================================================================

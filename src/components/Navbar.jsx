@@ -23,10 +23,11 @@ import {
   ShieldCheck,
   ChevronDown,
   UserCheck,
-  Calendar
+  Calendar,
+  Menu
 } from 'lucide-react';
 
-export const Navbar = () => {
+export const Navbar = ({ onOpenMobileSidebar }) => {
   const {
     currentUser,
     hasPermission,
@@ -100,169 +101,67 @@ export const Navbar = () => {
 
   const unreadCount = visibleNotifications.filter(n => !n.isRead).length;
 
+  const pageTitle = useMemo(() => {
+    if (isBigAdmin) return 'BigAdmin Boshqaruv Paneli';
+    if (currentUser?.role === 'monitor') return 'Foye Tablosi (Monitor)';
+    if (activeTab === 'directory') return "O'quvchilar";
+    if (activeTab === 'student_attendance') return "O'quvchilar Davomati";
+    if (activeTab === 'settings') return "O'qituvchilar & Darslar";
+    if (activeTab === 'teacher_attendance') return "O'qituvchilar Davomati";
+    if (activeTab === 'reports') return 'Davomat Hisobotlari';
+    if (currentPath === '/class-teacher') return myClassObj ? `${myClassObj.name} Rahbari` : 'Sinf Rahbari';
+    if (currentPath === '/subject-teacher') return 'Dars Jurnali';
+    if (currentUser?.role === 'inspector') return 'Navbatchi Paneli';
+    return 'Direktor Paneli';
+  }, [isBigAdmin, currentUser, activeTab, currentPath, myClassObj]);
+
   return (
-    <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 transition-colors">
-      <div className={`w-full ${currentUser?.role === 'monitor' ? 'max-w-none px-4 sm:px-6' : 'max-w-7xl mx-auto px-2 sm:px-4 lg:px-6'}`}>
+    <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 transition-colors print:hidden">
+      <div className="w-full px-3 sm:px-5">
         
-        {/* Asosiy qator: Logo, Rollar, Foydalanuvchi */}
+        {/* Asosiy qator: Mobil Menyu / Sahifa Sarlavhasi + O'ng tugmalar */}
         <div className="flex items-center justify-between h-14 gap-2">
           
-          {/* Logo */}
-          <div 
-            onClick={() => navigateTo(isBigAdmin ? '/bigadmin' : '/director')}
-            className="flex items-center gap-2 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
-            title={isBigAdmin ? "Bosh sahifa (BigAdmin)" : "Bosh sahifa (Direktor)"}
-          >
-            <div className="w-8 h-8 rounded-lg bg-blue-700 flex items-center justify-center text-white shadow-sm">
-              <Building className="w-4 h-4" />
-            </div>
-            <div className="hidden xs:block">
-              <span className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight">
-                SmartMaktab
-              </span>
-            </div>
-          </div>
-
-          
-
-          {/* O'rta: Yagona 1 Qatorlik Navigatsiya Paneli */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-            {/* BigAdmin Paneli */}
-            {isBigAdmin && (
+          {/* Chap tomon: Mobil menyu tugmasi + Logo (faqat mobil/monitor uchun) + Sahifa nomi */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            {currentUser?.role !== 'monitor' && (
               <button
-                onClick={() => navigateTo('/bigadmin')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 bg-indigo-600 text-white shadow-sm"
+                onClick={onOpenMobileSidebar}
+                className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Menyuni ochish"
               >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>BigAdmin</span>
+                <Menu className="w-5 h-5" />
               </button>
             )}
 
-            {/* Asosiy rol / Foye tablosi (BigAdmin uchun ko'rinmaydi) */}
-            {!isBigAdmin && (
-              currentUser?.role === 'monitor' ? (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded-xl border border-blue-200 dark:border-blue-900/60 text-xs font-black shadow-xs shrink-0">
+            {currentUser?.role === 'monitor' ? (
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-700 flex items-center justify-center text-white shadow-sm">
+                  <Building className="w-4 h-4" />
+                </div>
+                <span className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight">
+                  SmartMaktab
+                </span>
+                <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded-xl border border-blue-200 dark:border-blue-900/60 text-xs font-black">
                   <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
                   <span>Foye Tablosi (Monitor)</span>
                 </div>
-              ) : (currentUser?.role === 'class_teacher' || currentUser?.role === 'subject_teacher' || currentUser?.teacherId) ? (
-                <>
-                  {(myClassId || currentUser?.role === 'class_teacher') && (
-                    <button
-                      onClick={() => navigateTo('/class-teacher')}
-                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
-                        currentPath === '/class-teacher'
-                          ? 'bg-blue-700 text-white shadow-sm'
-                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      <GraduationCap className="w-3.5 h-3.5" />
-                      <span>{myClassObj ? `${myClassObj.name} Rahbari` : 'Sinf Rahbari'}</span>
-                    </button>
-                  )}
-                  <button
-                    onClick={() => navigateTo('/subject-teacher')}
-                    className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
-                      currentPath === '/subject-teacher'
-                        ? 'bg-blue-700 text-white shadow-sm'
-                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <BookOpen className="w-3.5 h-3.5" />
-                    <span>Dars Jurnali</span>
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => {
-                    if (currentUser?.role === 'inspector') navigateTo('/duty');
-                    else navigateTo('/director');
-                  }}
-                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
-                    activeTab === 'main'
-                      ? 'bg-blue-700 text-white shadow-sm'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <Home className="w-3.5 h-3.5" />
-                  <span>
-                    {currentUser?.role === 'director' && 'Direktor'}
-                    {currentUser?.role === 'inspector' && 'Navbatchi'}
-                    {currentUser?.category === 'leadership' && currentUser?.role !== 'director' && (currentUser?.detail || currentUser?.role || 'Rahbariyat')}
-                    {currentUser?.category === 'administrator' && (currentUser?.detail || 'Administrator')}
-                  </span>
-                </button>
-              )
-            )}
-
-            {/* O'quvchilar CRUD (BigAdmin uchun ko'rinmaydi) */}
-            {!isBigAdmin && canSeeStudents && (
-              <button
-                onClick={() => navigateTo('/students')}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
-                  activeTab === 'directory'
-                    ? 'bg-blue-700 text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>O'quvchilar</span>
-              </button>
-            )}
-
-            {/* O'quvchilar Davomati & Tarix (Direktor va Mas'ullar uchun) */}
-            {!isBigAdmin && canSeeStudents && (
-              <button
-                onClick={() => navigateTo('/student-attendance')}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
-                  activeTab === 'student_attendance'
-                    ? 'bg-blue-700 text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-                title="Barcha o'quvchilarning kunlik va tarixiy Face-ID davomati"
-              >
-                <Calendar className="w-3.5 h-3.5" />
-                <span>O'quvchilar Davomati</span>
-              </button>
-            )}
-
-            {/* O'qituvchilar va Fanlar CRUD (BigAdmin uchun ko'rinmaydi) */}
-            {!isBigAdmin && canSeeSettings && (
-              <button
-                onClick={() => navigateTo('/teachers')}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
-                  activeTab === 'settings'
-                    ? 'bg-blue-700 text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Settings className="w-3.5 h-3.5" />
-                <span>O'qituvchilar & Darslar</span>
-              </button>
-            )}
-
-            {/* O'qituvchilar Davomati (Direktor va Navbatchi uchun) */}
-            {!isBigAdmin && (isDirectorUser || currentUser?.role === 'inspector') && (
-              <button
-                onClick={() => navigateTo('/teacher-attendance')}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
-                  activeTab === 'teacher_attendance'
-                    ? 'bg-blue-700 text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span>O'qituvchilar Davomati</span>
-              </button>
+              </div>
+            ) : (
+              <div className="min-w-0">
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight truncate">
+                  {pageTitle}
+                </h2>
+              </div>
             )}
           </div>
 
           {/* O'ng tomon: Mavzu, Bildirishnoma, Foydalanuvchi ismi va Chiqish */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             
-            {/* Tarmoq holati nishoni (100% Global Jonli Rejim) */}
+            {/* Tarmoq holati nishoni (yashirilgan) */}
             <div 
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+              className="hidden items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
               title="Kameralar va Turniketlar Global Onlayn Holatda"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>

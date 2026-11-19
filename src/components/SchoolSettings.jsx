@@ -41,6 +41,7 @@ export const SchoolSettings = () => {
     classes, 
     schedules, 
     leadership = [],
+    technicalStaff = [],
     addStaffMember,
     updateStaffMember,
     deleteStaffMember,
@@ -48,6 +49,9 @@ export const SchoolSettings = () => {
     addTeacher, 
     updateTeacher, 
     deleteTeacher,
+    addTechnicalStaff,
+    updateTechnicalStaff,
+    deleteTechnicalStaff,
     addSchedule, 
     updateSchedule, 
     batchAssignTeacherToSchedule,
@@ -403,6 +407,77 @@ export const SchoolSettings = () => {
     }
   };
 
+  // ====== Texnik xodimlar boshqaruvi (Face-ID bilan) ======
+  const TECHNICAL_POSITIONS = [
+    'Qorovul',
+    'Farrosh',
+    'Hamshira',
+    "Xo'jalik mudiri",
+    'Elektrik',
+    'Santexnik',
+    "Bog'bon",
+    'Oshxona xodimi',
+    'Kutubxonachi',
+    'Amaliyot',
+    'Texnik xodim'
+  ];
+  const [techSearch, setTechSearch] = useState('');
+  const [techModal, setTechModal] = useState(false);
+  const [editTechId, setEditTechId] = useState(null);
+  const [techName, setTechName] = useState('');
+  const [techPosition, setTechPosition] = useState('Qorovul');
+  const [techPhone, setTechPhone] = useState('');
+  const [techGender, setTechGender] = useState('Erkak');
+  const [techPhoto, setTechPhoto] = useState('');
+
+  const openAddTechnical = () => {
+    setEditTechId(null);
+    setTechName('');
+    setTechPosition('Qorovul');
+    setTechPhone('');
+    setTechGender('Erkak');
+    setTechPhoto('');
+    setTechModal(true);
+  };
+
+  const openEditTechnical = (item) => {
+    setEditTechId(item.id);
+    setTechName(item.fullName || item.name || '');
+    setTechPosition(item.position || item.role || 'Texnik xodim');
+    setTechPhone(formatPhoneNumber(item.phone || ''));
+    setTechGender(item.gender || 'Erkak');
+    setTechPhoto(item.photo || item.photoUrl || '');
+    setTechModal(true);
+  };
+
+  const handleTechnicalSubmit = (e) => {
+    e.preventDefault();
+    if (!techName.trim()) return;
+    const data = {
+      name: techName.trim(),
+      fullName: techName.trim(),
+      position: techPosition.trim() || 'Texnik xodim',
+      role: techPosition.trim() || 'Texnik xodim',
+      department: 'Texnik xodimlar',
+      phone: formatPhoneNumber(techPhone),
+      gender: techGender,
+      photo: techPhoto || null,
+      photoUrl: techPhoto || null
+    };
+    if (editTechId) {
+      updateTechnicalStaff(editTechId, data);
+    } else {
+      addTechnicalStaff(data);
+    }
+    setTechModal(false);
+  };
+
+  const handleDeleteTechnical = (id, name) => {
+    if (window.confirm(`${name} texnik xodimlar ro'yxatidan va Face-ID turniketlaridan o'chirilsinmi?`)) {
+      deleteTechnicalStaff(id);
+    }
+  };
+
   // ====== Dars jadvali boshqaruvi ======
   const openAddSchedule = () => {
     setEditSchId(null);
@@ -545,6 +620,15 @@ export const SchoolSettings = () => {
           </button>
 
           <button
+            onClick={() => setActiveSubTab('technical')}
+            className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+              activeSubTab === 'technical' ? 'bg-blue-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            Texnik xodimlar ({technicalStaff.length})
+          </button>
+
+          <button
             onClick={() => setActiveSubTab('classes')}
             className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
               activeSubTab === 'classes' ? 'bg-blue-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -615,6 +699,16 @@ export const SchoolSettings = () => {
             </div>
           )}
 
+          {activeSubTab === 'technical' && (
+            <button
+              onClick={openAddTechnical}
+              className="px-2.5 py-1 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg flex items-center gap-1 shadow-sm transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Texnik Xodim Qo'shish
+            </button>
+          )}
+
           {activeSubTab === 'classes' && (
             <button
               onClick={openAddClass}
@@ -628,6 +722,124 @@ export const SchoolSettings = () => {
       </div>
 
       {/* 1. DARS JADVALI */}
+      {activeSubTab === 'technical' && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div>
+              <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">
+                Texnik xodimlar va Face-ID ro'yxati ({technicalStaff.length} nafar)
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Qo'shilgan har bir texnik xodim surati bilan avtomatik ravishda barcha 6 ta Face-ID turniketiga yuklanadi
+              </p>
+            </div>
+            <input
+              type="text"
+              value={techSearch}
+              onChange={(e) => setTechSearch(e.target.value)}
+              placeholder="Ism, lavozim yoki Face-ID qidirish..."
+              className="w-full sm:w-64 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/30"
+            />
+          </div>
+
+          {technicalStaff.filter(t => {
+            const q = techSearch.trim().toLowerCase();
+            if (!q) return true;
+            return (
+              String(t.fullName || t.name || '').toLowerCase().includes(q) ||
+              String(t.position || t.role || '').toLowerCase().includes(q) ||
+              String(t.faceId || t.employeeNo || '').toLowerCase().includes(q)
+            );
+          }).length === 0 ? (
+            <div className="py-12 text-center bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 space-y-2">
+              <Users className="w-9 h-9 text-slate-300 dark:text-slate-600 mx-auto" />
+              <div className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                Hali texnik xodimlar qo'shilmagan
+              </div>
+              <p className="text-[11px] text-slate-400">
+                "Texnik Xodim Qo'shish" tugmasini bosib Qorovul, Farrosh, Hamshira va boshqa xodimlarni Face-ID ga kiriting
+              </p>
+              <button
+                onClick={openAddTechnical}
+                className="mt-1 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg inline-flex items-center gap-1 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" /> Texnik Xodim Qo'shish
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {technicalStaff
+                .filter(t => {
+                  const q = techSearch.trim().toLowerCase();
+                  if (!q) return true;
+                  return (
+                    String(t.fullName || t.name || '').toLowerCase().includes(q) ||
+                    String(t.position || t.role || '').toLowerCase().includes(q) ||
+                    String(t.faceId || t.employeeNo || '').toLowerCase().includes(q)
+                  );
+                })
+                .map(item => (
+                  <div
+                    key={item.id}
+                    className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 hover:border-blue-300 dark:hover:border-blue-700 transition-all flex items-start justify-between gap-2.5"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-11 h-11 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0 flex items-center justify-center">
+                        {item.photo || item.photoUrl ? (
+                          <img
+                            src={item.photo || item.photoUrl}
+                            alt={item.fullName || item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-sm font-black text-blue-700 dark:text-blue-400">
+                            {(item.fullName || item.name || 'T').charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {item.fullName || item.name}
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                            {item.position || item.role || 'Texnik xodim'}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                            Face-ID: #{item.faceId || item.employeeNo}
+                          </span>
+                        </div>
+                        {item.phone && (
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-1">
+                            {formatPhoneNumber(item.phone)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => openEditTechnical(item)}
+                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg transition-colors cursor-pointer"
+                        title="Tahrirlash"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTechnical(item.id, item.fullName || item.name)}
+                        className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                        title="O'chirish"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {activeSubTab === 'schedules' && (
         <div className="space-y-3">
           
@@ -2277,6 +2489,162 @@ export const SchoolSettings = () => {
               </div>
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {/* TEXNIK XODIM QO'SHISH / TAHRIRLASH MODALI (FACE-ID BILAN) */}
+      {techModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between">
+              <h3 className="text-xs sm:text-sm font-black">
+                {editTechId ? 'Texnik Xodimni Tahrirlash (Face-ID)' : "Yangi Texnik Xodim Qo'shish (Face-ID)"}
+              </h3>
+              <button
+                onClick={() => setTechModal(false)}
+                className="p-1 text-white/70 hover:text-white rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleTechnicalSubmit} className="p-4 space-y-3">
+              {/* Face-ID surati */}
+              <div className="flex items-center gap-3 p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-700 shrink-0 flex items-center justify-center border border-slate-300 dark:border-slate-600">
+                  {techPhoto ? (
+                    <img src={techPhoto} alt="Face-ID" className="w-full h-full object-cover" />
+                  ) : (
+                    <Users className="w-7 h-7 text-slate-400" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <label className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg cursor-pointer transition-colors">
+                      Rasm tanlash
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            try {
+                              const base64 = await compressImageBase64(file, 480, 0.85);
+                              setTechPhoto(base64);
+                            } catch (err) {}
+                          }
+                        }}
+                      />
+                    </label>
+                    <label className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg cursor-pointer transition-colors">
+                      Kamera
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="user"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            try {
+                              const base64 = await compressImageBase64(file, 480, 0.85);
+                              setTechPhoto(base64);
+                            } catch (err) {}
+                          }
+                        }}
+                      />
+                    </label>
+                    {techPhoto && (
+                      <button
+                        type="button"
+                        onClick={() => setTechPhoto('')}
+                        className="px-2 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg cursor-pointer"
+                      >
+                        O'chirish
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Yuzi aniq ko'ringan surat yuklang — barcha 6 ta Face-ID turniketiga kiritiladi
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-0.5">F.I.Sh:</label>
+                <input
+                  type="text"
+                  required
+                  value={techName}
+                  onChange={(e) => setTechName(e.target.value)}
+                  placeholder="Masalan: Karimov Sobirjon"
+                  className="w-full text-xs p-2 border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-0.5">Lavozimi:</label>
+                  <input
+                    type="text"
+                    list="technical-positions-list"
+                    required
+                    value={techPosition}
+                    onChange={(e) => setTechPosition(e.target.value)}
+                    placeholder="Masalan: Qorovul"
+                    className="w-full text-xs p-2 border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  />
+                  <datalist id="technical-positions-list">
+                    {TECHNICAL_POSITIONS.map(pos => (
+                      <option key={pos} value={pos} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-0.5">Jinsi:</label>
+                  <select
+                    value={techGender}
+                    onChange={(e) => setTechGender(e.target.value)}
+                    className="w-full text-xs p-2 border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  >
+                    <option value="Erkak">Erkak</option>
+                    <option value="Ayol">Ayol</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-0.5">Telefon (ixtiyoriy):</label>
+                <input
+                  type="text"
+                  value={techPhone}
+                  onChange={(e) => handlePhoneInputChange(e.target.value, setTechPhone)}
+                  placeholder="+998-90-123-45-67"
+                  maxLength={17}
+                  className="w-full text-xs p-2 border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setTechModal(false)}
+                  className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white rounded-lg flex items-center gap-1.5 shadow-sm cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Saqlash va Face-ID ga yuklash</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

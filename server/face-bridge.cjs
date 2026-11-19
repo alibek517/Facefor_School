@@ -213,6 +213,32 @@ function syncUsersMapWithDB() {
       }
     });
   }
+  if (Array.isArray(schoolDB.technicalStaff)) {
+    schoolDB.technicalStaff.forEach(t => {
+      const rawEmp = String(t.faceId || t.employeeNo || t.id || '').replace(/^tech-/, '').trim();
+      if (!rawEmp) return;
+      const empPadded = rawEmp.padStart(8, '0');
+      const empClean = rawEmp.replace(/^0+/, '');
+      const staffName = (t.fullName || t.name || '').replace(/''/g, "'").trim();
+      const userObj = {
+        employeeNo: empPadded,
+        name: staffName,
+        role: 'technical',
+        position: t.position || 'Texnik xodim',
+        faceURL: t.photo || t.photoUrl || null
+      };
+      usersMap.set(empPadded, userObj);
+      usersMap.set(rawEmp, userObj);
+      usersMap.set(empClean, userObj);
+
+      const existingCached = cachedUsers.find(u => u.employeeNo === empPadded || u.employeeNo === rawEmp || u.employeeNo === empClean);
+      if (existingCached) {
+        existingCached.name = staffName;
+      } else {
+        cachedUsers.push(userObj);
+      }
+    });
+  }
 
   // Mavjud skanerlashlardagi ismlarni ham yangilash
   if (typeof recentScans !== 'undefined' && Array.isArray(recentScans)) {
@@ -424,7 +450,7 @@ function getCamerasForSchool(schoolId) {
 
 async function syncStudentToHardware(action, studentData, schoolId = null) {
   if (!studentData) return;
-  const rawEmp = String(studentData.employeeNo || studentData.studentId || studentData.faceId || studentData.id || '').replace(/^[st]-/, '').trim();
+  const rawEmp = String(studentData.employeeNo || studentData.studentId || studentData.faceId || studentData.id || '').replace(/^(?:tech|[st])-/, '').trim();
   if (!rawEmp) return;
 
   const rawNum = parseInt(rawEmp.replace(/\D/g, ''), 10);
@@ -742,12 +768,13 @@ function detectAndSyncTeacherDifferences(oldTeachers, newTeachers, schoolId = nu
   }
 }
 
-// Barcha o'quvchi va o'qituvchilarni maktabning barcha turniketlariga to'liq sinxronlash
+// Barcha o'quvchi, o'qituvchi va texnik xodimlarni maktabning barcha turniketlariga to'liq sinxronlash
 async function syncAllUsersToHardware(schoolId = 'sch-1') {
   const targetCams = getCamerasForSchool(schoolId);
   const students = (schoolDB.students || []).filter(s => s && (s.fullName || s.name));
   const teachers = (schoolDB.teachers || []).filter(t => t && (t.name || t.fullName));
-  console.log(`[FULL SYNC] Barcha ${students.length} ta o'quvchi va ${teachers.length} ta o'qituvchi ${targetCams.length} ta turniketga sinxronlanmoqda...`);
+  const technicalStaff = (schoolDB.technicalStaff || []).filter(t => t && (t.name || t.fullName));
+  console.log(`[FULL SYNC] Barcha ${students.length} ta o'quvchi, ${teachers.length} ta o'qituvchi va ${technicalStaff.length} ta texnik xodim ${targetCams.length} ta turniketga sinxronlanmoqda...`);
 
   let count = 0;
   // 1. O'qituvchilar
@@ -756,7 +783,13 @@ async function syncAllUsersToHardware(schoolId = 'sch-1') {
     count++;
   }
 
-  // 2. O'quvchilar
+  // 2. Texnik xodimlar
+  for (const tech of technicalStaff) {
+    await syncStudentToHardware('update', { ...tech, role: 'teacher' }, schoolId);
+    count++;
+  }
+
+  // 3. O'quvchilar
   for (const s of students) {
     await syncStudentToHardware('update', { ...s, role: 'student' }, schoolId);
     count++;
@@ -1145,7 +1178,7 @@ async function autoReconcileAllTurnstiles() {
   isReconciling = true;
 
   try {
-    const totalCentralUsers = (schoolDB.students || []).length + (schoolDB.teachers || []).length;
+    const totalCentralUsers = (schoolDB.students || []).length + (schoolDB.teachers || []).length + (schoolDB.technicalStaff || []).length;
     const turnstilesMatrix = (CAMERAS || []).map(cam => {
       const isOnline = Boolean(cam.online);
       return {
@@ -1967,7 +2000,66 @@ function addScanEvent(rawEvent, camera, isNew = true) {
   }
 }
 
+const wsClients = new Set();
+
+function encodeWSFrame(payload, opcode = 0x1) {
+  const buf = Buffer.isBuffer(payload) ? payload : Buffer.from(String(payload), 'utf8');
+  const len = buf.length;
+  let header;
+  if (len < 126) {
+    header = Buffer.alloc(2);
+    header[0] = 0x80 | opcode;
+    header[1] = len;
+  } else if (len < 65536) {
+    header = Buffer.alloc(4);
+    header[0] = 0x80 | opcode;
+    header[1] = 126;
+    header.writeUInt16BE(len, 2);
+  } else {
+    header = Buffer.alloc(10);
+    header[0] = 0x80 | opcode;
+    header[1] = 127;
+    header.writeUInt32BE(0, 2);
+    header.writeUInt32BE(len, 6);
+  }
+  return Buffer.concat([header, buf]);
+}
+
+function sendWSMsg(socket, type, data) {
+  if (!socket || socket.destroyed || !socket.writable) return;
+  try {
+    const json = JSON.stringify({ type, data, ts: Date.now() });
+    socket.write(encodeWSFrame(json, 0x1));
+  } catch (e) {
+    wsClients.delete(socket);
+  }
+}
+
+function broadcastWS(type, data) {
+  if (wsClients.size === 0) return;
+  let frame;
+  try {
+    frame = encodeWSFrame(JSON.stringify({ type, data, ts: Date.now() }), 0x1);
+  } catch (e) {
+    return;
+  }
+  wsClients.forEach(sock => {
+    if (!sock || sock.destroyed || !sock.writable) {
+      wsClients.delete(sock);
+      return;
+    }
+    try {
+      sock.write(frame);
+    } catch (e) {
+      wsClients.delete(sock);
+    }
+  });
+}
+
 function broadcastSSE(type, data) {
+  // 1. WebSocket mijozlariga darhol uzatish
+  broadcastWS(type, data);
+  // 2. SSE mijozlariga zaxira sifatida uzatish
   const payload = `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
   sseClients.forEach(client => {
     try { client.write(payload); } catch (e) {}
@@ -2746,25 +2838,35 @@ const server = http.createServer(async (req, res) => {
       .replace('/photos/', '')
       .replace(/\.jpg$/i, '')
       .trim();
-    const cleanNo = rawEmp.replace(/^s-/, '').replace(/^0+/, '');
+    const cleanNo = rawEmp.replace(/^(?:tech|[st])-/, '').replace(/^0+/, '');
     const paddedNo = cleanNo ? cleanNo.padStart(8, '0') : rawEmp;
 
     // Turli formatdagi fayl nomlarini tekshirish
     const candidates = [
       rawEmp,
-      rawEmp.replace(/^s-/, ''),
+      rawEmp.replace(/^(?:tech|[st])-/, ''),
       paddedNo,
       cleanNo,
       cleanNo ? cleanNo.padStart(6, '0') : null
     ].filter(Boolean);
 
+    const photoDirs = [
+      PHOTO_CACHE_DIR,
+      path.join(__dirname, '..', 'dist', 'photos'),
+      path.join(__dirname, '..', 'public', 'photos')
+    ];
+
     let foundFile = null;
-    for (const c of candidates) {
-      const p = path.join(PHOTO_CACHE_DIR, `${c}.jpg`);
-      if (fs.existsSync(p)) {
-        foundFile = p;
-        break;
+    for (const dir of photoDirs) {
+      if (!fs.existsSync(dir)) continue;
+      for (const c of candidates) {
+        const p = path.join(dir, `${c}.jpg`);
+        if (fs.existsSync(p)) {
+          foundFile = p;
+          break;
+        }
       }
+      if (foundFile) break;
     }
 
     // 1-bosqich: Disk keshidan berish (Tezkor va xatosiz)
@@ -3197,6 +3299,90 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // 12.3.1 Texnik xodimni qo'shish/yangilash va barcha Face-ID turniketlariga yuklash
+  if (pathname === '/api/school/save-technical' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        let { staff } = JSON.parse(body);
+        if (staff && (staff.name || staff.fullName)) {
+          if (!Array.isArray(schoolDB.technicalStaff)) schoolDB.technicalStaff = [];
+          const rawIdStr = String(staff.faceId || staff.employeeNo || staff.id || '').replace(/^tech-/, '').trim();
+          let rawNum = parseInt(rawIdStr.replace(/\D/g, ''), 10);
+          if (isNaN(rawNum) || rawNum <= 0 || rawNum >= 90000000) {
+            let maxEmp = 0;
+            (schoolDB.students || []).concat(schoolDB.teachers || []).concat(schoolDB.technicalStaff || []).forEach(p => {
+              const n = parseInt(String(p.studentId || p.faceId || p.employeeNo || p.id || '').replace(/^(?:tech|[st])-/, '').replace(/\D/g, ''), 10);
+              if (!isNaN(n) && n > maxEmp && n < 90000000) maxEmp = n;
+            });
+            rawNum = maxEmp + 1;
+          }
+          const empPadded = String(rawNum).padStart(8, '0');
+          staff = {
+            ...staff,
+            id: staff.id || `tech-${empPadded}`,
+            faceId: empPadded,
+            employeeNo: empPadded,
+            department: staff.department || 'Texnik xodimlar',
+            position: staff.position || staff.role || 'Texnik xodim',
+            role: staff.position || staff.role || 'Texnik xodim'
+          };
+
+          const existsIdx = schoolDB.technicalStaff.findIndex(t => t.id === staff.id || t.faceId === staff.faceId);
+          if (existsIdx >= 0) {
+            schoolDB.technicalStaff[existsIdx] = staff;
+          } else {
+            schoolDB.technicalStaff.unshift(staff);
+          }
+          saveSchoolDB(schoolDB);
+          syncModuleToSupabase('technicalStaff', schoolDB.technicalStaff);
+          broadcastSSE('school_data_sync', schoolDB);
+          await syncStudentToHardware(existsIdx >= 0 ? 'update' : 'add', {
+            ...staff,
+            role: 'teacher'
+          });
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true, message: "Texnik xodim saqlandi va Face-ID apparatiga yuklandi" }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 12.3.2 Texnik xodimni o'chirish va Face-ID dan olib tashlash
+  if (pathname === '/api/school/delete-technical' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { staffId, employeeNo } = JSON.parse(body);
+        const empNoToDel = String(employeeNo || staffId || '').replace(/^tech-/, '');
+
+        if (Array.isArray(schoolDB.technicalStaff)) {
+          schoolDB.technicalStaff = schoolDB.technicalStaff.filter(t =>
+            t.id !== staffId && t.faceId !== staffId && t.faceId !== empNoToDel && t.id !== `tech-${empNoToDel}`
+          );
+          saveSchoolDB(schoolDB);
+          syncModuleToSupabase('technicalStaff', schoolDB.technicalStaff);
+          broadcastSSE('school_data_sync', schoolDB);
+        }
+
+        await syncStudentToHardware('delete', { id: staffId, employeeNo: empNoToDel });
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true, message: "Texnik xodim bazadan va Face-ID dan o'chirildi" }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
   // 12.4 Alohida apparat sinxronlash buyrug'ini qabul qilish
   if (pathname === '/api/school/hardware-sync-task' && req.method === 'POST') {
     let body = '';
@@ -3246,7 +3432,7 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/school/inter-turnstile-sync' && req.method === 'POST') {
     try {
       await autoReconcileAllTurnstiles();
-      const totalCentralUsers = (schoolDB.students || []).length + (schoolDB.teachers || []).length;
+      const totalCentralUsers = (schoolDB.students || []).length + (schoolDB.teachers || []).length + (schoolDB.technicalStaff || []).length;
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({
         success: true,
@@ -3275,12 +3461,16 @@ const server = http.createServer(async (req, res) => {
 
     cachedUsers.forEach(cu => {
       const empKey = String(cu.employeeNo || '').replace(/^0+/, '');
-      // Agar bu shaxs o'qituvchilar bazasida mavjud bo'lsa, o'quvchilarga qo'shilmaydi!
+      // Agar bu shaxs o'qituvchilar yoki texnik xodimlar bazasida mavjud bo'lsa, o'quvchilarga qo'shilmaydi!
       const isTeacher = (schoolDB.teachers || []).some(t => {
         const tKey = String(t.faceId || t.id || '').replace(/^t-/, '').replace(/^0+/, '');
         return (tKey && tKey === empKey) || (t.name && cu.name && t.name.trim().toLowerCase() === cu.name.trim().toLowerCase());
       });
-      if (isTeacher) return;
+      const isTech = (schoolDB.technicalStaff || []).some(t => {
+        const tKey = String(t.faceId || t.employeeNo || t.id || '').replace(/^tech-/, '').replace(/^0+/, '');
+        return (tKey && tKey === empKey) || ((t.fullName || t.name) && cu.name && (t.fullName || t.name).trim().toLowerCase() === cu.name.trim().toLowerCase());
+      });
+      if (isTeacher || isTech) return;
 
       const existing = existingMap.get(empKey);
       if (existing) {
@@ -3373,6 +3563,116 @@ const server = http.createServer(async (req, res) => {
 
 server.keepAliveTimeout = 65000;
 server.headersTimeout = 66000;
+
+// Native RFC 6455 WebSocket Server (/ws) — barcha sahifalarga real-vaqtda ma'lumot uzatish
+server.on('upgrade', (req, socket) => {
+  try {
+    const upgradeHeader = (req.headers['upgrade'] || '').toLowerCase();
+    const wsKey = req.headers['sec-websocket-key'];
+    if (upgradeHeader !== 'websocket' || !wsKey) {
+      socket.destroy();
+      return;
+    }
+
+    const acceptKey = crypto
+      .createHash('sha1')
+      .update(wsKey + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')
+      .digest('base64');
+
+    const headers = [
+      'HTTP/1.1 101 Switching Protocols',
+      'Upgrade: websocket',
+      'Connection: Upgrade',
+      `Sec-WebSocket-Accept: ${acceptKey}`,
+      '',
+      ''
+    ].join('\r\n');
+
+    socket.write(headers);
+    socket.setNoDelay(true);
+    wsClients.add(socket);
+
+    // Ulanishi bilan joriy holatni yuborish
+    const onlineCount = CAMERAS.filter(c => c.online).length;
+    sendWSMsg(socket, 'connected', {
+      device: {
+        online: onlineCount > 0,
+        ip: CAMERAS[0]?.ip || '192.168.1.35',
+        model: 'DS-K1T343MFWX',
+        totalUsers: cachedUsers.length,
+        lastSync: new Date().toISOString()
+      },
+      cameras: CAMERAS,
+      globalStreamUrl: currentTunnelUrl,
+      recentScans: (recentScans || []).slice(0, 80)
+    });
+
+    socket.on('data', (chunk) => {
+      try {
+        if (!chunk || chunk.length < 2) return;
+        const opcode = chunk[0] & 0x0f;
+        if (opcode === 0x8) {
+          // Close frame
+          wsClients.delete(socket);
+          try { socket.end(encodeWSFrame(Buffer.alloc(0), 0x8)); } catch (e) {}
+          return;
+        }
+        if (opcode === 0x9) {
+          // Ping -> Pong
+          try { socket.write(encodeWSFrame(Buffer.alloc(0), 0xA)); } catch (e) {}
+          return;
+        }
+        if (opcode === 0x1) {
+          const masked = (chunk[1] & 0x80) !== 0;
+          let payloadLen = chunk[1] & 0x7f;
+          let offset = 2;
+          if (payloadLen === 126 && chunk.length >= 4) {
+            payloadLen = chunk.readUInt16BE(2);
+            offset = 4;
+          } else if (payloadLen === 127 && chunk.length >= 10) {
+            payloadLen = chunk.readUInt32BE(6);
+            offset = 10;
+          }
+          if (masked && chunk.length >= offset + 4 + payloadLen) {
+            const mask = chunk.slice(offset, offset + 4);
+            const raw = chunk.slice(offset + 4, offset + 4 + payloadLen);
+            const unmasked = Buffer.alloc(payloadLen);
+            for (let i = 0; i < payloadLen; i++) {
+              unmasked[i] = raw[i] ^ mask[i % 4];
+            }
+            const msg = JSON.parse(unmasked.toString('utf8'));
+            if (msg?.type === 'ping') {
+              sendWSMsg(socket, 'pong', { ts: Date.now() });
+            } else if (msg?.type === 'request_sync') {
+              sendWSMsg(socket, 'school_data_sync', schoolDB);
+              sendWSMsg(socket, 'cameras_updated', CAMERAS);
+            }
+          }
+        }
+      } catch (e) {}
+    });
+
+    const cleanup = () => wsClients.delete(socket);
+    socket.on('close', cleanup);
+    socket.on('end', cleanup);
+    socket.on('error', cleanup);
+  } catch (err) {
+    try { socket.destroy(); } catch (e) {}
+  }
+});
+
+// WebSocket ulanishlarini tirik saqlash (25 soniyada bir ping)
+setInterval(() => {
+  if (wsClients.size === 0) return;
+  const pingFrame = encodeWSFrame(Buffer.alloc(0), 0x9);
+  wsClients.forEach(sock => {
+    if (!sock || sock.destroyed || !sock.writable) {
+      wsClients.delete(sock);
+      return;
+    }
+    try { sock.write(pingFrame); } catch (e) { wsClients.delete(sock); }
+  });
+}, 25000);
 
 // Barcha interfeyslarda (0.0.0.0) tinglaymiz
 server.listen(CONFIG.BRIDGE_PORT, '0.0.0.0', () => {

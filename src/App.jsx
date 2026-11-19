@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SchoolProvider, useSchool } from './context/SchoolContext';
 import { Navbar } from './components/Navbar';
+import { Sidebar } from './components/Sidebar';
 import { LoginModal } from './components/LoginModal';
 import { DirectorDashboard } from './components/DirectorDashboard';
 import { InspectorAttendance } from './components/InspectorAttendance';
@@ -11,6 +12,7 @@ import { SchoolSettings } from './components/SchoolSettings';
 import { SchoolMonitor } from './components/SchoolMonitor';
 import { TeacherAttendanceView } from './components/TeacherAttendanceView';
 import { StudentAttendanceHistoryView } from './components/StudentAttendanceHistoryView';
+import { AttendanceReportView } from './components/AttendanceReportView';
 import { BigAdminDashboard } from './components/BigAdminDashboard';
 import { Toast } from './components/Toast';
 import { LocalNetworkModal } from './components/LocalNetworkModal';
@@ -18,6 +20,8 @@ import { Users, Home, Settings, Tv, ShieldCheck, Building } from 'lucide-react';
 
 const MainLayout = () => {
   const { currentUser, hasPermission, activeTab, navigateTo, currentPath, isBigAdmin, currentSchool } = useSchool();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   if (!currentUser) {
     if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
@@ -38,6 +42,7 @@ const MainLayout = () => {
   const canSeeStudents = !isBigAdmin && isDirectorUser && hasPermission('students');
   const canSeeSettings = !isBigAdmin && isDirectorUser && (hasPermission('teachers') || hasPermission('schedules') || hasPermission('classes') || hasPermission('leadership'));
   const canSeeTeacherAttendance = !isBigAdmin && (isDirectorUser || currentUser?.role === 'inspector');
+  const canSeeReports = !isBigAdmin && (isDirectorUser || currentUser?.role === 'inspector');
 
   // Tizimga kirilganda /login yoki / dan mos sahifaga yo'naltirish
   React.useEffect(() => {
@@ -63,53 +68,67 @@ const MainLayout = () => {
 
   // Direktor bo'lmagan foydalanuvchilar (masalan, sinf rahbari) uchun faqat o'z kabinetini ochish
   React.useEffect(() => {
-    if (!isBigAdmin && !isDirectorUser && activeTab !== 'main') {
+    const allowedForInspector = currentUser?.role === 'inspector' && (activeTab === 'reports' || activeTab === 'teacher_attendance');
+    if (!isBigAdmin && !isDirectorUser && !allowedForInspector && activeTab !== 'main') {
       navigateTo(currentPath || '/director');
     }
-  }, [currentUser?.id, currentUser?.role, isDirectorUser, isBigAdmin]);
+  }, [currentUser?.id, currentUser?.role, isDirectorUser, isBigAdmin, activeTab]);
 
   return (
-    <div className="min-h-screen min-w-[250px] flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased overflow-x-hidden transition-colors">
-      {/* Yuqori panel */}
-      <Navbar />
+    <div className="min-h-screen min-w-[250px] flex bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased overflow-x-hidden transition-colors">
+      {/* Chap Sidebar */}
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(v => !v)}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+      />
 
-      {/* Asosiy qism */}
-      <main className={`flex-1 w-full mx-auto ${currentUser?.role === 'monitor' ? 'max-w-none px-2 sm:px-6 py-2 sm:py-3' : 'max-w-7xl px-2 sm:px-4 py-3 sm:py-4'}`}>
-        {isBigAdmin ? (
-          <BigAdminDashboard />
-        ) : (
-          <>
-            {activeTab === 'directory' && canSeeStudents && <StudentDirectory />}
-            {activeTab === 'student_attendance' && canSeeStudents && <StudentAttendanceHistoryView />}
-            {activeTab === 'settings' && canSeeSettings && <SchoolSettings />}
-            {activeTab === 'teacher_attendance' && canSeeTeacherAttendance && <TeacherAttendanceView />}
-            {(activeTab === 'main' || 
-              (!canSeeStudents && activeTab === 'directory') || 
-              (!canSeeStudents && activeTab === 'student_attendance') || 
-              (!canSeeSettings && activeTab === 'settings') || 
-              (!canSeeTeacherAttendance && activeTab === 'teacher_attendance')) && (
-              <>
-                {(currentUser?.role === 'director' || currentUser?.isDirector || currentUser?.category === 'leadership' || currentUser?.category === 'administrator') && <DirectorDashboard />}
-                {currentUser?.role === 'inspector' && <InspectorAttendance />}
-                {currentUser?.role === 'class_teacher' && <ClassTeacherView />}
-                {currentUser?.role === 'subject_teacher' && <TeacherJournal />}
-                {currentUser?.role === 'monitor' && <SchoolMonitor />}
-              </>
-            )}
-          </>
-        )}
-      </main>
+      {/* O'ng asosiy ustun: Navbar + Kontent + Footer */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Yuqori panel */}
+        <Navbar onOpenMobileSidebar={() => setMobileSidebarOpen(true)} />
+
+        {/* Asosiy qism */}
+        <main className={`flex-1 w-full mx-auto ${currentUser?.role === 'monitor' ? 'max-w-none px-2 sm:px-6 py-2 sm:py-3' : 'max-w-7xl px-2 sm:px-4 py-3 sm:py-4'}`}>
+          {isBigAdmin ? (
+            <BigAdminDashboard />
+          ) : (
+            <>
+              {activeTab === 'directory' && canSeeStudents && <StudentDirectory />}
+              {activeTab === 'student_attendance' && canSeeStudents && <StudentAttendanceHistoryView />}
+              {activeTab === 'settings' && canSeeSettings && <SchoolSettings />}
+              {activeTab === 'teacher_attendance' && canSeeTeacherAttendance && <TeacherAttendanceView />}
+              {activeTab === 'reports' && canSeeReports && <AttendanceReportView />}
+              {(activeTab === 'main' || 
+                (!canSeeStudents && activeTab === 'directory') || 
+                (!canSeeStudents && activeTab === 'student_attendance') || 
+                (!canSeeSettings && activeTab === 'settings') || 
+                (!canSeeTeacherAttendance && activeTab === 'teacher_attendance') ||
+                (!canSeeReports && activeTab === 'reports')) && (
+                <>
+                  {(currentUser?.role === 'director' || currentUser?.isDirector || currentUser?.category === 'leadership' || currentUser?.category === 'administrator') && <DirectorDashboard />}
+                  {currentUser?.role === 'inspector' && <InspectorAttendance />}
+                  {currentUser?.role === 'class_teacher' && <ClassTeacherView />}
+                  {currentUser?.role === 'subject_teacher' && <TeacherJournal />}
+                  {currentUser?.role === 'monitor' && <SchoolMonitor />}
+                </>
+              )}
+            </>
+          )}
+        </main>
+
+        {/* Footer */}
+        <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-3 text-center text-[11px] text-slate-400 dark:text-slate-500 transition-colors">
+          SmartMaktab CRM • Maktab Davomat va Boshqaruv Tizimi
+        </footer>
+      </div>
 
       {/* Jonli bildirishnoma toast */}
       <Toast />
 
       {/* Maktab lokal Wi-Fi ogohlantirish modali (Direktor va Navbatchi uchun) */}
       <LocalNetworkModal />
-
-      {/* Footer */}
-      <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-3 text-center text-[11px] text-slate-400 dark:text-slate-500 transition-colors">
-        SmartMaktab CRM • Maktab Davomat va Boshqaruv Tizimi
-      </footer>
     </div>
   );
 };

@@ -8,12 +8,16 @@ export const BIGADMIN_SUPABASE_CONFIG = {
 };
 
 // BigAdmin alohida izolyatsiyalangan Supabase mijoz
-export const bigAdminSupabase = createClient(BIGADMIN_SUPABASE_CONFIG.URL, BIGADMIN_SUPABASE_CONFIG.KEY, {
+const globalRef = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : {});
+
+export const bigAdminSupabase = globalRef.__bigAdminSupabaseClient || (globalRef.__bigAdminSupabaseClient = createClient(BIGADMIN_SUPABASE_CONFIG.URL, BIGADMIN_SUPABASE_CONFIG.KEY, {
   auth: {
     persistSession: false,
-    autoRefreshToken: false
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+    storageKey: 'sb-bigadmin-auth-token'
   }
-});
+}));
 
 // Standart 24-maktab Supabase parametrlari
 export const SUPABASE_URL = 'https://ffwbxpqfzlkevxhijvtd.supabase.co';
@@ -43,20 +47,24 @@ export function checkQuota(error) {
   return false;
 }
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+export const supabase = globalRef.__defaultSupabaseClient || (globalRef.__defaultSupabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: false,
-    autoRefreshToken: false
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+    storageKey: 'sb-default-school-auth-token'
   },
   realtime: {
     params: {
       eventsPerSecond: 10
     }
   }
-});
+}));
 
 // Har bir maktab uchun dinamik Supabase kesh
-const schoolClientsCache = new Map();
+const schoolClientsCache = globalRef.__schoolClientsCache || (globalRef.__schoolClientsCache = new Map());
+schoolClientsCache.set(`${SUPABASE_URL}::${SUPABASE_KEY}`, supabase);
+schoolClientsCache.set(`${BIGADMIN_SUPABASE_CONFIG.URL}::${BIGADMIN_SUPABASE_CONFIG.KEY}`, bigAdminSupabase);
 
 /**
  * Maktab uchun alohida Supabase klientini olish
@@ -64,17 +72,22 @@ const schoolClientsCache = new Map();
  */
 export function getSupabaseForSchool(schoolOrConfig) {
   if (!schoolOrConfig) return supabase;
-  const url = (schoolOrConfig.supabaseUrl || schoolOrConfig.url || '').trim();
+  const url = (schoolOrConfig.supabaseUrl || schoolOrConfig.url || '').trim().replace(/\/+$/, '');
   const key = (schoolOrConfig.supabaseKey || schoolOrConfig.key || '').trim();
   
   if (!url || !key) return null;
+  if (url === SUPABASE_URL && key === SUPABASE_KEY) return supabase;
+  if (url === BIGADMIN_SUPABASE_CONFIG.URL && key === BIGADMIN_SUPABASE_CONFIG.KEY) return bigAdminSupabase;
 
   const cacheKey = `${url}::${key}`;
   if (!schoolClientsCache.has(cacheKey)) {
+    const safeHost = url.replace(/[^a-zA-Z0-9]/g, '').slice(-20);
     const client = createClient(url, key, {
       auth: {
         persistSession: false,
-        autoRefreshToken: false
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        storageKey: `sb-school-${safeHost}-${schoolClientsCache.size}-auth-token`
       },
       realtime: {
         params: {
@@ -108,8 +121,16 @@ export async function testSupabaseConnection(url, key) {
     return { success: false, message: 'URL va Anon Key kiritilishi shart!' };
   }
   try {
-    const testClient = createClient(url.trim(), key.trim(), {
-      auth: { persistSession: false, autoRefreshToken: false }
+    const cleanUrl = url.trim().replace(/\/+$/, '');
+    const cleanKey = key.trim();
+    const existingClient = getSupabaseForSchool({ supabaseUrl: cleanUrl, supabaseKey: cleanKey });
+    const testClient = existingClient || createClient(cleanUrl, cleanKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        storageKey: `sb-test-${Date.now()}-auth-token`
+      }
     });
     const { data, error } = await testClient.from('school_data').select('key').limit(1);
     if (error) {
