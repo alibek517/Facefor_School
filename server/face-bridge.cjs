@@ -769,6 +769,44 @@ function detectAndSyncTeacherDifferences(oldTeachers, newTeachers, schoolId = nu
   }
 }
 
+// Baza va apparat o'rtasidagi farqlarni aniqlash va avtomatik sinxronlash (Texnik xodimlar)
+function detectAndSyncTechnicalDifferences(oldList, newList, schoolId = null) {
+  if (!Array.isArray(oldList) || !Array.isArray(newList)) return;
+
+  const newIds = new Set(newList.map(t => String(t.faceId || t.employeeNo || t.id || '').replace(/^tech-/, '').replace(/^0+/, '')));
+  for (const oldT of oldList) {
+    const empNo = String(oldT.faceId || oldT.employeeNo || oldT.id || '').replace(/^tech-/, '').replace(/^0+/, '');
+    if (empNo && !newIds.has(empNo)) {
+      console.log(`[TECH DIFF SYNC] O'chirilgan texnik xodim: #${empNo} (${oldT.fullName || oldT.name}). Kameralardan o'chirilmoqda...`);
+      syncStudentToHardware('delete', { ...oldT, role: 'teacher' }, schoolId).catch(() => {});
+    }
+  }
+
+  const oldMap = new Map();
+  oldList.forEach(t => {
+    const empNo = String(t.faceId || t.employeeNo || t.id || '').replace(/^tech-/, '').replace(/^0+/, '');
+    if (empNo) oldMap.set(empNo, t);
+  });
+
+  for (const newT of newList) {
+    const empNo = String(newT.faceId || newT.employeeNo || newT.id || '').replace(/^tech-/, '').replace(/^0+/, '');
+    if (!empNo) continue;
+    const oldT = oldMap.get(empNo);
+    if (!oldT) {
+      console.log(`[TECH DIFF SYNC] Yangi texnik xodim: #${empNo} (${newT.fullName || newT.name}). Kameralarga kiritilmoqda...`);
+      syncStudentToHardware('add', { ...newT, role: 'teacher' }, schoolId).catch(() => {});
+    } else if (
+      (newT.fullName || newT.name) !== (oldT.fullName || oldT.name) ||
+      newT.gender !== oldT.gender ||
+      (newT.photo && newT.photo !== oldT.photo) ||
+      (newT.photoUrl && newT.photoUrl !== oldT.photoUrl)
+    ) {
+      console.log(`[TECH DIFF SYNC] Tahrirlangan texnik xodim: #${empNo} (${newT.fullName || newT.name}). Kameralarda yangilanmoqda...`);
+      syncStudentToHardware('update', { ...newT, role: 'teacher' }, schoolId).catch(() => {});
+    }
+  }
+}
+
 // Barcha o'quvchi, o'qituvchi va texnik xodimlarni maktabning barcha turniketlariga to'liq sinxronlash
 async function syncAllUsersToHardware(schoolId = 'sch-1') {
   const targetCams = getCamerasForSchool(schoolId);
@@ -3094,7 +3132,12 @@ const server = http.createServer(async (req, res) => {
         const targetSchoolId = payload.schoolId || parsedUrl.searchParams.get('schoolId') || schoolDB.schools?.[0]?.id || 'sch-1';
         const school = (schoolDB.schools || []).find(s => s.id === targetSchoolId);
 
-        if (payload.key && payload.data) {
+        let oldDataForDiff = null;
+        if (payload.key && payload.data !== undefined) {
+          oldDataForDiff = Array.isArray(school?.[payload.key])
+            ? [...school[payload.key]]
+            : (Array.isArray(schoolDB[payload.key]) ? [...schoolDB[payload.key]] : []);
+
           if (school) {
             school[payload.key] = payload.data;
           }
@@ -3111,7 +3154,20 @@ const server = http.createServer(async (req, res) => {
         }
 
         saveSchoolDB(schoolDB);
+        // 1. Barcha Lokal va Global brauzerlarga WebSocket orqali darhol uzatish
         broadcastSSE('school_data_sync', { schoolId: targetSchoolId, data: school || schoolDB });
+        // 2. Supabase bulutiga ham sinxronlash (agar kvota ochiq bo'lsa)
+        if (payload.key && payload.data !== undefined) {
+          syncModuleToSupabase(payload.key, payload.data, targetSchoolId).catch(() => {});
+          // 3. Barcha 6 ta Face-ID turniketlariga farqlarni darhol yozish!
+          if (payload.key === 'students' && Array.isArray(payload.data)) {
+            detectAndSyncStudentDifferences(oldDataForDiff || [], payload.data, targetSchoolId);
+          } else if (payload.key === 'teachers' && Array.isArray(payload.data)) {
+            detectAndSyncTeacherDifferences(oldDataForDiff || [], payload.data, targetSchoolId);
+          } else if (payload.key === 'technicalStaff' && Array.isArray(payload.data)) {
+            detectAndSyncTechnicalDifferences(oldDataForDiff || [], payload.data, targetSchoolId);
+          }
+        }
 
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ 

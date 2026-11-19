@@ -1122,8 +1122,17 @@ export const SchoolProvider = ({ children }) => {
     : (isCloudflareTunnel ? (typeof window !== 'undefined' ? window.location.origin : '') : validGlobalStream);
 
   const getActiveBridgeUrl = () => {
-    if (BRIDGE_API && !deadTunnelsSet.has(BRIDGE_API.replace(/\/+$/, ''))) return BRIDGE_API;
-    if (validGlobalStream) return validGlobalStream;
+    const isHttpsPage = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    if (!isHttpsPage && BRIDGE_API && !deadTunnelsSet.has(BRIDGE_API.replace(/\/+$/, ''))) {
+      return BRIDGE_API.replace(/\/+$/, '');
+    }
+    const tunnelCandidate = (globalStreamUrlRef.current || validGlobalStream || '').trim().replace(/\/+$/, '');
+    if (tunnelCandidate && !deadTunnelsSet.has(tunnelCandidate) && (!isHttpsPage || tunnelCandidate.startsWith('https://'))) {
+      return tunnelCandidate;
+    }
+    if (BRIDGE_API && !deadTunnelsSet.has(BRIDGE_API.replace(/\/+$/, '')) && (!isHttpsPage || BRIDGE_API.startsWith('https://'))) {
+      return BRIDGE_API.replace(/\/+$/, '');
+    }
     return '';
   };
 
@@ -1865,17 +1874,20 @@ export const SchoolProvider = ({ children }) => {
     });
 
     try {
-      await fetch(`${BRIDGE_API}/api/school/update-student`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          studentId, 
-          updatedData: { 
-            classId: newClassId,
-            className: targetClassName
-          } 
-        })
-      });
+      const targetUrl = getActiveBridgeUrl();
+      if (targetUrl) {
+        await fetch(`${targetUrl}/api/school/update-student`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            studentId, 
+            updatedData: { 
+              classId: newClassId,
+              className: targetClassName
+            } 
+          })
+        });
+      }
     } catch (e) {}
 
     showToast('Sinf yangilandi', `O'quvchi ${targetClassName || 'yangi sinf'}ga biriktirildi. Supabase bulut bazasida saqlandi.`, 'success');
