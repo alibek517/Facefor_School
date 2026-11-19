@@ -551,12 +551,20 @@ export const SchoolProvider = ({ children }) => {
 
       if (deadTunnelsSet.has(cleanUrl)) return;
 
-      const evRes = await fetch(`${cleanUrl}/api/device/events`, { signal: AbortSignal.timeout(3000) }).catch(() => null);
+      const evRes = await fetch(`${cleanUrl}/api/device/events`, { signal: AbortSignal.timeout(4000) }).catch(() => null);
       if (evRes && evRes.ok) {
         markTunnelSuccess(cleanUrl);
         const evJson = await evRes.json().catch(() => null);
         if (evJson && Array.isArray(evJson.data) && evJson.data.length > 0) {
           setRecentFaceScans(evJson.data);
+        }
+      }
+
+      const camRes = await fetch(`${cleanUrl}/api/device/cameras`, { signal: AbortSignal.timeout(4000) }).catch(() => null);
+      if (camRes && camRes.ok) {
+        const camJson = await camRes.json().catch(() => null);
+        if (camJson && Array.isArray(camJson.cameras) && camJson.cameras.length > 0) {
+          setCameras(camJson.cameras);
         }
       }
       setIsSchoolLocalOnline(true);
@@ -595,7 +603,7 @@ export const SchoolProvider = ({ children }) => {
     if (isLocalHostEnv) return;
     const fetchLatestBridge = async () => {
       try {
-        const res = await fetch('https://ntfy.sh/maktab_bridge_alibek517/json?poll=1', { signal: AbortSignal.timeout(4000) }).catch(() => null);
+        const res = await fetch('https://ntfy.sh/maktab_bridge_alibek517/json?poll=1&since=12h', { signal: AbortSignal.timeout(5000) }).catch(() => null);
         if (res && res.ok) {
           const text = await res.text().catch(() => '');
           const lines = text.trim().split('\n');
@@ -615,7 +623,7 @@ export const SchoolProvider = ({ children }) => {
       } catch (e) {}
     };
     fetchLatestBridge();
-    const interval = setInterval(fetchLatestBridge, 15000);
+    const interval = setInterval(fetchLatestBridge, 8000);
     return () => clearInterval(interval);
   }, [isLocalHostEnv]);
 
