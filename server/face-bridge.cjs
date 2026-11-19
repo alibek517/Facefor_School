@@ -266,6 +266,18 @@ function syncUsersMapWithDB() {
 
 function saveSchoolDB(data) {
   try {
+    // Lokal (top-level schoolDB) va Global (schoolDB.schools[0]) har doim 100% bir xil bo'lishini kafolatlash
+    if (Array.isArray(data.schools) && data.schools.length > 0) {
+      const primary = data.schools[0];
+      const syncKeys = ['students', 'teachers', 'technicalStaff', 'classes', 'schedules', 'attendanceList', 'teacherAttendance', 'hourlyAttendance', 'leadership'];
+      syncKeys.forEach(k => {
+        if (data[k] !== undefined) {
+          primary[k] = data[k];
+        } else if (primary[k] !== undefined) {
+          data[k] = primary[k];
+        }
+      });
+    }
     data.lastUpdated = Date.now();
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
     syncUsersMapWithDB();
@@ -433,13 +445,7 @@ async function syncModuleToSupabase(key, data, targetSchoolId = null) {
 
 // ==================== FACE-ID QURILMALARI (6 TA KAMERA) APPARAT SINXRONIZATSIYASI ====================
 function getCamerasForSchool(schoolId) {
-  if (schoolId && schoolDB && Array.isArray(schoolDB.schools)) {
-    const sch = schoolDB.schools.find(s => s.id === schoolId);
-    if (sch && Array.isArray(sch.turnstiles) && sch.turnstiles.length > 0) {
-      return sch.turnstiles;
-    }
-  }
-  return (CAMERAS && CAMERAS.length > 0) ? CAMERAS : [
+  const defaultCams = [
     { id: 'cam-1', ip: '192.168.1.35', type: 'in', name: 'Turniket 1 (Kirish)', location: 'Bosh kirish eshigi (1)', port: 80 },
     { id: 'cam-2', ip: '192.168.1.36', type: 'in', name: 'Turniket 2 (Kirish)', location: 'Bosh kirish eshigi (2)', port: 80 },
     { id: 'cam-3', ip: '192.168.1.33', type: 'in', name: 'Turniket 3 (Kirish)', location: 'Bosh kirish eshigi (3)', port: 80 },
@@ -447,6 +453,32 @@ function getCamerasForSchool(schoolId) {
     { id: 'cam-5', ip: '192.168.1.32', type: 'out', name: 'Turniket 5 (Chiqish)', location: "Chiqish yo'lagi (2)", port: 80 },
     { id: 'cam-6', ip: '192.168.1.13', type: 'out', name: 'Turniket 6 (Chiqish)', location: "Chiqish yo'lagi (3)", port: 80 },
   ];
+
+  let list = null;
+  if (schoolId && schoolDB && Array.isArray(schoolDB.schools)) {
+    const sch = schoolDB.schools.find(s => s.id === schoolId);
+    if (sch && Array.isArray(sch.turnstiles) && sch.turnstiles.length > 0) {
+      list = sch.turnstiles;
+    }
+  }
+  if (!list) {
+    const primarySchoolId = schoolDB?.schools?.[0]?.id || 'sch-1';
+    list = (CAMERAS && CAMERAS.length > 0)
+      ? CAMERAS.filter(c => !c.schoolId || c.schoolId === (schoolId || primarySchoolId))
+      : defaultCams;
+  }
+
+  // IP bo'yicha dublikatlarni olib tashlash va barcha 6 ta turniketni qamrab olish
+  const byIp = new Map();
+  list.forEach(c => {
+    if (c && c.ip && !byIp.has(c.ip)) byIp.set(c.ip, c);
+  });
+  if (!schoolId || schoolId === 'sch-1') {
+    defaultCams.forEach(dc => {
+      if (!byIp.has(dc.ip)) byIp.set(dc.ip, dc);
+    });
+  }
+  return Array.from(byIp.values());
 }
 
 async function syncStudentToHardware(action, studentData, schoolId = null) {
@@ -563,11 +595,21 @@ async function syncStudentToHardware(action, studentData, schoolId = null) {
       cachedUsers.push(userObj);
     }
 
-    // 1. Foydalanuvchi ma'lumotlarini (Ismi, jinsi, kirish huquqi) o'rnatish
-    const setUpPayload = JSON.stringify({
+    // Mavjud skanerlar ro'yxatidagi eski ismni ham darhol yangilash
+    if (typeof recentScans !== 'undefined' && Array.isArray(recentScans)) {
+      recentScans.forEach(sc => {
+        const scEmp = String(sc.employeeNo || '').replace(/^0+/, '');
+        if ((empClean && scEmp === empClean) || sc.employeeNo === empPadded || sc.employeeNo === rawEmp) {
+          sc.name = name || sc.name;
+        }
+      });
+    }
+
+    // 1. Foydalanuvchi ma'lumotlarini (Ismi, jinsi, kirish huquqi) BARCHA 6 ta turniketda PARALLEL yangilash
+    const buildUserPayload = (targetEmpId) => JSON.stringify({
       UserInfo: {
-        employeeNo: empPadded,
-        name: (name || '').slice(0, 31),
+        employeeNo: targetEmpId,
+        name: (name || '').replace(/[\r\n\t]/g, ' ').trim().slice(0, 31),
         userType: 'normal',
         closeDelayEnabled: false,
         Valid: {
@@ -582,39 +624,67 @@ async function syncStudentToHardware(action, studentData, schoolId = null) {
       }
     });
 
-    for (const cam of targetCameras) {
+    const paddedPayload = buildUserPayload(empPadded);
+    const cleanPayload = empClean && empClean !== empPadded ? buildUserPayload(empClean) : null;
+
+    await Promise.allSettled(targetCameras.map(async (cam) => {
       try {
-        const setRes = await digestRequest({
+        // Avval mavjud foydalanuvchini Modify (tahrirlash) qilamiz, bo'lmasa SetUp bilan yaratamiz
+        const modRes = await digestRequest({
           host: cam.ip,
           port: cam.port || 80,
-          path: '/ISAPI/AccessControl/UserInfo/SetUp?format=json',
+          path: '/ISAPI/AccessControl/UserInfo/Modify?format=json',
           method: 'PUT',
-          body: setUpPayload,
+          body: paddedPayload,
           username: CONFIG.DEVICE_USER,
           password: CONFIG.DEVICE_PASS,
-          timeout: 2500
-        });
-        if (setRes && setRes.status === 200) {
-          console.log(`[SETUP] Kamera ${cam.name} (${cam.ip}): #${empPadded} (${name}) saqlandi`);
-        }
-        if (action === 'update') {
-          await digestRequest({
-            host: cam.ip,
-            port: cam.port || 80,
-            path: '/ISAPI/AccessControl/UserInfo/Modify?format=json',
-            method: 'PUT',
-            body: setUpPayload,
-            username: CONFIG.DEVICE_USER,
-            password: CONFIG.DEVICE_PASS,
-            timeout: 2500
-          });
+          timeout: 3000
+        }).catch(() => null);
+
+        const modOk = modRes && modRes.status === 200 && !String(modRes.body || '').includes('"statusCode":6');
+        if (modOk) {
+          console.log(`[MODIFY OK] Kamera ${cam.name} (${cam.ip}): #${empPadded} -> "${name}" yangilandi`);
+        } else {
+          // Agar terminalda unpadded ID (masalan "179") bilan saqlangan bo'lsa uni ham Modify qilib ko'ramiz
+          let cleanModOk = false;
+          if (cleanPayload) {
+            const cRes = await digestRequest({
+              host: cam.ip,
+              port: cam.port || 80,
+              path: '/ISAPI/AccessControl/UserInfo/Modify?format=json',
+              method: 'PUT',
+              body: cleanPayload,
+              username: CONFIG.DEVICE_USER,
+              password: CONFIG.DEVICE_PASS,
+              timeout: 2500
+            }).catch(() => null);
+            cleanModOk = Boolean(cRes && cRes.status === 200 && !String(cRes.body || '').includes('"statusCode":6'));
+            if (cleanModOk) {
+              console.log(`[MODIFY CLEAN OK] Kamera ${cam.name} (${cam.ip}): #${empClean} -> "${name}" yangilandi`);
+            }
+          }
+          if (!cleanModOk) {
+            const setRes = await digestRequest({
+              host: cam.ip,
+              port: cam.port || 80,
+              path: '/ISAPI/AccessControl/UserInfo/SetUp?format=json',
+              method: 'PUT',
+              body: paddedPayload,
+              username: CONFIG.DEVICE_USER,
+              password: CONFIG.DEVICE_PASS,
+              timeout: 3000
+            }).catch(() => null);
+            if (setRes && setRes.status === 200) {
+              console.log(`[SETUP OK] Kamera ${cam.name} (${cam.ip}): #${empPadded} -> "${name}" saqlandi`);
+            }
+          }
         }
       } catch (e) {}
-    }
+    }));
 
-    // 2. Agar yangi rasm taqdim etilgan bo'lsa, uni barcha Face-ID terminallarining FDLib (Yuz bazasi) ga yuklash
+    // 2. Agar yangi rasm taqdim etilgan bo'lsa, uni barcha Face-ID terminallarining FDLib (Yuz bazasi) ga PARALLEL yuklash
     const photoSource = studentData.photo || studentData.photoUrl || studentData.faceURL;
-    if (photoSource && typeof photoSource === 'string') {
+    if (photoSource && typeof photoSource === 'string' && !photoSource.includes('192.168.') && !photoSource.includes('/LOCALS/')) {
       try {
         let imgBuffer = null;
         if (photoSource.startsWith('data:image/')) {
@@ -629,11 +699,17 @@ async function syncStudentToHardware(action, studentData, schoolId = null) {
         }
 
         if (imgBuffer && imgBuffer.length > 500) {
-          try {
-            const photosDir = path.join(__dirname, '..', 'public', 'photos');
-            if (!fs.existsSync(photosDir)) fs.mkdirSync(photosDir, { recursive: true });
-            fs.writeFileSync(path.join(photosDir, `${empPadded}.jpg`), imgBuffer);
-          } catch (e) {}
+          // Barcha 3 ta lokal surat papkasiga saqlash (public, dist, photo_cache)
+          [
+            path.join(__dirname, '..', 'public', 'photos'),
+            path.join(__dirname, '..', 'dist', 'photos'),
+            PHOTO_CACHE_DIR
+          ].forEach(dir => {
+            try {
+              if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+              fs.writeFileSync(path.join(dir, `${empPadded}.jpg`), imgBuffer);
+            } catch (e) {}
+          });
 
           const boundary = `----WebKitFormBoundaryFace${Date.now()}`;
           const jsonMeta = JSON.stringify({
@@ -648,9 +724,8 @@ async function syncStudentToHardware(action, studentData, schoolId = null) {
             Buffer.from(`\r\n--${boundary}--\r\n`)
           ]);
 
-          for (const cam of targetCameras) {
+          await Promise.allSettled(targetCameras.map(async (cam) => {
             try {
-              // Eskisini o'chirish (agar bo'lsa)
               await digestRequest({
                 host: cam.ip,
                 port: cam.port || 80,
@@ -660,9 +735,8 @@ async function syncStudentToHardware(action, studentData, schoolId = null) {
                 username: CONFIG.DEVICE_USER,
                 password: CONFIG.DEVICE_PASS,
                 timeout: 2500
-              });
+              }).catch(() => {});
 
-              // Yangisini yuklash
               const faceRes = await digestRequest({
                 host: cam.ip,
                 port: cam.port || 80,
@@ -675,12 +749,12 @@ async function syncStudentToHardware(action, studentData, schoolId = null) {
                 timeout: 5000
               });
               if (faceRes && faceRes.status === 200) {
-                console.log(`[PHOTO SYNC] Kamera ${cam.name} (${cam.ip}): #${empPadded} fotosi muvaffaqiyatli yuklandi`);
+                console.log(`[PHOTO SYNC OK] Kamera ${cam.name} (${cam.ip}): #${empPadded} fotosi yuklandi`);
               }
             } catch (err) {
               console.log(`[PHOTO SYNC ERR] Kamera ${cam.name} (${cam.ip}): ${err.message}`);
             }
-          }
+          }));
         }
       } catch (err) {
         console.error(`[PHOTO SYNC ERROR] #${empPadded}:`, err.message);
