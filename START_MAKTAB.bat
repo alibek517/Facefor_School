@@ -78,6 +78,7 @@ echo.
 echo [3/4] Kompyuter yonganda avtomatik ishga tushish sozlanmoqda...
 
 (
+    echo On Error Resume Next
     echo Set WshShell = CreateObject^("WScript.Shell"^)
     echo Set fso = CreateObject^("Scripting.FileSystemObject"^)
     echo installDir = "C:\Maktab_FaceID_Tizimi"
@@ -89,20 +90,17 @@ echo [3/4] Kompyuter yonganda avtomatik ishga tushish sozlanmoqda...
     echo If fso.FileExists^(bridgeScript^) Then
     echo     WshShell.CurrentDirectory = installDir
     echo     WshShell.Run nodeExe ^& " server/face-bridge.cjs", 0, False
-    echo     ' Server tayyor bo'lishini tezkor kutish (maks 8 soniya)
     echo     Set http = CreateObject^("MSXML2.XMLHTTP"^)
     echo     For i = 1 To 16
     echo         WScript.Sleep 500
-    echo         On Error Resume Next
+    echo         Err.Clear
     echo         http.Open "GET", "http://localhost:5001/status", False
     echo         http.Send
-    echo         If Err.Number = 0 And http.Status = 200 Then
-    echo             Exit For
+    echo         If Err.Number = 0 Then
+    echo             If http.Status = 200 Then Exit For
     echo         End If
-    echo         Err.Clear
-    echo         On Error GoTo 0
     echo     Next
-    echo     WshShell.Run "http://localhost:5001/", 1, False
+    echo     WshShell.Run "cmd /c start """" ""http://localhost:5001/""", 0, False
     echo End If
 ) > "%INSTALL_DIR%\Maktab_AvtoBoshlash.vbs"
 
