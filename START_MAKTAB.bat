@@ -111,7 +111,10 @@ if exist "%STARTUP_FOLDER%" (
 
 :: Windows Registry Run kalitiga ham yozish (100% kafolatli avto-start!)
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "SmartMaktab_FaceID" /t REG_SZ /d "wscript.exe //B \"%INSTALL_DIR%\Maktab_AvtoBoshlash.vbs\"" /f >nul 2>nul
-echo       [OK] Avto-ishga tushish (Startup + Registry) sozlandi!
+
+:: Ish stoliga (Desktop) "SmartMaktab" yorlig'ini avtomatik yaratish
+powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $desk = $ws.SpecialFolders('Desktop'); $sc = $ws.CreateShortcut((Join-Path $desk 'SmartMaktab.lnk')); $sc.TargetPath = 'wscript.exe'; $sc.Arguments = '//B \"C:\Maktab_FaceID_Tizimi\Maktab_AvtoBoshlash.vbs\"'; $sc.WorkingDirectory = 'C:\Maktab_FaceID_Tizimi'; $sc.IconLocation = 'shell32.dll,13'; $sc.Description = 'SmartMaktab Face-ID Tizimini Ishga Tushirish'; $sc.Save()" >nul 2>nul
+echo       [OK] Avto-ishga tushish (Startup + Registry) va Desktop yorlig'i sozlandi!
 
 :: 4. Serverni TO'LIQ YASHIRIN (HIDDEN) holda ishga tushirish va brauzerda tezkor ochish
 echo.
