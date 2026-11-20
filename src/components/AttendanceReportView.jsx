@@ -1007,7 +1007,6 @@ export const AttendanceReportView = () => {
                     { id: 'late', label: 'Kechikkan' },
                     { id: 'completed_all', label: 'Barcha darsga kirgan' },
                     { id: 'left_early', label: 'Ketib qolgan' },
-                    { id: 'outdoor_lesson', label: 'Jismoniy / CHQBT' },
                     { id: 'excused', label: 'Sababli' },
                     { id: 'unexcused', label: 'Sababsiz' }
                   ].map(f => (
@@ -1049,7 +1048,6 @@ export const AttendanceReportView = () => {
                     { id: 'late', label: 'Kechikkan' },
                     { id: 'completed_all', label: 'Barcha darsga kirgan' },
                     { id: 'left_early', label: 'Ketib qolgan' },
-                    { id: 'outdoor_lesson', label: 'Jismoniy / CHQBT' },
                     { id: 'excused', label: 'Sababli' },
                     { id: 'unexcused', label: 'Sababsiz' }
                   ].map(f => (
@@ -1089,7 +1087,6 @@ export const AttendanceReportView = () => {
                     { id: 'late', label: 'Kechikkan' },
                     { id: 'completed_all', label: 'Barcha darsga kirgan' },
                     { id: 'left_early', label: 'Ketib qolgan' },
-                    { id: 'outdoor_lesson', label: 'Jismoniy / CHQBT' },
                     { id: 'excused', label: 'Sababli' },
                     { id: 'unexcused', label: 'Sababsiz' }
                   ].map(f => (
@@ -1428,18 +1425,16 @@ export const AttendanceReportView = () => {
                         {visibleCols.status && (
                           <td className="px-3 py-2.5 text-center border-r border-slate-100 dark:border-slate-800 space-y-1">
                             <div>{statusBadge(row.status)}</div>
-                            {row.scheduleStatus && row.scheduleStatus !== 'absent' && (
+                            {row.scheduleStatus && row.scheduleStatus !== 'absent' && row.scheduleStatus !== 'outdoor_lesson' && (
                               <div>
                                 <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
                                   row.scheduleStatus === 'completed_all'
                                     ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
                                     : row.scheduleStatus === 'left_early'
                                     ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300'
-                                    : row.scheduleStatus === 'outdoor_lesson'
-                                    ? 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/70 dark:text-cyan-300'
                                     : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
                                 }`}>
-                                  {row.scheduleLabel}
+                                  {row.scheduleStatus === 'completed_all' ? 'Barcha darsga kirgan' : row.scheduleLabel}
                                 </span>
                               </div>
                             )}
