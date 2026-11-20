@@ -601,29 +601,35 @@ export const SchoolProvider = ({ children }) => {
     updateGlobalStreamUrl(url, true);
   };
 
-  // Relay (ntfy.sh) orqali maktabning eng so'nggi jonli tunnel manzilini avtomatik aniqlash (Vercel va mobil qurilmalar uchun)
+  // Relay (ntfy.envs.net + ntfy.sh) orqali maktabning eng so'nggi jonli tunnel manzilini avtomatik aniqlash (Vercel va mobil qurilmalar uchun)
   useEffect(() => {
     if (isLocalHostEnv) return;
+    const relayEndpoints = [
+      'https://ntfy.envs.net/maktab_bridge_alibek517/json?poll=1&since=12h',
+      'https://ntfy.sh/maktab_bridge_alibek517/json?poll=1&since=12h'
+    ];
     const fetchLatestBridge = async () => {
-      try {
-        const res = await fetch('https://ntfy.sh/maktab_bridge_alibek517/json?poll=1&since=12h', { signal: AbortSignal.timeout(5000) }).catch(() => null);
-        if (res && res.ok) {
-          const text = await res.text().catch(() => '');
-          const lines = text.trim().split('\n');
-          for (let i = lines.length - 1; i >= 0; i--) {
-            try {
-              const parsed = JSON.parse(lines[i]);
-              if (parsed.message && parsed.message.startsWith('http') && parsed.message.includes('trycloudflare.com')) {
-                const candidate = parsed.message.trim().replace(/\/+$/, '');
-                if (!deadTunnelsSet.has(candidate)) {
-                  updateGlobalStreamUrl(candidate);
-                  break;
+      for (const ep of relayEndpoints) {
+        try {
+          const res = await fetch(ep, { signal: AbortSignal.timeout(5000) }).catch(() => null);
+          if (res && res.ok) {
+            const text = await res.text().catch(() => '');
+            const lines = text.trim().split('\n');
+            for (let i = lines.length - 1; i >= 0; i--) {
+              try {
+                const parsed = JSON.parse(lines[i]);
+                if (parsed.message && parsed.message.startsWith('http') && parsed.message.includes('trycloudflare.com')) {
+                  const candidate = parsed.message.trim().replace(/\/+$/, '');
+                  if (!deadTunnelsSet.has(candidate)) {
+                    updateGlobalStreamUrl(candidate);
+                    return;
+                  }
                 }
-              }
-            } catch (e) {}
+              } catch (e) {}
+            }
           }
-        }
-      } catch (e) {}
+        } catch (e) {}
+      }
     };
     fetchLatestBridge();
     const interval = setInterval(fetchLatestBridge, 8000);
