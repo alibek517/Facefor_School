@@ -587,7 +587,10 @@ export const SchoolProvider = ({ children }) => {
     if (typeof window !== 'undefined' && clean) {
       try { localStorage.setItem('saved_bridge_url', clean); } catch (e) {}
     }
-    syncFromBridge(clean);
+    // Lokal tarmoqda (localhost:5001) turib tashqi trycloudflare tunnelga CORS so'rov yubormaymiz
+    if (!(isLocalHostEnv && clean.includes('trycloudflare.com'))) {
+      syncFromBridge(clean);
+    }
     // Faqat foydalanuvchi interfeysdan qo'lda o'zgartirganda Supabase ga saqlash (cheksiz Realtime siklidan himoya)
     if (syncToCloud) {
       saveModuleToSupabase('global_stream_url', clean).catch(() => {});

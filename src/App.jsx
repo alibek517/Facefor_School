@@ -23,15 +23,8 @@ const MainLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  if (!currentUser) {
-    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-      window.history.replaceState({ path: '/login' }, '', '/login');
-    }
-    return <LoginModal />;
-  }
-
   const isDirectorUser = Boolean(
-    !isBigAdmin && (
+    currentUser && !isBigAdmin && (
       currentUser?.isDirector || 
       currentUser?.role === 'director' || 
       (currentUser?.category === 'leadership' && (hasPermission('teachers') || hasPermission('leadership'))) ||
@@ -39,40 +32,50 @@ const MainLayout = () => {
     )
   );
 
-  const canSeeStudents = !isBigAdmin && isDirectorUser && hasPermission('students');
-  const canSeeSettings = !isBigAdmin && isDirectorUser && (hasPermission('teachers') || hasPermission('schedules') || hasPermission('classes') || hasPermission('leadership'));
-  const canSeeTeacherAttendance = !isBigAdmin && (isDirectorUser || currentUser?.role === 'inspector');
-  const canSeeReports = !isBigAdmin && (isDirectorUser || currentUser?.role === 'inspector');
+  const canSeeStudents = Boolean(currentUser && !isBigAdmin && isDirectorUser && hasPermission('students'));
+  const canSeeSettings = Boolean(currentUser && !isBigAdmin && isDirectorUser && (hasPermission('teachers') || hasPermission('schedules') || hasPermission('classes') || hasPermission('leadership')));
+  const canSeeTeacherAttendance = Boolean(currentUser && !isBigAdmin && (isDirectorUser || currentUser?.role === 'inspector'));
+  const canSeeReports = Boolean(currentUser && !isBigAdmin && (isDirectorUser || currentUser?.role === 'inspector'));
 
   // Tizimga kirilganda /login yoki / dan mos sahifaga yo'naltirish
   React.useEffect(() => {
-    if (currentUser) {
-      if (currentPath === '/login' || (typeof window !== 'undefined' && window.location.pathname === '/login')) {
-        let p = '/director';
-        if (currentUser.role === 'bigadmin' || isBigAdmin) p = '/bigadmin';
-        else if (currentUser.role === 'inspector') p = '/duty';
-        else if (currentUser.role === 'class_teacher') p = '/class-teacher';
-        else if (currentUser.role === 'subject_teacher') p = '/subject-teacher';
-        else if (currentUser.role === 'monitor') p = '/monitor';
-        navigateTo(p);
+    if (!currentUser) {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.history.replaceState({ path: '/login' }, '', '/login');
       }
+      return;
+    }
+    if (currentPath === '/login' || (typeof window !== 'undefined' && window.location.pathname === '/login')) {
+      let p = '/director';
+      if (currentUser.role === 'bigadmin' || isBigAdmin) p = '/bigadmin';
+      else if (currentUser.role === 'inspector') p = '/duty';
+      else if (currentUser.role === 'class_teacher') p = '/class-teacher';
+      else if (currentUser.role === 'subject_teacher') p = '/subject-teacher';
+      else if (currentUser.role === 'monitor') p = '/monitor';
+      navigateTo(p);
     }
   }, [currentUser, currentPath, isBigAdmin]);
 
   // BigAdmin faqat /bigadmin sahifasida bo'ladi, boshqa ichki maktab sahifalariga o'ta olmaydi
   React.useEffect(() => {
+    if (!currentUser) return;
     if (isBigAdmin && (activeTab !== 'bigadmin' || currentPath !== '/bigadmin')) {
       navigateTo('/bigadmin');
     }
-  }, [isBigAdmin, activeTab, currentPath, navigateTo]);
+  }, [currentUser, isBigAdmin, activeTab, currentPath, navigateTo]);
 
   // Direktor bo'lmagan foydalanuvchilar (masalan, sinf rahbari) uchun faqat o'z kabinetini ochish
   React.useEffect(() => {
+    if (!currentUser) return;
     const allowedForInspector = currentUser?.role === 'inspector' && (activeTab === 'reports' || activeTab === 'teacher_attendance');
     if (!isBigAdmin && !isDirectorUser && !allowedForInspector && activeTab !== 'main') {
       navigateTo(currentPath || '/director');
     }
   }, [currentUser?.id, currentUser?.role, isDirectorUser, isBigAdmin, activeTab]);
+
+  if (!currentUser) {
+    return <LoginModal />;
+  }
 
   return (
     <div className="min-h-screen min-w-[250px] flex bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased overflow-x-hidden transition-colors">
