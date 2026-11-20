@@ -15,16 +15,29 @@ process.on('unhandledRejection', (reason) => {
 
 let cloudflareProcess = null;
 let currentTunnelUrl = null;
+let lastPublishedTunnelUrl = null;
+let lastPublishedAt = 0;
 
-async function publishTunnelToRelay(url) {
+async function publishTunnelToRelay(url, force = false) {
   if (!url) return;
+  const now = Date.now();
+  // Rate-limit (429) ga tushmaslik uchun: faqat URL o'zgarganda yoki 3 soatda 1 marta yuboramiz!
+  if (!force && url === lastPublishedTunnelUrl && (now - lastPublishedAt) < 3 * 60 * 60 * 1000) {
+    return;
+  }
   try {
-    await fetch('https://ntfy.sh/maktab_bridge_alibek517', {
+    const res = await fetch('https://ntfy.sh/maktab_bridge_alibek517', {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
+      headers: { 'Content-Type': 'text/plain', 'Cache': 'yes' },
       body: url
     });
-    console.log(`[DISCOVERY RELAY] Faol tunnel manzili ntfy.sh ga e'lon qilindi: ${url}`);
+    if (res && res.ok) {
+      lastPublishedTunnelUrl = url;
+      lastPublishedAt = Date.now();
+      console.log(`[DISCOVERY RELAY] Faol tunnel manzili ntfy.sh ga e'lon qilindi: ${url}`);
+    } else if (res && res.status === 429) {
+      console.warn('[DISCOVERY RELAY] ntfy.sh vaqtincha limit (429), 5 daqiqadan keyin qayta yuboriladi.');
+    }
   } catch (e) {}
 }
 
@@ -3846,10 +3859,10 @@ server.listen(CONFIG.BRIDGE_PORT, '0.0.0.0', () => {
   // Bepul global Cloudflare tunnelni avtomatik yoqish
   setTimeout(startCloudflareTunnel, 1500);
 
-  // Har 30 soniyada faol tunnel manzilini global relayga e'lon qilib turish
+  // Har 5 daqiqada faqat hali e'lon qilinmagan yoki 3 soat o'tgan bo'lsa ntfy.sh ga yuborish (429 dan himoya)
   setInterval(() => {
     if (currentTunnelUrl) {
       publishTunnelToRelay(currentTunnelUrl);
     }
-  }, 30000);
+  }, 5 * 60 * 1000);
 });
