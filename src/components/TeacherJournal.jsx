@@ -336,43 +336,12 @@ export const TeacherJournal = () => {
         </div>
 
         {/* Tanlangan kundagi darslar tugmalari */}
-        {viewMode === 'daily' && (
+        {viewMode === 'daily' && (dayLessons.length > 0 || allTeacherLessons.length === 0) && (
           <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
             {dayLessons.length === 0 ? (
-              <div>
-                {allTeacherLessons.length > 0 ? (
-                  <div className="p-3 bg-amber-50/80 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 space-y-2">
-                    <div className="flex items-center gap-1.5 font-bold">
-                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>{selectedDay} kuni uchun darsingiz yo'q.</span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                      Sizning darslaringiz jadval bo'yicha quyidagi kunlarga biriktirilgan. Kerakli kunni tanlang:
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {DAYS_OF_WEEK.filter(d => allTeacherLessons.some(s => s.day === d)).map(d => {
-                        const cnt = allTeacherLessons.filter(s => s.day === d).length;
-                        return (
-                          <button
-                            key={d}
-                            onClick={() => setSelectedDay(d)}
-                            className="px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-900 dark:text-amber-200 font-bold rounded-lg border border-amber-300 dark:border-amber-700 text-xs flex items-center gap-1 shadow-2xs transition-colors"
-                          >
-                            <span>👉 {d}</span>
-                            <span className="text-[10px] bg-amber-200 dark:bg-amber-900 px-1.5 py-0.2 rounded-full font-black">
-                              {cnt} ta dars
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
-                    <p className="font-bold text-slate-700 dark:text-slate-300">Hozircha sizga biriktirilgan darslar jadvalda topilmadi.</p>
-                    <p className="text-[11px]">Dars jadvali bo'limidan ushbu o'qituvchiga dars biriktirilganini tekshiring.</p>
-                  </div>
-                )}
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                <p className="font-bold text-slate-700 dark:text-slate-300">Hozircha sizga biriktirilgan darslar jadvalda topilmadi.</p>
+                <p className="text-[11px]">Dars jadvali bo'limidan ushbu o'qituvchiga dars biriktirilganini tekshiring.</p>
               </div>
             ) : (
               <div>
