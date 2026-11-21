@@ -205,7 +205,7 @@ export const Navbar = ({ onOpenMobileSidebar }) => {
 
                 {/* Bildirishnomalar oynasi */}
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 sm:w-88 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50">
+                  <div className="fixed sm:absolute right-3 sm:right-0 top-14 sm:top-auto sm:mt-2 w-[calc(100vw-1.5rem)] sm:w-88 max-w-sm bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50">
                     <div className="p-3 bg-slate-900 dark:bg-slate-950 text-white flex items-center justify-between text-xs border-b border-slate-800">
                       <div>
                         <span className="font-bold block">
@@ -283,10 +283,10 @@ export const Navbar = ({ onOpenMobileSidebar }) => {
               </div>
             )}
 
-            {/* Profil ma'lumoti */}
-            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
+            {/* Profil ma'lumoti (kichik telefonlarda sidebar ichida ko'rinadi) */}
+            <div className="hidden sm:flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
               <User className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400 shrink-0" />
-              <div className="text-left max-w-[90px] sm:max-w-[130px] truncate">
+              <div className="text-left max-w-[140px] md:max-w-[180px] truncate">
                 <span className="block text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
                   {currentUser?.name}
                 </span>

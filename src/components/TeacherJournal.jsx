@@ -221,35 +221,35 @@ export const TeacherJournal = () => {
     <div className="w-full space-y-3">
       
       {/* 1. Sarlavha paneli */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-800 transition-colors shadow-2xs">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
+      <div className="bg-white dark:bg-slate-900 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-800 transition-colors shadow-2xs overflow-hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <h1 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-snug break-words">
                 {currentTeacher?.name || 'Fan O\'qituvchisi'}
               </h1>
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded-md border border-amber-200 dark:border-amber-800">
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded-md border border-amber-200 dark:border-amber-800 whitespace-nowrap shrink-0">
                 Fan O'qituvchisi
               </span>
             </div>
 
-            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1 text-xs text-slate-500 dark:text-slate-400">
               <span>Mutaxassislik fani: <b className="text-slate-800 dark:text-slate-200">{currentTeacher?.subject || 'Belgilanmagan'}</b></span>
-              <span>•</span>
+              <span className="hidden xs:inline">•</span>
               <span>Jami darslar: <b className="text-emerald-600 dark:text-emerald-400 font-bold">{allTeacherLessons.length} ta dars</b></span>
             </div>
           </div>
 
           {/* O'qituvchi tanlash yoki Rejim almashtirish */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full lg:w-auto min-w-0">
             {myHomeroomClass && (
               <button
                 onClick={() => navigateTo('/class-teacher')}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-xs transition-colors shrink-0"
+                className="w-full sm:w-auto justify-center px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-xs transition-colors shrink-0"
                 title={`${myHomeroomClass.name} sinf rahbarligi sahifasiga o'tish`}
               >
-                <GraduationCap className="w-3.5 h-3.5" />
-                <span>🏫 {myHomeroomClass.name} (Rahbarlik sinfim)</span>
+                <GraduationCap className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">🏫 {myHomeroomClass.name} (Rahbarlik sinfim)</span>
               </button>
             )}
 
@@ -264,7 +264,7 @@ export const TeacherJournal = () => {
                     setSelectedTeacherId(e.target.value);
                   }
                 }}
-                className="text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 outline-none cursor-pointer"
+                className="w-full sm:w-auto sm:max-w-[260px] max-w-full min-w-0 truncate text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 outline-none cursor-pointer"
                 title="O'qituvchi profilini tanlash"
               >
                 {teachers.length === 0 ? (
@@ -279,10 +279,10 @@ export const TeacherJournal = () => {
               </select>
             )}
 
-            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+            <div className="grid grid-cols-2 sm:flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 w-full sm:w-auto shrink-0">
               <button
                 onClick={() => setViewMode('daily')}
-                className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                className={`px-2.5 py-1.5 sm:py-1 text-xs font-bold rounded-md transition-all text-center ${
                   viewMode === 'daily'
                     ? 'bg-amber-600 text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -292,13 +292,13 @@ export const TeacherJournal = () => {
               </button>
               <button
                 onClick={() => setViewMode('weekly')}
-                className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                className={`px-2.5 py-1.5 sm:py-1 text-xs font-bold rounded-md transition-all text-center ${
                   viewMode === 'weekly'
                     ? 'bg-amber-600 text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Haftalik Jadval ({allTeacherLessons.length})
+                Haftalik ({allTeacherLessons.length})
               </button>
             </div>
           </div>
@@ -306,7 +306,7 @@ export const TeacherJournal = () => {
 
         {/* Hafta Kunlari Menyusi */}
         <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
-          <div className="flex items-center justify-between gap-2 mb-1.5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 mb-2">
             <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
               Hafta kunini tanlang:
             </label>
@@ -315,7 +315,7 @@ export const TeacherJournal = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-1.5 py-0.5">
             {DAYS_OF_WEEK.map(day => {
               const count = allTeacherLessons.filter(s => s.day === day).length;
               const isSelected = selectedDay === day;
@@ -324,13 +324,13 @@ export const TeacherJournal = () => {
                 <button
                   key={day}
                   onClick={() => setSelectedDay(day)}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  className={`px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-bold rounded-lg whitespace-nowrap transition-all flex items-center justify-center gap-1 sm:gap-1.5 ${
                     isSelected
                       ? 'bg-amber-600 text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
-                  <span>{day}</span>
+                  <span className="truncate">{day}</span>
                   {count > 0 ? (
                     <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
                       isSelected ? 'bg-amber-800 text-white' : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300'

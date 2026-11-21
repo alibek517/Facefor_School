@@ -413,7 +413,7 @@ export const ClassTeacherView = () => {
                       loginAsTeacher(target);
                     }
                   }}
-                  className="text-xs font-bold bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 outline-none cursor-pointer hover:border-blue-500 shadow-2xs"
+                  className="w-full sm:w-auto sm:max-w-[240px] max-w-full min-w-0 truncate text-xs font-bold bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 outline-none cursor-pointer hover:border-blue-500 shadow-2xs"
                   title="Boshqa o'qituvchi kabinetiga tezkor o'tish"
                 >
                   {teachers.map(t => {
@@ -436,7 +436,7 @@ export const ClassTeacherView = () => {
             <select
               value={effectiveClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
-              className="text-xs font-bold bg-blue-50 dark:bg-blue-950/70 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800 rounded-lg px-2.5 py-1.5 outline-none cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors shadow-2xs"
+              className="w-full sm:w-auto sm:max-w-[260px] max-w-full min-w-0 truncate text-xs font-bold bg-blue-50 dark:bg-blue-950/70 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800 rounded-lg px-2.5 py-1.5 outline-none cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors shadow-2xs"
               title="O'qituvchining rahbarlik qiladigan va dars beradigan barcha sinflari"
             >
               {teacherClasses.map(c => (
