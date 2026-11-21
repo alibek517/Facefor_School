@@ -140,7 +140,9 @@ export const SchoolSettings = () => {
       login: member.login || '',
       password: member.password || '',
       isDirector: Boolean(member.isDirector),
-      permissions: Array.isArray(member.permissions) ? member.permissions : ['dashboard']
+      permissions: Array.isArray(member.permissions)
+        ? member.permissions.filter(k => k !== 'bigadmin' && k !== 'schools')
+        : ['dashboard']
     });
     setStaffModalOpen(true);
   };
@@ -1195,7 +1197,9 @@ export const SchoolSettings = () => {
 
             <div className="space-y-2">
               {leadership.filter(m => m.category === 'leadership' || !m.category).map((person) => {
-                const permsCount = Array.isArray(person.permissions) ? person.permissions.length : 0;
+                const permsCount = Array.isArray(person.permissions)
+                  ? person.permissions.filter(k => k !== 'bigadmin' && k !== 'schools').length
+                  : 0;
                 return (
                   <div
                     key={person.id}
@@ -1286,7 +1290,9 @@ export const SchoolSettings = () => {
 
             <div className="space-y-2">
               {leadership.filter(m => m.category === 'administrator').map((person) => {
-                const permsCount = Array.isArray(person.permissions) ? person.permissions.length : 0;
+                const permsCount = Array.isArray(person.permissions)
+                  ? person.permissions.filter(k => k !== 'bigadmin' && k !== 'schools').length
+                  : 0;
                 return (
                   <div
                     key={person.id}

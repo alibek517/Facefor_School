@@ -10,8 +10,6 @@ export const DAYS_OF_WEEK = [
 ];
 
 export const AVAILABLE_PERMISSIONS = [
-  { key: 'bigadmin', label: 'Big Admin Paneli', desc: 'Barcha maktablar va turniketlarni to\'liq boshqarish' },
-  { key: 'schools', label: 'Maktablar Boshqaruvi', desc: 'Yangi maktablar ochish va turniketlar biriktirish' },
   { key: 'dashboard', label: 'Direktor Monitoring Paneli', desc: 'Davomat tahlili, sinflar matritsasi va grafiklar' },
   { key: 'cameras', label: 'Turniket Kameralari (Jonli)', desc: '6 ta turniket kamerasini jonli kuzatish' },
   { key: 'playback', label: 'Kameralar Arxivi (Playback)', desc: 'Kameralarni ortga qaytarib tomosha qilish' },
