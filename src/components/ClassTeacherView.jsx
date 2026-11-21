@@ -171,7 +171,10 @@ export const ClassTeacherView = () => {
 
   // Dars jadvali ko'rinish rejimi: 'grid' (Haftalik) | 'daily' (Kunlik)
   const [scheduleViewMode, setScheduleViewMode] = useState('grid');
-  const [selectedDayTab, setSelectedDayTab] = useState(DAYS_OF_WEEK[0]);
+  const [selectedDayTab, setSelectedDayTab] = useState(() => {
+    const idx = new Date().getDay();
+    return ['Dushanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'][idx] || DAYS_OF_WEEK[0];
+  });
 
   if (!myClass) {
     return (

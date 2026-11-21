@@ -120,19 +120,6 @@ export const TeacherJournal = () => {
   const [selectedDay, setSelectedDay] = useState(todayDay);
   const [viewMode, setViewMode] = useState('daily'); // 'daily' (Kunlik jurnal) | 'weekly' (Haftalik jadval)
 
-  // Agar tanlangan kunda dars bo'lmasa, lekin boshqa kunlarda dars bo'lsa, avtomatik ravishda dars bor birinchi kunni tanlash
-  useEffect(() => {
-    if (allTeacherLessons.length > 0) {
-      const hasSelectedDayLessons = allTeacherLessons.some(s => s.day === selectedDay);
-      if (!hasSelectedDayLessons) {
-        const firstDayWithLesson = DAYS_OF_WEEK.find(d => allTeacherLessons.some(s => s.day === d));
-        if (firstDayWithLesson) {
-          setSelectedDay(firstDayWithLesson);
-        }
-      }
-    }
-  }, [allTeacherLessons]);
-
   // Tanlangan kunga tegishli bu o'qituvchining darslari
   const dayLessons = useMemo(() => {
     return allTeacherLessons
