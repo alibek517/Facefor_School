@@ -195,41 +195,8 @@ export const StudentAttendanceHistoryView = () => {
     });
   }, [recentFaceScans, selectedDate]);
 
-  // Tarixiy sanalar uchun deterministik davomat generatori (agar arxivda bo'lmasa, sahifa bo'sh qolmaydi)
-  const getSimulatedHistoricalRecord = (student, dateStr) => {
-    const seedStr = `${student.id || student.studentId}-${dateStr}`;
-    let hash = 0;
-    for (let i = 0; i < seedStr.length; i++) {
-      hash = (hash << 5) - hash + seedStr.charCodeAt(i);
-      hash |= 0;
-    }
-    const positiveHash = Math.abs(hash);
-    // ~92% kelgan, ~8% kelmagan
-    const isPresent = (positiveHash % 100) < 92;
-    if (!isPresent) return null;
-
-    const inMinute = (positiveHash % 45); // 07:35 dan 08:20 gacha
-    const inHour = inMinute > 25 ? '07' : '08';
-    const inMinFormatted = String((inMinute % 60)).padStart(2, '0');
-    const inTime = `${inHour}:${inMinFormatted}`;
-
-    const hasExited = (positiveHash % 10) < 3; // 30% darsdan so'ng chiqib ketgan
-    const outTime = hasExited ? `13:${String((positiveHash % 45)).padStart(2, '0')}` : null;
-    const gateNum = (positiveHash % 3) + 1;
-
-    return {
-      hasEntered: true,
-      hasExited,
-      inTime,
-      outTime,
-      gateName: `Turniket ${gateNum} (Kirish) • Bosh kirish eshigi (${gateNum})`
-    };
-  };
-
-  // 🎯 Barcha o'quvchilarning tanlangan sana bo'yicha to'liq boyitilgan davomat ro'yxati
+  // 🎯 Barcha o'quvchilarning tanlangan sana bo'yicha HAQIQIY davomat ro'yxati (soxta ma'lumotlarsiz)
   const enrichedStudents = useMemo(() => {
-    const isToday = selectedDate === todayStr;
-
     return (students || [])
       .filter(s => s.status !== 'graduated' && s.classId !== 'graduated')
       .map(student => {
@@ -293,19 +260,6 @@ export const StudentAttendanceHistoryView = () => {
           scheduleStatus = hasExited ? 'completed_all' : 'inside';
           scheduleLabel = hasExited ? 'Barcha darsga kirgan' : 'Maktab ichida';
           gateName = attRecord.inspector ? `Qayd: ${attRecord.inspector}` : 'Turniket 1 (Kirish) • Bosh kirish eshigi (1)';
-        } else if (!isToday) {
-          // O'tgan sana uchun deterministik arxiv
-          const hist = getSimulatedHistoricalRecord(student, selectedDate);
-          if (hist) {
-            hasEntered = hist.hasEntered;
-            hasExited = hist.hasExited;
-            isInside = hasEntered && !hasExited;
-            entryTime = hist.inTime;
-            exitTime = hist.outTime;
-            scheduleStatus = hasEntered ? (hasExited ? 'completed_all' : 'inside') : 'absent';
-            scheduleLabel = hasEntered ? (hasExited ? 'Barcha darsga kirgan' : 'Maktab ichida') : 'Kelmagan';
-            gateName = hist.gateName;
-          }
         }
 
         const cls = classMap[student.classId];
@@ -383,13 +337,17 @@ export const StudentAttendanceHistoryView = () => {
     return list;
   }, [scopedStudents, insideStudents, enteredStudents, exitedStudents, absentStudents, selectedTab, searchTerm]);
 
-  // Sanani oldinga yoki orqaga 1 kunga surish
+  // Sanani oldinga yoki orqaga 1 kunga surish (kelajak sanaga o'tmaydi)
   const shiftDate = (days) => {
     try {
       const [y, m, d] = selectedDate.split('-').map(Number);
       const cur = new Date(y, m - 1, d);
       cur.setDate(cur.getDate() + days);
       const nextStr = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
+      if (nextStr > todayStr) {
+        setSelectedDate(todayStr);
+        return;
+      }
       setSelectedDate(nextStr);
     } catch (e) {}
   };
@@ -484,14 +442,19 @@ export const StudentAttendanceHistoryView = () => {
               <input
                 type="date"
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                max={todayStr}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v) setSelectedDate(v > todayStr ? todayStr : v);
+                }}
                 className="text-xs sm:text-sm font-bold bg-transparent text-slate-900 dark:text-white outline-none cursor-pointer font-mono"
               />
             </div>
 
             <button
               onClick={() => shiftDate(1)}
-              className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+              disabled={selectedDate >= todayStr}
+              className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors disabled:opacity-35 disabled:cursor-not-allowed"
               title="Bir kun keyingi sana"
             >
               <ChevronRight className="w-4 h-4" />

@@ -803,25 +803,6 @@ export const DirectorDashboard = () => {
         let exitTime = hasExited ? (formatScanTime(lastScan) || attRecord?.outTime) : null;
         let gateName = firstInScan?.cameraName || lastScan?.cameraName || (attRecord?.inspector ? `Qayd: ${attRecord.inspector}` : 'Turniket');
 
-        // O'tgan sanalar uchun deterministik arxiv (agar arxivda skan topilmasa, bo'sh ko'rinmasligi uchun)
-        if (!hasEntered && selectedDate !== todayStr) {
-          const seedStr = `${student.id || student.studentId}-${selectedDate}`;
-          let hash = 0;
-          for (let i = 0; i < seedStr.length; i++) hash = (hash << 5) - hash + seedStr.charCodeAt(i);
-          const pos = Math.abs(hash);
-          if ((pos % 100) < 92) {
-            hasEntered = true;
-            hasExited = (pos % 10) < 3;
-            isInside = hasEntered && !hasExited;
-            const inMin = pos % 45;
-            const inH = inMin > 25 ? '07' : '08';
-            entryTime = `${inH}:${String(inMin % 60).padStart(2, '0')}`;
-            exitTime = hasExited ? `13:${String(pos % 45).padStart(2, '0')}` : null;
-            const gateNum = (pos % 3) + 1;
-            gateName = `Turniket ${gateNum} (Kirish) • Bosh kirish eshigi (${gateNum})`;
-          }
-        }
-
         const cl = (classes || []).find(c => c.id === student.classId);
 
         return {
@@ -1087,7 +1068,11 @@ export const DirectorDashboard = () => {
             <input
               type="date"
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              max={todayStr}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v) setSelectedDate(v > todayStr ? todayStr : v);
+              }}
               className="text-xs bg-transparent text-slate-900 dark:text-slate-100 outline-none font-bold cursor-pointer"
             />
           </div>
