@@ -615,7 +615,6 @@ export const StudentAttendanceHistoryView = () => {
               { id: 'entered', label: 'Kelganlar', count: enteredStudents.length, color: 'blue' },
               { id: 'completed_all', label: 'Barcha darsga kirgan', count: completedAllStudents.length, color: 'emerald' },
               { id: 'left_early', label: 'Ketib qolgan', count: leftEarlyStudents.length, color: 'rose' },
-              { id: 'outdoor_lesson', label: 'Jismoniy / CHQBT', count: outdoorStudents.length, color: 'cyan' },
               { id: 'exited', label: 'Chiqib ketgan', count: exitedStudents.length, color: 'amber' },
               { id: 'absent', label: 'Kelmaganlar', count: absentStudents.length, color: 'rose' }
             ].map(tab => {
