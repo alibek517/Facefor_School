@@ -240,7 +240,7 @@ export const TeacherJournal = () => {
               </button>
             )}
 
-            {(currentUser?.isDirector || currentUser?.role === 'director' || teachers.length > 0) && (
+            {(currentUser?.isDirector || currentUser?.role === 'director') && teachers.length > 0 && (
               <select
                 value={currentTeacher?.id || ''}
                 onChange={(e) => {

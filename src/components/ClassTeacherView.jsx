@@ -404,8 +404,8 @@ export const ClassTeacherView = () => {
               </span>
             )}
 
-            {/* O'qituvchini almashtirish / Boshqa o'qituvchi kabinetiga o'tish */}
-            {teachers && teachers.length > 0 && (
+            {/* O'qituvchini almashtirish — faqat Direktor uchun (O'qituvchi faqat o'zinikini ko'radi!) */}
+            {(currentUser?.isDirector || currentUser?.role === 'director') && teachers && teachers.length > 0 && (
               <div className="flex items-center gap-1.5 ml-0 sm:ml-2">
                 <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">Kabinet:</span>
                 <select
