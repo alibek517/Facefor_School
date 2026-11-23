@@ -1942,15 +1942,19 @@ async function pollAllCameras() {
         const lastTotal = lastKnownTotals.get(cam.ip) || 0;
 
         if (total > 0) {
-          if (lastTotal === 0) {
-            // Tizim yoqilganda: Bugungi BARCHA o'tishlarni 0-dan boshlab to'liq yuklab olish
-            lastKnownTotals.set(cam.ip, total);
-            const BATCH_SIZE = 50;
-            for (let pos = 0; pos < total; pos += BATCH_SIZE) {
+          if (lastTotal === 0 || total > lastTotal) {
+            const isInitial = (lastTotal === 0);
+            let pos = isInitial ? 0 : lastTotal;
+            const BATCH_SIZE = 24; // Hikvision DS-K1T343 max 30 ta qaytaradi; 24 xavfsiz!
+            let fetchedUpTo = pos;
+            let safetyLoops = 0;
+
+            while (pos < total && safetyLoops < 100) {
+              safetyLoops++;
               const countToFetch = Math.min(BATCH_SIZE, total - pos);
               const fetchBody = JSON.stringify({
                 AcsEventCond: {
-                  searchID: `f_${cam.id}_init_${pos}`,
+                  searchID: `f_${cam.id}_${isInitial ? 'init' : 'new'}_${pos}`,
                   searchResultPosition: pos,
                   maxResults: countToFetch,
                   major: 5,
@@ -1960,63 +1964,38 @@ async function pollAllCameras() {
                 }
               });
 
-              try {
-                const fetchRes = await digestRequest({
-                  host: cam.ip,
-                  port: 80,
-                  path: '/ISAPI/AccessControl/AcsEvent?format=json',
-                  method: 'POST',
-                  body: fetchBody,
-                  username: CONFIG.DEVICE_USER,
-                  password: CONFIG.DEVICE_PASS,
-                  timeout: 3000
-                });
+              let batchOk = false;
+              for (let attempt = 0; attempt < 2 && !batchOk; attempt++) {
+                try {
+                  const fetchRes = await digestRequest({
+                    host: cam.ip,
+                    port: 80,
+                    path: '/ISAPI/AccessControl/AcsEvent?format=json',
+                    method: 'POST',
+                    body: fetchBody,
+                    username: CONFIG.DEVICE_USER,
+                    password: CONFIG.DEVICE_PASS,
+                    timeout: 6000
+                  });
 
-                if (fetchRes.status === 200) {
-                  const fetchData = JSON.parse(fetchRes.body);
-                  const infoList = fetchData.AcsEvent?.InfoList || [];
-                  infoList.forEach(ev => addScanEvent(ev, cam, false));
-                }
-              } catch (err) {}
+                  if (fetchRes.status === 200) {
+                    const fetchData = JSON.parse(fetchRes.body);
+                    const infoList = fetchData.AcsEvent?.InfoList || [];
+                    infoList.forEach(ev => addScanEvent(ev, cam, !isInitial));
+                    const step = infoList.length > 0 ? infoList.length : countToFetch;
+                    pos += step;
+                    fetchedUpTo = pos;
+                    batchOk = true;
+                  }
+                } catch (err) {}
+              }
+              if (!batchOk) {
+                // Qayta urinish keyingi siklda aynan to'xtagan joydan davom etishi uchun to'xtatamiz
+                break;
+              }
             }
-          } else if (total > lastTotal) {
-            // Yangi o'tishlar sodir bo'ldi: barchasini to'liq yuklab olish
-            const startPos = lastTotal;
-            lastKnownTotals.set(cam.ip, total);
-            const BATCH_SIZE = 50;
-
-            for (let pos = startPos; pos < total; pos += BATCH_SIZE) {
-              const countToFetch = Math.min(BATCH_SIZE, total - pos);
-              const fetchBody = JSON.stringify({
-                AcsEventCond: {
-                  searchID: `f_${cam.id}_new_${pos}`,
-                  searchResultPosition: pos,
-                  maxResults: countToFetch,
-                  major: 5,
-                  minor: 75,
-                  startTime: `${todayStr}T00:00:00`,
-                  endTime: `${todayStr}T23:59:59`
-                }
-              });
-
-              try {
-                const fetchRes = await digestRequest({
-                  host: cam.ip,
-                  port: 80,
-                  path: '/ISAPI/AccessControl/AcsEvent?format=json',
-                  method: 'POST',
-                  body: fetchBody,
-                  username: CONFIG.DEVICE_USER,
-                  password: CONFIG.DEVICE_PASS,
-                  timeout: 3000
-                });
-
-                if (fetchRes.status === 200) {
-                  const fetchData = JSON.parse(fetchRes.body);
-                  const infoList = fetchData.AcsEvent?.InfoList || [];
-                  infoList.forEach(ev => addScanEvent(ev, cam, true));
-                }
-              } catch (err) {}
+            if (fetchedUpTo > lastTotal) {
+              lastKnownTotals.set(cam.ip, fetchedUpTo);
             }
           }
         }
