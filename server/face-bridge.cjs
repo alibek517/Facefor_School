@@ -1816,6 +1816,8 @@ async function updateCameraFrame(cam) {
     if (snapRes.status === 200 && isValidJpeg(snapRes.body)) {
       cameraFrames.set(cam.ip, { buffer: snapRes.body, timestamp: Date.now() });
       cam.online = true;
+      cam.lastSeenAt = Date.now();
+      cam.failCount = 0;
       savePlaybackArchiveFrame(cam.ip, snapRes.body);
       syncLatestFramesToSupabase().catch(() => {});
       return;
@@ -1829,24 +1831,32 @@ async function updateCameraFrame(cam) {
       method: 'GET',
       username: CONFIG.DEVICE_USER,
       password: CONFIG.DEVICE_PASS,
-      timeout: 2000,
+      timeout: 4500,
       isBinary: true
     });
 
     if (snapRes.status === 200 && isValidJpeg(snapRes.body)) {
       cameraFrames.set(cam.ip, { buffer: snapRes.body, timestamp: Date.now() });
       cam.online = true;
+      cam.lastSeenAt = Date.now();
+      cam.failCount = 0;
       savePlaybackArchiveFrame(cam.ip, snapRes.body);
       syncLatestFramesToSupabase().catch(() => {});
       return;
     }
 
-    // Ikkala kanal ham javob bermasa kamera oflayn
-    cam.online = false;
-    cameraFrames.delete(cam.ip);
+    // Qisqa Wi-Fi uzilishida darhol oflayn qilib yubormaslik (25 soniya / 5 marta ketma-ket xatoda oflayn)
+    cam.failCount = (cam.failCount || 0) + 1;
+    if (cam.failCount >= 5 && (Date.now() - (cam.lastSeenAt || 0) > 25000)) {
+      cam.online = false;
+      cameraFrames.delete(cam.ip);
+    }
   } catch (err) {
-    cam.online = false;
-    cameraFrames.delete(cam.ip);
+    cam.failCount = (cam.failCount || 0) + 1;
+    if (cam.failCount >= 5 && (Date.now() - (cam.lastSeenAt || 0) > 25000)) {
+      cam.online = false;
+      cameraFrames.delete(cam.ip);
+    }
   }
 }
 
@@ -1906,7 +1916,7 @@ async function pollAllCameras() {
   const d = new Date();
   const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-  for (const cam of CAMERAS) {
+  await Promise.allSettled(CAMERAS.map(async (cam) => {
     try {
       // 1. Bugungi kungi jami o'tishlar sonini aniqlash (Probe count)
       const probeBody = JSON.stringify({
@@ -1929,11 +1939,13 @@ async function pollAllCameras() {
         body: probeBody,
         username: CONFIG.DEVICE_USER,
         password: CONFIG.DEVICE_PASS,
-        timeout: 3000
+        timeout: 5000
       });
 
       if (res.status === 200) {
         cam.online = true;
+        cam.lastSeenAt = Date.now();
+        cam.failCount = 0;
         deviceStatus.online = true;
         deviceStatus.lastSync = new Date().toISOString();
 
@@ -2000,15 +2012,18 @@ async function pollAllCameras() {
           }
         }
       } else {
-        cam.online = false;
+        cam.failCount = (cam.failCount || 0) + 1;
+        if (cam.failCount >= 5 && (Date.now() - (cam.lastSeenAt || 0) > 25000)) {
+          cam.online = false;
+        }
       }
     } catch (err) {
-      cam.online = false;
+      cam.failCount = (cam.failCount || 0) + 1;
+      if (cam.failCount >= 5 && (Date.now() - (cam.lastSeenAt || 0) > 25000)) {
+        cam.online = false;
+      }
     }
-
-    // Qurilmalar oralig'ida mikro-pauza (tarmoqni yuklamaslik uchun)
-    await new Promise(r => setTimeout(r, 60));
-  }
+  }));
 
   isPolling = false;
 }
