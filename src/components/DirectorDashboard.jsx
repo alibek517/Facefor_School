@@ -93,7 +93,8 @@ const isDeadTunnel = (url) => {
 const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, updateCameraType, recentFaceScans, index, onMoveLeft, onMoveRight, effectiveBaseUrl: passedEffectiveBaseUrl }) => {
   const isEntry = cam.type === 'in';
   const { isLocalConnected, isSchoolLocalOnline, cameraLatestFrames, students, teachers } = useSchool();
-  const isDirectLocal = Boolean(isLocalConnected);
+  const isLocalHostPage = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const isDirectLocal = Boolean(isLocalConnected || isLocalHostPage);
 
   // Kadr formati tekshiruvi (xom IP yoki noto'g'ri string brauzerda ERR_NAME_NOT_RESOLVED chaqirmasligi uchun)
   const isValidFrameSrc = (src) => {
@@ -190,12 +191,12 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
           } else {
             // Kamera vaqtincha javob bermayapti (1x1 dummy rasm yoki oflayn)
             failCountRef.current += 1;
-            setIsStreamingLive(false);
-            if (failCountRef.current >= 2) {
+            if (failCountRef.current >= 3) {
+              setIsStreamingLive(false);
               setFrameSrc(null);
               setHasError(true);
             }
-            timer = setTimeout(loadNext, 4000);
+            timer = setTimeout(loadNext, 3000);
           }
         };
         img.onerror = () => {
@@ -203,12 +204,12 @@ const CameraCard = ({ cam, bridgeUrl, livePlaying, onEnlarge, onPlayback, update
           img.onerror = null;
           if (!isMounted) return;
           failCountRef.current += 1;
-          setIsStreamingLive(false);
-          if (failCountRef.current >= 2) {
+          if (failCountRef.current >= 3) {
+            setIsStreamingLive(false);
             setFrameSrc(null);
             setHasError(true);
           }
-          timer = setTimeout(loadNext, 3000);
+          timer = setTimeout(loadNext, 2500);
         };
         img.src = nextUrl;
       };

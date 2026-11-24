@@ -1809,7 +1809,7 @@ async function updateCameraFrame(cam) {
       method: 'GET',
       username: CONFIG.DEVICE_USER,
       password: CONFIG.DEVICE_PASS,
-      timeout: 2500,
+      timeout: 4500,
       isBinary: true
     });
 
