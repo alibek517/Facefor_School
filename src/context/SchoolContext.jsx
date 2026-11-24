@@ -330,13 +330,19 @@ export const SchoolProvider = ({ children }) => {
 
     const normalizedStandard = DEFAULT_CAMERAS.map(def => {
       const match = list.find(c => c && (c.id === def.id || c.ip === def.ip));
+      const resolvedType = (match && (match.type === 'in' || match.type === 'out')) ? match.type : def.type;
+      const typeLabel = resolvedType === 'in' ? 'Kirish' : 'Chiqish';
+      const baseName = (match && match.name) ? match.name : def.name;
+      const resolvedName = /\((Kirish|Chiqish)\)/i.test(baseName)
+        ? baseName.replace(/\((Kirish|Chiqish)\)/i, `(${typeLabel})`)
+        : `${baseName} (${typeLabel})`;
       return {
         ...def,
         ...(match || {}),
         id: def.id,
-        name: def.name,
-        type: def.type,
-        location: def.location,
+        name: resolvedName,
+        type: resolvedType,
+        location: (match && match.location) ? match.location : def.location,
         ip: def.ip,
         online: match ? (match.online ?? true) : true
       };
@@ -1832,9 +1838,10 @@ export const SchoolProvider = ({ children }) => {
     await saveCamerasToSupabase(updated);
     saveModuleToSupabase('cameras', updated).catch(() => {});
 
-    // 2. Mahalliy ko'prik serveriga jo'natish
+    // 2. Mahalliy ko'prik serveriga (yoki Global tunnel orqali) jo'natish
     try {
-      await fetch(`${BRIDGE_API}/api/device/cameras/configure`, {
+      const targetBridge = getActiveBridgeUrl() || BRIDGE_API;
+      await fetch(`${targetBridge}/api/device/cameras/configure`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated)
