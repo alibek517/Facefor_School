@@ -2839,7 +2839,7 @@ const server = http.createServer(async (req, res) => {
   if (pathname.startsWith('/api/camera/snapshot/')) {
     const targetIp = pathname.replace('/api/camera/snapshot/', '').trim();
     const cached = cameraFrames.get(targetIp);
-    const isFresh = cached && (Date.now() - (cached.timestamp || 0) < 15000);
+    const isFresh = cached && (Date.now() - (cached.timestamp || 0) < 30000);
 
     if (isFresh && isValidJpeg(cached.buffer)) {
       res.writeHead(200, {
@@ -2852,9 +2852,15 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // Kamera oflayn yoki javob bermasa: to'g'ridan-to'g'ri 404 beramiz
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Kamera oflayn yoki ulanmagan');
+    // Kamera oflayn bo'lsa: brauzer konsolini 404 xatolar bilan to'ldirmaslik uchun 1x1 shaffof GIF qaytaramiz
+    // (DirectorDashboard.jsx naturalWidth > 20 orqali oflayn holatni avtomatik aniqlaydi)
+    const pixel1x1 = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+    res.writeHead(200, {
+      'Content-Type': 'image/gif',
+      'Content-Length': pixel1x1.length,
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
+    });
+    res.end(pixel1x1);
     return;
   }
 
