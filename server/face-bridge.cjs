@@ -1279,21 +1279,8 @@ loadSchoolDataFromSupabase();
 loadRecentScansFromSupabase();
 setTimeout(sendHeartbeatToSupabase, 1500);
 
-// Eski bazada o'chirilgan, lekin apparat xotirasida qolib ketgan foydalanuvchilarni tozalash (masalan, 424 va 433)
-setTimeout(() => {
-  if (schoolDB.students && Array.isArray(schoolDB.students)) {
-    const activeStudentIds = new Set(schoolDB.students.map(s => String(s.studentId || s.id || '').replace(/^s-/, '').replace(/^0+/, '')));
-    const teacherFaceIds = new Set((schoolDB.teachers || []).map(t => String(t.faceId || t.id || '').replace(/^t-/, '').replace(/^0+/, '')));
-
-    cachedUsers.forEach(cu => {
-      const k = String(cu.employeeNo || '').replace(/^0+/, '');
-      if (k && !activeStudentIds.has(k) && !teacherFaceIds.has(k)) {
-        console.log(`[CLEANUP] Baza o'chirilgan, lekin apparat xotirasida qolgan: #${cu.employeeNo} (${cu.name}). Kameralardan o'chirilmoqda...`);
-        syncStudentToHardware('delete', { employeeNo: cu.employeeNo, name: cu.name }).catch(() => {});
-      }
-    });
-  }
-}, 4000);
+// Avtomatik ishga tushishda barcha 6 ta kameraga yuzlab parallel DELETE yuborib turniketlarni qotirib qo'ymaslik uchun o'chirildi.
+// (O'quvchi o'chirilganda faqat o'sha 1 ta o'quvchi alohida o'chiriladi.)
 
 setInterval(() => {
   sendHeartbeatToSupabase();
