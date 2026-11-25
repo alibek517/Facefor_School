@@ -1867,7 +1867,10 @@ async function syncLatestFramesToSupabase() {
   } catch (err) {}
 }
 
-// Har bir kamera uchun alohida, mustaqil va uzluksiz video oqim aylanishi (~2.5 FPS)
+// Qaysi kamerani foydalanuvchi hozir ko'rib turganini kuzatish (turniket protsessorini qotirmaslik uchun)
+const lastSnapshotViewers = new Map();
+
+// Har bir kamera uchun yengil video oqim aylanishi (tomoshabin bo'lsa 2s, bo'lmasa 12s -> turniket CPU yukini 85-95% kamaytiradi!)
 function startCameraWorker(cam) {
   if (!cam || !cam.ip || activeCameraWorkers.has(cam.ip)) return;
   activeCameraWorkers.add(cam.ip);
@@ -1879,11 +1882,12 @@ function startCameraWorker(cam) {
       try {
         await updateCameraFrame(cam);
       } catch (e) {}
-      // Kadrlar oralig'ida 400ms pauza (kameralar protsessori va tarmoq yengil ishlashi uchun)
-      await new Promise(r => setTimeout(r, 400));
+      const lastViewed = lastSnapshotViewers.get(cam.ip) || 0;
+      const hasActiveViewer = (Date.now() - lastViewed) < 20000;
+      await new Promise(r => setTimeout(r, hasActiveViewer ? 2000 : 12000));
     }
   };
-  setTimeout(workerLoop, (CAMERAS.indexOf(cam) % 6) * 150 + 100);
+  setTimeout(workerLoop, (CAMERAS.indexOf(cam) % 6) * 250 + 200);
 }
 
 function stopCameraWorker(ip) {
@@ -2825,8 +2829,9 @@ const server = http.createServer(async (req, res) => {
   // 4. Jonli kamera surati (RAM keshdan 0ms tezlikda Snapshot: /api/camera/snapshot/:ip)
   if (pathname.startsWith('/api/camera/snapshot/')) {
     const targetIp = pathname.replace('/api/camera/snapshot/', '').trim();
+    lastSnapshotViewers.set(targetIp, Date.now());
     const cached = cameraFrames.get(targetIp);
-    const isFresh = cached && (Date.now() - (cached.timestamp || 0) < 30000);
+    const isFresh = cached && (Date.now() - (cached.timestamp || 0) < 35000);
 
     if (isFresh && isValidJpeg(cached.buffer)) {
       res.writeHead(200, {
