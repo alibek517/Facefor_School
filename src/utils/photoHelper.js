@@ -81,7 +81,7 @@ export const getStudentPhotoUrls = (studentOrEmp, effectiveBaseUrl, allStudents 
   const targetName = paddedId || cleanId;
 
   // 1. Static yuklangan rasm (Vercel, Netlify va barcha Global CDN larda 24/7 ishlaydi)
-  const staticUrl = `/photos/${targetName}.jpg`;
+  const staticUrl = `/photos/${targetName}.jpg?v=2`;
 
   // 2. Lokal server yoki Cloudflare tuneli orqali jonli bridge URL
   const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
