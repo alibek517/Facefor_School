@@ -30,7 +30,8 @@ import {
   UserCheck,
   Sparkles,
   Camera,
-  LogIn
+  LogIn,
+  RefreshCw
 } from 'lucide-react';
 import { StudentAvatar } from './StudentAvatar';
 import { compressImageBase64 } from '../utils/excelAndPromotion';
