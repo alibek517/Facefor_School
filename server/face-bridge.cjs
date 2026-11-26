@@ -3198,6 +3198,8 @@ const server = http.createServer(async (req, res) => {
           students: school.students || [],
           classes: school.classes || [],
           teachers: school.teachers || [],
+          leadership: school.leadership || schoolDB.leadership || [],
+          technicalStaff: school.technicalStaff || schoolDB.technicalStaff || [],
           schedules: school.schedules || [],
           attendanceList: school.attendanceList || [],
           teacherAttendance: school.teacherAttendance || [],
