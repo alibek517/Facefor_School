@@ -371,7 +371,8 @@ export const SchoolSettings = () => {
     setTSubject(t.subject);
     setTPhone(formatPhoneNumber(t.phone || ''));
     setTClassId(t.classId || '');
-    setTPhoto(t.photo || t.photoUrl || t.faceURL || '');
+    const rawPhoto = t.photo || t.photoUrl || t.faceURL || (t.faceId ? `/photos/${t.faceId}.jpg?v=2` : '');
+    setTPhoto(rawPhoto && rawPhoto.startsWith('/photos/') && !rawPhoto.includes('?') ? `${rawPhoto}?v=2` : rawPhoto);
     setTLogin(t.login || generateTeacherLogin(t.name));
     setTPassword(t.password || '123');
     setShowTPassword(false);
@@ -1815,7 +1816,25 @@ export const SchoolSettings = () => {
               <div className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 shrink-0 flex items-center justify-center relative">
                   {tPhoto ? (
-                    <img src={tPhoto} alt="O'qituvchi yuzi" className="w-full h-full object-cover" />
+                    <img
+                      src={tPhoto}
+                      alt="O'qituvchi yuzi"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const img = e.currentTarget;
+                        if (img.dataset.fallbackTried) {
+                          img.style.display = 'none';
+                          return;
+                        }
+                        img.dataset.fallbackTried = '1';
+                        const m = String(tPhoto || '').match(/\/photos\/([^.?/]+)/);
+                        if (m && m[1] && bridgeUrl) {
+                          img.src = `${bridgeUrl.replace(/\/+$/, '')}/api/device/photo/${m[1]}`;
+                        } else {
+                          img.style.display = 'none';
+                        }
+                      }}
+                    />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
                       <Camera className="w-5 h-5 text-slate-400" />
