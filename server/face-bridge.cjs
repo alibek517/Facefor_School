@@ -1908,44 +1908,47 @@ async function pollAllCameras() {
   const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
   await Promise.allSettled(CAMERAS.map(async (cam) => {
+    let anyMinorOk = false;
     try {
-      // 1. Bugungi kungi jami o'tishlar sonini aniqlash (Probe count)
-      const probeBody = JSON.stringify({
-        AcsEventCond: {
-          searchID: `p_${cam.id}`,
-          searchResultPosition: 0,
-          maxResults: 1,
-          major: 5,
-          minor: 75,
-          startTime: `${todayStr}T00:00:00`,
-          endTime: `${todayStr}T23:59:59`
-        }
-      });
+      // 1. Ikkala Face-ID tanish kodini ham olish: 75 (asosiy o'tish) va 104 (qayta/ikkinchi tanish)
+      for (const minorCode of [75, 104]) {
+        const probeBody = JSON.stringify({
+          AcsEventCond: {
+            searchID: `p_${cam.id}_${minorCode}`,
+            searchResultPosition: 0,
+            maxResults: 1,
+            major: 5,
+            minor: minorCode,
+            startTime: `${todayStr}T00:00:00`,
+            endTime: `${todayStr}T23:59:59`
+          }
+        });
 
-      const res = await digestRequest({
-        host: cam.ip,
-        port: 80,
-        path: '/ISAPI/AccessControl/AcsEvent?format=json',
-        method: 'POST',
-        body: probeBody,
-        username: CONFIG.DEVICE_USER,
-        password: CONFIG.DEVICE_PASS,
-        timeout: 5000
-      });
+        const res = await digestRequest({
+          host: cam.ip,
+          port: 80,
+          path: '/ISAPI/AccessControl/AcsEvent?format=json',
+          method: 'POST',
+          body: probeBody,
+          username: CONFIG.DEVICE_USER,
+          password: CONFIG.DEVICE_PASS,
+          timeout: 5000
+        }).catch(() => null);
 
-      if (res.status === 200) {
-        cam.online = true;
-        cam.lastSeenAt = Date.now();
-        cam.failCount = 0;
-        deviceStatus.online = true;
-        deviceStatus.lastSync = new Date().toISOString();
+        if (res && res.status === 200) {
+          anyMinorOk = true;
+          cam.online = true;
+          cam.lastSeenAt = Date.now();
+          cam.failCount = 0;
+          deviceStatus.online = true;
+          deviceStatus.lastSync = new Date().toISOString();
 
-        const data = JSON.parse(res.body);
-        const total = data.AcsEvent?.totalMatches || 0;
-        const lastTotal = lastKnownTotals.get(cam.ip) || 0;
+          const data = JSON.parse(res.body);
+          const total = data.AcsEvent?.totalMatches || 0;
+          const trackKey = `${cam.ip}_${minorCode}`;
+          const lastTotal = lastKnownTotals.get(trackKey) || 0;
 
-        if (total > 0) {
-          if (lastTotal === 0 || total > lastTotal) {
+          if (total > 0 && (lastTotal === 0 || total > lastTotal)) {
             const isInitial = (lastTotal === 0);
             let pos = isInitial ? 0 : lastTotal;
             const BATCH_SIZE = 24; // Hikvision DS-K1T343 max 30 ta qaytaradi; 24 xavfsiz!
@@ -1957,11 +1960,11 @@ async function pollAllCameras() {
               const countToFetch = Math.min(BATCH_SIZE, total - pos);
               const fetchBody = JSON.stringify({
                 AcsEventCond: {
-                  searchID: `f_${cam.id}_${isInitial ? 'init' : 'new'}_${pos}`,
+                  searchID: `f_${cam.id}_${minorCode}_${isInitial ? 'init' : 'new'}_${pos}`,
                   searchResultPosition: pos,
                   maxResults: countToFetch,
                   major: 5,
-                  minor: 75,
+                  minor: minorCode,
                   startTime: `${todayStr}T00:00:00`,
                   endTime: `${todayStr}T23:59:59`
                 }
@@ -1984,7 +1987,11 @@ async function pollAllCameras() {
                   if (fetchRes.status === 200) {
                     const fetchData = JSON.parse(fetchRes.body);
                     const infoList = fetchData.AcsEvent?.InfoList || [];
-                    infoList.forEach(ev => addScanEvent(ev, cam, !isInitial));
+                    infoList.forEach(ev => {
+                      if (ev && (ev.employeeNoString || ev.cardNo)) {
+                        addScanEvent(ev, cam, !isInitial);
+                      }
+                    });
                     const step = infoList.length > 0 ? infoList.length : countToFetch;
                     pos += step;
                     fetchedUpTo = pos;
@@ -1993,16 +2000,16 @@ async function pollAllCameras() {
                 } catch (err) {}
               }
               if (!batchOk) {
-                // Qayta urinish keyingi siklda aynan to'xtagan joydan davom etishi uchun to'xtatamiz
                 break;
               }
             }
             if (fetchedUpTo > lastTotal) {
-              lastKnownTotals.set(cam.ip, fetchedUpTo);
+              lastKnownTotals.set(trackKey, fetchedUpTo);
             }
           }
         }
-      } else {
+      }
+      if (!anyMinorOk) {
         cam.failCount = (cam.failCount || 0) + 1;
         if (cam.failCount >= 5 && (Date.now() - (cam.lastSeenAt || 0) > 25000)) {
           cam.online = false;
