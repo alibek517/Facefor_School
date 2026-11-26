@@ -199,8 +199,8 @@ export const SchoolProvider = ({ children }) => {
   });
 
   const filterRealTeachers = (list) => {
-    if (!Array.isArray(list) || list.length === 0) return INITIAL_TEACHERS;
-    const filtered = list.filter(t => 
+    if (!Array.isArray(list)) return [];
+    return list.filter(t => 
       t && 
       t.id !== 't-00000558' && 
       t.id !== 't-00000706' && 
@@ -209,12 +209,6 @@ export const SchoolProvider = ({ children }) => {
       !String(t.name || '').toLowerCase().includes('mamashev viktor') &&
       !String(t.name || '').toLowerCase().includes('maxmudjanov elbek')
     );
-    const hasIzzat = filtered.some(t => t.id === 't-00000784' || String(t.name || '').toLowerCase().includes('urazmetov izzat'));
-    if (!hasIzzat) {
-      const izzatObj = INITIAL_TEACHERS.find(t => t.id === 't-00000784');
-      if (izzatObj) return [izzatObj, ...filtered];
-    }
-    return filtered.length > 0 ? filtered : INITIAL_TEACHERS;
   };
 
   const filterRealStudents = (list) => {
@@ -451,6 +445,7 @@ export const SchoolProvider = ({ children }) => {
               if (Array.isArray(d.students)) setStudents(d.students);
               if (Array.isArray(d.classes)) setClasses(d.classes);
               if (Array.isArray(d.teachers)) setTeachers(d.teachers);
+              if (Array.isArray(d.leadership) && d.leadership.length > 0) setLeadership(d.leadership);
               if (Array.isArray(d.technicalStaff)) setTechnicalStaff(d.technicalStaff);
               if (Array.isArray(d.schedules)) setSchedules(d.schedules);
               if (Array.isArray(d.attendanceList)) setAttendanceList(d.attendanceList);
