@@ -129,7 +129,7 @@ const CONFIG = {
   BRIDGE_PORT: 5001,
   DEVICE_USER: 'admin',
   DEVICE_PASS: 'Islam4343',
-  POLL_INTERVAL_MS: 3000
+  POLL_INTERVAL_MS: 5000
 };
 
 // 6 ta Turniket Kamera qurilmalari (Yagona va standart tartib: Turniket 1..6, 1-3 Kirish, 4-6 Chiqish)
@@ -1884,7 +1884,7 @@ function startCameraWorker(cam) {
       } catch (e) {}
       const lastViewed = lastSnapshotViewers.get(cam.ip) || 0;
       const hasActiveViewer = (Date.now() - lastViewed) < 20000;
-      await new Promise(r => setTimeout(r, hasActiveViewer ? 2000 : 12000));
+      await new Promise(r => setTimeout(r, hasActiveViewer ? 3000 : 30000));
     }
   };
   setTimeout(workerLoop, (CAMERAS.indexOf(cam) % 6) * 250 + 200);
@@ -1899,19 +1899,33 @@ function stopCameraWorker(ip) {
 // Barcha 6 ta kamerani parallel ravishda uzluksiz video oqim rejimida ishga tushirish
 CAMERAS.forEach(cam => startCameraWorker(cam));
 
+let pollCycleCount = 0;
+
 // 6 ta qurilmani tekshirish va voqealarni olish
 async function pollAllCameras() {
   if (isPolling) return;
   isPolling = true;
+  pollCycleCount++;
 
   const d = new Date();
   const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-  await Promise.allSettled(CAMERAS.map(async (cam) => {
+  // Takroriy IP lar (masalan 192.168.1.36) va boshqa maktab IP larini (192.168.2.x) chiqarib tashlash
+  const seenIps = new Set();
+  const uniqueCams = CAMERAS.filter(cam => {
+    if (!cam || !cam.ip || cam.ip.startsWith('192.168.2.') || seenIps.has(cam.ip)) return false;
+    seenIps.add(cam.ip);
+    return true;
+  });
+
+  // minor=104 faqat har 3-siklda (15s) tekshiriladi — turniket CPU yukini 2 baravar kamaytiradi
+  const minorsToPoll = (pollCycleCount === 1 || pollCycleCount % 3 === 0) ? [75, 104] : [75];
+
+  await Promise.allSettled(uniqueCams.map(async (cam) => {
     let anyMinorOk = false;
     try {
       // 1. Ikkala Face-ID tanish kodini ham olish: 75 (asosiy o'tish) va 104 (qayta/ikkinchi tanish)
-      for (const minorCode of [75, 104]) {
+      for (const minorCode of minorsToPoll) {
         const probeBody = JSON.stringify({
           AcsEventCond: {
             searchID: `p_${cam.id}_${minorCode}`,
@@ -2838,7 +2852,7 @@ const server = http.createServer(async (req, res) => {
     const targetIp = pathname.replace('/api/camera/snapshot/', '').trim();
     lastSnapshotViewers.set(targetIp, Date.now());
     const cached = cameraFrames.get(targetIp);
-    const isFresh = cached && (Date.now() - (cached.timestamp || 0) < 35000);
+    const isFresh = cached && (Date.now() - (cached.timestamp || 0) < 60000);
 
     if (isFresh && isValidJpeg(cached.buffer)) {
       res.writeHead(200, {
