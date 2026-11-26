@@ -134,7 +134,7 @@ export const AttendanceReportView = () => {
   // Jadval saralash, sahifalash va ustunlar ko'rinishi
   const [sortConfig, setSortConfig] = useState({ key: 'index', dir: 'asc' });
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(30);
   const [showColMenu, setShowColMenu] = useState(false);
   const [visibleCols, setVisibleCols] = useState({
     index: true,
@@ -1183,6 +1183,7 @@ export const AttendanceReportView = () => {
               >
                 <option value={10}>10</option>
                 <option value={25}>25</option>
+                <option value={30}>30</option>
                 <option value={50}>50</option>
                 <option value={100}>100</option>
                 <option value="all">Barchasi</option>
