@@ -1613,6 +1613,29 @@ export const SchoolProvider = ({ children }) => {
       }
     };
 
+    let schoolsFetchedOnce = false;
+    let lastScansSig = '';
+    let lastCamsSig = '';
+
+    const applyCamerasIfChanged = (incomingCams) => {
+      if (!Array.isArray(incomingCams)) return;
+      const sig = incomingCams.map(c => `${c.id}:${c.ip}:${c.online ? 1 : 0}:${c.type}:${c.lastEvent?.serialNo || ''}`).join('|');
+      if (sig !== lastCamsSig) {
+        lastCamsSig = sig;
+        setCameras(incomingCams);
+      }
+    };
+
+    const applyScansIfChanged = (incomingScans) => {
+      if (!Array.isArray(incomingScans)) return;
+      const first = incomingScans[0];
+      const sig = `${incomingScans.length}:${first?.id || ''}:${first?.serialNo || ''}:${first?.timestamp || ''}`;
+      if (sig !== lastScansSig) {
+        lastScansSig = sig;
+        setRecentFaceScans(incomingScans);
+      }
+    };
+
     const pollDevice = async () => {
       let localReachable = false;
       const activeBridge = (BRIDGE_API && !deadTunnelsSet.has(BRIDGE_API.replace(/\/+$/, ''))) ? BRIDGE_API : '';
@@ -1626,8 +1649,14 @@ export const SchoolProvider = ({ children }) => {
             markTunnelSuccess(activeBridge);
             const json = await res.json().catch(() => null);
             if (json) {
-              if (json.data) setFaceDevice(json.data);
-              if (json.cameras) setCameras(json.cameras);
+              if (json.data) {
+                setFaceDevice(prev => (
+                  prev && prev.online === json.data.online && prev.activeCameras === json.data.activeCameras && prev.totalUsers === json.data.totalUsers
+                    ? prev
+                    : json.data
+                ));
+              }
+              if (json.cameras) applyCamerasIfChanged(json.cameras);
               if (json.globalStreamUrl) updateGlobalStreamUrl(json.globalStreamUrl);
               localReachable = true;
               localFailuresCount.current = 0;
@@ -1649,29 +1678,11 @@ export const SchoolProvider = ({ children }) => {
 
       if (localReachable) {
         connectWebSocket(activeBridge || BRIDGE_API);
-        // Ushbu qurilma lokalga ulangan - u Global va Localni bir-biriga bog'lovchi faol ko'prikdir
-        const hbInfo = {
-          bridgedBy: currentUser?.fullName || currentUser?.name || 'Lokal Maktab Profili',
-          role: currentUser?.role || 'monitor',
-          totalCameras: 6,
-          camerasOnline: 6
-        };
-        sendLocalHeartbeatToSupabase(hbInfo).catch(() => {});
-        if (supabaseChannelRef.current && isChannelSubscribedRef.current) {
-          try {
-            supabaseChannelRef.current.send({
-              type: 'broadcast',
-              event: 'local_heartbeat',
-              payload: { online: true, timestamp: Date.now(), ...hbInfo }
-            });
-          } catch (e) {}
-        }
-
         try {
-          const evRes = await fetch(`${activeBridge}/api/device/events`, { signal: AbortSignal.timeout(3000) }).catch(() => null);
+          const evRes = await fetch(`${activeBridge}/api/device/events`, { signal: AbortSignal.timeout(4000) }).catch(() => null);
           if (evRes && evRes.ok) {
             const evJson = await evRes.json().catch(() => null);
-            if (evJson && evJson.data) setRecentFaceScans(evJson.data);
+            if (evJson && evJson.data) applyScansIfChanged(evJson.data);
           }
         } catch (e) {}
       } else {
@@ -1688,12 +1699,12 @@ export const SchoolProvider = ({ children }) => {
         const activeTunnel = getActiveBridgeUrl();
         if (activeTunnel && !deadTunnelsSet.has(activeTunnel.replace(/\/+$/, ''))) {
           try {
-            const evRes = await fetch(`${activeTunnel}/api/device/events`, { signal: AbortSignal.timeout(3000) }).catch(() => null);
+            const evRes = await fetch(`${activeTunnel}/api/device/events`, { signal: AbortSignal.timeout(4000) }).catch(() => null);
             if (evRes && evRes.ok) {
               markTunnelSuccess(activeTunnel);
               const evJson = await evRes.json().catch(() => null);
               if (evJson && Array.isArray(evJson.data) && evJson.data.length > 0) {
-                setRecentFaceScans(evJson.data);
+                applyScansIfChanged(evJson.data);
               }
               setIsSchoolLocalOnline(true);
               tunnelReachable = true;
@@ -1706,37 +1717,21 @@ export const SchoolProvider = ({ children }) => {
           }
         }
 
-        // Agar tunnel orqali aloqa bo'lmasa, Supabase dan "local_status" heartbeat ni tekshiramiz
         if (!tunnelReachable) {
-          try {
-            const localStatus = await getLocalStatusFromSupabase();
-            if (localStatus && localStatus.online) {
-              const isFresh = (Date.now() - (localStatus.timestamp || 0)) < 45000;
-              setIsSchoolLocalOnline(isFresh);
-              if (isFresh) setLocalBridgeInfo(localStatus);
-            } else {
-              setIsSchoolLocalOnline(false);
-            }
-          } catch (e) {
-            setIsSchoolLocalOnline(false);
-          }
+          setIsSchoolLocalOnline(false);
         }
-
-        // Supabase dan oxirgi kamera kadrlarini yangilab turish (Global rejim uchun)
-        try {
-          const cloudFrames = await getLatestCameraFramesFromSupabase();
-          if (cloudFrames && typeof cloudFrames === 'object' && Object.keys(cloudFrames).length > 0) {
-            setCameraLatestFrames(prev => ({ ...prev, ...cloudFrames }));
-          }
-        } catch (e) {}
       }
 
       setIsInitialized(true);
-      fetchSchoolsFromBackend();
+      if (!schoolsFetchedOnce) {
+        schoolsFetchedOnce = true;
+        fetchSchoolsFromBackend();
+      }
     };
 
     pollDevice();
-    const interval = setInterval(pollDevice, 2000);
+    // WebSocket yangi skanlarni real-vaqtda (<50ms) uzatadi; 10s polling faqat zaxira sinxronizatsiya uchun (brauzer qotishini yo'qotadi)
+    const interval = setInterval(pollDevice, 10000);
 
     return () => {
       isEffectUnmounted = true;
@@ -1755,50 +1750,9 @@ export const SchoolProvider = ({ children }) => {
     };
   }, []);
 
-  // Lokal profil uchun kamera kadrlarini uzluksiz tezkor relay qilish (har 1.2 soniyada)
-  useEffect(() => {
-    if (!isLocalConnected) return;
-
-    let isMounted = true;
-    const relayInterval = setInterval(async () => {
-      if (!isMounted) return;
-      try {
-        const res = await fetch(`${BRIDGE_API}/api/camera/latest_frames`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json && json.frames && typeof json.frames === 'object') {
-            const frameEntries = Object.entries(json.frames);
-            if (frameEntries.length > 0) {
-              setCameraLatestFrames(prev => ({ ...prev, ...json.frames }));
-
-              if (supabaseChannelRef.current && isChannelSubscribedRef.current) {
-                for (const [ip, frame] of frameEntries) {
-                  try {
-                    supabaseChannelRef.current.send({
-                      type: 'broadcast',
-                      event: 'camera_frame',
-                      payload: { ip, frame, timestamp: Date.now() }
-                    });
-                  } catch (e) {}
-                }
-              }
-
-              const now = Date.now();
-              if (now - lastSavedFramesTime.current > 1500) {
-                lastSavedFramesTime.current = now;
-                saveLatestCameraFramesToSupabase(json.frames).catch(() => {});
-              }
-            }
-          }
-        }
-      } catch (err) {}
-    }, 1200);
-
-    return () => {
-      isMounted = false;
-      clearInterval(relayInterval);
-    };
-  }, [isLocalConnected]);
+  // Eslatma: avvalgi 1.2s li /api/camera/latest_frames base64 relay olib tashlandi —
+  // har 1.2 soniyada butun React ilovasini qayta chizib qotirishga sabab bo'layotgan edi.
+  // Kameralar endi faqat Jonli Kameralar sahifasi ochilganda to'g'ridan-to'g'ri /api/camera/snapshot/:ip dan o'qiladi.
 
   const refreshLocalStatus = async () => {
     manualRetryLocal.current = true;

@@ -1581,14 +1581,16 @@ function savePlaybackArchiveFrame(camIp, buf, customTimeStr = null, customDateSt
   const dirPath = path.join(PLAYBACK_DIR, camIp, dateStr, hourStr);
 
   try {
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-    }
     const targetFile = path.join(dirPath, fileTimeStr);
-    // Maxsus vaqt (masalan skanerlash hodisasi yoki yuz rasmi) bo'lsa har doim yangilaymiz
-    if (customTimeStr || !fs.existsSync(targetFile)) {
-      fs.writeFileSync(targetFile, buf);
-    }
+    // Asinxron yozish — Node.js event-loop ni to'xtatib qo'ymaslik (qotishlarni yo'qotish) uchun
+    fs.promises.mkdir(dirPath, { recursive: true })
+      .then(() => {
+        if (customTimeStr) {
+          return fs.promises.writeFile(targetFile, buf);
+        }
+        return fs.promises.access(targetFile).catch(() => fs.promises.writeFile(targetFile, buf));
+      })
+      .catch(() => {});
   } catch (err) {}
 }
 
@@ -1863,47 +1865,39 @@ async function updateCameraFrame(cam) {
   }
 }
 
-// Oxirgi kadrlarni Supabase ga uzatish (Global internetda ko'rsatish uchun)
-let lastFramesSyncTime = 0;
+// Oxirgi kadrlarni Supabase ga uzatish — o'chirilgan (Cloudflare tunnel orqali to'g'ridan-to'g'ri ishlaydi, CPU va tarmoqni qotirmaydi)
 async function syncLatestFramesToSupabase() {
-  const now = Date.now();
-  if (now - lastFramesSyncTime < 2000) return;
-  lastFramesSyncTime = now;
-
-  try {
-    const frames = {};
-    for (const cam of CAMERAS) {
-      if (!cam.online) continue;
-      const frameObj = cameraFrames.get(cam.ip);
-      if (frameObj && frameObj.buffer && isValidJpeg(frameObj.buffer) && (Date.now() - (frameObj.timestamp || 0) < 15000)) {
-        frames[cam.ip] = `data:image/jpeg;base64,${frameObj.buffer.toString('base64')}`;
-      }
-    }
-    await syncModuleToSupabase('camera_latest_frames', frames);
-  } catch (err) {}
+  return;
 }
 
 // Qaysi kamerani foydalanuvchi hozir ko'rib turganini kuzatish (turniket protsessorini qotirmaslik uchun)
 const lastSnapshotViewers = new Map();
 
-// Har bir kamera uchun yengil video oqim aylanishi (tomoshabin bo'lsa 2s, bo'lmasa 12s -> turniket CPU yukini 85-95% kamaytiradi!)
+// Har bir kamera uchun yengil video oqim aylanishi — faqat tomoshabin bo'lganda kadr oladi (turniket protsessorini 95% bo'shatadi!)
 function startCameraWorker(cam) {
-  if (!cam || !cam.ip || activeCameraWorkers.has(cam.ip)) return;
+  if (!cam || !cam.ip || cam.ip.startsWith('192.168.2.') || activeCameraWorkers.has(cam.ip)) return;
   activeCameraWorkers.add(cam.ip);
   let isRunning = false;
   const workerLoop = async () => {
     if (isRunning) return;
     isRunning = true;
+    // Boshlang'ich 1 ta kadr olish
+    try { await updateCameraFrame(cam); } catch (e) {}
     while (activeCameraWorkers.has(cam.ip)) {
-      try {
-        await updateCameraFrame(cam);
-      } catch (e) {}
       const lastViewed = lastSnapshotViewers.get(cam.ip) || 0;
-      const hasActiveViewer = (Date.now() - lastViewed) < 20000;
-      await new Promise(r => setTimeout(r, hasActiveViewer ? 3000 : 30000));
+      const hasActiveViewer = (Date.now() - lastViewed) < 15000;
+      if (hasActiveViewer) {
+        try {
+          await updateCameraFrame(cam);
+        } catch (e) {}
+        await new Promise(r => setTimeout(r, 4000));
+      } else {
+        // Tomoshabin yo'q paytda turniketga umuman snapshot so'rovi yubormaymiz (100% CPU Face-ID tanishga qoladi!)
+        await new Promise(r => setTimeout(r, 5000));
+      }
     }
   };
-  setTimeout(workerLoop, (CAMERAS.indexOf(cam) % 6) * 250 + 200);
+  setTimeout(workerLoop, (CAMERAS.indexOf(cam) % 6) * 350 + 300);
 }
 
 function stopCameraWorker(ip) {
@@ -2156,27 +2150,9 @@ function addScanEvent(rawEvent, camera, isNew = true) {
 
       const dStr = (scan.timestamp || '').split('T')[0];
 
-      // 1. Agar Face-ID apparatida haqiqiy rasm (pictureURL) mavjud bo'lsa, zudlik bilan yuklab arxivga saqlaymiz
-      if (rawEvent.pictureURL) {
-        try {
-          const picPath = new URL(rawEvent.pictureURL).pathname;
-          digestRequest({
-            host: camera.ip,
-            path: picPath,
-            method: 'GET'
-          }).then(picRes => {
-            if (picRes && isValidJpeg(picRes.body)) {
-              savePlaybackArchiveFrame(camera.ip, picRes.body, scan.timeFormatted, dStr);
-              const picCacheDir = path.join(__dirname, 'photo_cache', 'events');
-              if (!fs.existsSync(picCacheDir)) fs.mkdirSync(picCacheDir, { recursive: true });
-              const picFile = path.join(picCacheDir, `${scan.employeeNo}_${scan.timeFormatted.replace(/:/g, '-')}.jpg`);
-              fs.writeFileSync(picFile, picRes.body);
-            }
-          }).catch(() => {});
-        } catch (e) {}
-      }
-
-      // 2. Zaxira sifatida joriy kamera kadrini ham saqlaymiz
+      // Odam ko'paygan paytda turniketdan har bir o'tishda pictureURL yuklab olish kamera protsessorini
+      // va per-IP navbatni band qilib qotish keltirib chiqarardi. Shuning uchun faqat keshdagi kadrni
+      // asinxron saqlaymiz (o'quvchining profil rasmi bazada allaqachon bor).
       const curSnap = cameraFrames.get(camera.ip);
       if (curSnap && isValidJpeg(curSnap.buffer)) {
         savePlaybackArchiveFrame(camera.ip, curSnap.buffer, scan.timeFormatted, dStr);
