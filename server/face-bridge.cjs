@@ -1361,8 +1361,24 @@ function parseDigestHeader(header) {
 // HTTP (80) yopiq bo'lib, faqat HTTPS (443) orqali ishlaydigan kameralar keshi (masalan 192.168.1.33)
 const httpsHostsCache = new Set();
 
+// Har bir kamera IP si uchun alohida navbat (1 ta kameraga bir vaqtda 2 ta parallel Digest so'rov urilmasligi va 401 lock bo'lmasligi uchun)
+const perHostQueues = new Map();
+function digestRequest(opts) {
+  const hostKey = String(opts?.host || 'default');
+  const prev = perHostQueues.get(hostKey) || Promise.resolve();
+  const next = prev
+    .catch(() => {})
+    .then(async () => {
+      const res = await _digestRequestRaw(opts);
+      await new Promise(r => setTimeout(r, 35));
+      return res;
+    });
+  perHostQueues.set(hostKey, next.catch(() => {}));
+  return next;
+}
+
 // Digest avtorizatsiya so'rovi (Promise, timeout va avtomatik HTTPS 443 fallback bilan)
-function digestRequest({ host, port = 80, path, method = 'GET', body = null, username, password, timeout = 3500, isBinary = false, contentType = 'application/json', _forceHttps = false }) {
+function _digestRequestRaw({ host, port = 80, path, method = 'GET', body = null, username, password, timeout = 3500, isBinary = false, contentType = 'application/json', _forceHttps = false }) {
   const useHttps = _forceHttps || port === 443 || httpsHostsCache.has(host);
   const transport = useHttps ? https : http;
   const targetPort = useHttps ? (port === 80 || !port ? 443 : port) : (port || 80);
@@ -1489,7 +1505,7 @@ function digestRequest({ host, port = 80, path, method = 'GET', body = null, use
         if (!resolved) {
           resolved = true;
           clearTimeout(timer);
-          digestRequest({ host, port: 443, path, method, body, username, password, timeout, isBinary, contentType, _forceHttps: true })
+          _digestRequestRaw({ host, port: 443, path, method, body, username, password, timeout, isBinary, contentType, _forceHttps: true })
             .then(resolve)
             .catch(reject);
         }
