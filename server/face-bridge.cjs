@@ -1959,7 +1959,8 @@ async function pollAllCameras() {
 
           const data = JSON.parse(res.body);
           const total = data.AcsEvent?.totalMatches || 0;
-          const trackKey = `${cam.ip}_${minorCode}`;
+          // Har yangi kunda (00:00 da) hisoblagich avtomatik 0 dan boshlanishi uchun trackKey ichida todayStr bo'lishi shart!
+          const trackKey = `${todayStr}_${cam.ip}_${minorCode}`;
           const lastTotal = lastKnownTotals.get(trackKey) || 0;
 
           if (total > 0 && (lastTotal === 0 || total > lastTotal)) {
