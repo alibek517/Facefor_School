@@ -147,11 +147,19 @@ export const SchoolProvider = ({ children }) => {
     return null;
   };
 
-  // Autentifikatsiya (Login holati) - Saytga kirganda token bilan tekshiradi, bo'lmasa login page ochiladi!
+  // Autentifikatsiya (Login holati) - Har bir yangi qurilma/oyna ochilganda majburiy /login sahifasiga tushadi!
+  // Faqat joriy brauzer sessiyasi (sessionStorage) ichida login qilingan foydalanuvchi saqlanadi.
   const [currentUser, setCurrentUser] = useState(() => {
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-      const saved = typeof window !== 'undefined' ? localStorage.getItem('school_user') : null;
+      // Eski localStorage dagi avtomatik saqlangan tokenlarni tozalash (avto-direktor kirishini oldini olish)
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('school_user');
+        } catch (e) {}
+      }
+      const token = typeof window !== 'undefined' ? sessionStorage.getItem('auth_token') : null;
+      const saved = typeof window !== 'undefined' ? sessionStorage.getItem('school_user') : null;
       if (token && saved) {
         const verified = verifyAuthToken(token);
         const parsed = JSON.parse(saved);
@@ -164,8 +172,8 @@ export const SchoolProvider = ({ children }) => {
           );
           if (isLocal && (parsed.role === 'bigadmin' || parsed.login === 'bigadmin')) {
             try {
-              localStorage.removeItem('auth_token');
-              localStorage.removeItem('school_user');
+              sessionStorage.removeItem('auth_token');
+              sessionStorage.removeItem('school_user');
             } catch (e) {}
             return null;
           }
@@ -174,7 +182,7 @@ export const SchoolProvider = ({ children }) => {
       }
     } catch (e) {}
 
-    // Token bo'lmasa yoki yaroqsiz bo'lsa, login sahifasi ochiladi
+    // Token bo'lmasa yoki yangi oyna/qurilma bo'lsa, har doim login sahifasi ochiladi
     return null;
   });
 
@@ -699,6 +707,16 @@ export const SchoolProvider = ({ children }) => {
   });
 
   const navigateTo = (targetPath) => {
+    // Login qilmagan foydalanuvchi faqat /login sahifasida qoladi (to'g'ridan-to'g'ri direktor panelga kira olmaydi!)
+    if (!currentUserRef.current) {
+      setActiveTab('login');
+      setCurrentPath('/login');
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.history.replaceState({ path: '/login' }, '', '/login');
+      }
+      return;
+    }
+
     // Agar BigAdmin tizimda bo'lsa, boshqa sahifalarga o'tish taqiqlanadi
     if (currentUserRef.current?.role === 'bigadmin' || currentUserRef.current?.isBigAdmin) {
       targetPath = '/bigadmin';
@@ -728,7 +746,7 @@ export const SchoolProvider = ({ children }) => {
         currentUserRef.current = updated;
         setCurrentUser(updated);
         try {
-          localStorage.setItem('school_user', JSON.stringify(updated));
+          sessionStorage.setItem('school_user', JSON.stringify(updated));
         } catch (e) {}
       }
       return;
@@ -764,6 +782,14 @@ export const SchoolProvider = ({ children }) => {
     if (typeof window === 'undefined') return;
 
     const handlePopState = () => {
+      if (!currentUserRef.current) {
+        setCurrentPath('/login');
+        setActiveTab('login');
+        if (window.location.pathname !== '/login') {
+          window.history.replaceState({ path: '/login' }, '', '/login');
+        }
+        return;
+      }
       const route = parsePath(window.location.pathname);
       setCurrentPath(route.path);
       setActiveTab(route.tab);
@@ -780,11 +806,11 @@ export const SchoolProvider = ({ children }) => {
           setCurrentUser(prev => {
             if (!prev) return prev;
             const updated = { ...prev, role: route.role };
-            try { localStorage.setItem('school_user', JSON.stringify(updated)); } catch (e) {}
+            try { sessionStorage.setItem('school_user', JSON.stringify(updated)); } catch (e) {}
             return updated;
           });
         }
-      } else {
+      } else if (route.role) {
         quickSwitchRole(route.role, false, true);
       }
     };
@@ -813,7 +839,7 @@ export const SchoolProvider = ({ children }) => {
       currentUserRef.current?.role === 'subject_teacher'
     );
 
-    if (initialRoute.role && initialRoute.role !== 'director') {
+    if (currentUserRef.current && initialRoute.role && initialRoute.role !== 'director') {
       if (!(isInitTeacherUser && isInitTeacherRole)) {
         quickSwitchRole(initialRoute.role, false, true);
       }
@@ -2019,11 +2045,11 @@ export const SchoolProvider = ({ children }) => {
         }
       }
 
-      // Auth tokenni yaratish va saqlash
+      // Auth tokenni yaratish va faqat joriy sessiyaga (sessionStorage) saqlash
       const token = generateAuthToken(found);
       try {
-        localStorage.setItem('auth_token', token);
-        localStorage.setItem('school_user', JSON.stringify(found));
+        sessionStorage.setItem('auth_token', token);
+        sessionStorage.setItem('school_user', JSON.stringify(found));
       } catch (e) {}
 
       currentUserRef.current = found;
@@ -2055,9 +2081,12 @@ export const SchoolProvider = ({ children }) => {
   // Chiqish
   const logout = () => {
     try {
+      sessionStorage.removeItem('auth_token');
+      sessionStorage.removeItem('school_user');
       localStorage.removeItem('auth_token');
       localStorage.removeItem('school_user');
     } catch (e) {}
+    currentUserRef.current = null;
     setCurrentUser(null);
     navigateTo('/login');
     showToast('Chiqildi', 'Tizimdan muvaffaqiyatli chiqildi.', 'info');
@@ -2093,10 +2122,10 @@ export const SchoolProvider = ({ children }) => {
     setSelectedTeacherId(tObj.id);
 
     try {
-      localStorage.setItem('school_user', JSON.stringify(userObj));
+      sessionStorage.setItem('school_user', JSON.stringify(userObj));
       localStorage.setItem('school_teacher_id', tObj.id);
       const token = generateAuthToken(userObj);
-      localStorage.setItem('auth_token', token);
+      sessionStorage.setItem('auth_token', token);
     } catch (e) {}
 
     showToast('Profilga kirildi', `${tObj.name} kabinetiga muvaffaqiyatli o'tildi.`, 'success');
@@ -2110,6 +2139,10 @@ export const SchoolProvider = ({ children }) => {
 
   // Tezkor almashtirish
   const quickSwitchRole = (role, updateUrl = true, silent = false) => {
+    // Login qilmagan foydalanuvchi hech qanday rolga avtomatik kira olmaydi!
+    if (!currentUserRef.current) {
+      return;
+    }
     // Agar BigAdmin tizimda bo'lsa, boshqa rollarga o'tish bloklanadi
     if (currentUserRef.current?.role === 'bigadmin' && role !== 'bigadmin') {
       return;
@@ -2151,7 +2184,7 @@ export const SchoolProvider = ({ children }) => {
         setCurrentUser(match);
         setSelectedTeacherId(activeTeacher.id);
         try {
-          localStorage.setItem('school_user', JSON.stringify(match));
+          sessionStorage.setItem('school_user', JSON.stringify(match));
           localStorage.setItem('school_teacher_id', activeTeacher.id);
         } catch (e) {}
 
@@ -2175,7 +2208,7 @@ export const SchoolProvider = ({ children }) => {
     if (match) {
       setCurrentUser(match);
       try {
-        localStorage.setItem('school_user', JSON.stringify(match));
+        sessionStorage.setItem('school_user', JSON.stringify(match));
       } catch (e) {}
       if (!silent) {
         showToast('Rol almashtirildi', `${match.name} (${match.detail || match.role}) rejimiga o'tildi.`, 'info');
